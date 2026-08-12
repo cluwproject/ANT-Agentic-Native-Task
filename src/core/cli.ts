@@ -318,14 +318,10 @@ async function main() {
             const envContent = fs.readFileSync(envPath, 'utf-8');
             const match = envContent.match(/^TRADING_LOOP_ENABLED=(true|false)/m);
             if (match && match[1] === 'true') {
-                const { startTradingLoop } = await import('./trading_loop.js');
-                startTradingLoop();
-                console.log(chalk.green('🔄 Autopilot Trading Loop otomatis diaktifkan dari konfigurasi .env.\n'));
+                console.log(chalk.dim('ℹ Autopilot Trading Loop (disabled in ANT CLI).\n'));
             }
         }
-    } catch (e: any) {
-        console.log(chalk.yellow(`[WARN] Gagal memulai trading loop otomatis: ${e.message}\n`));
-    }
+    } catch (e: any) {}
 
     console.log(chalk.green('Sistem Siap! ANT berjalan dalam mode Standalone CLI.'));
     console.log(chalk.dim('(Ketik "exit" atau "quit" untuk keluar)'));
@@ -633,14 +629,7 @@ async function main() {
                     // Reload env in process
                     process.env.TRADING_LOOP_ENABLED = String(enable);
                     
-                    const { startTradingLoop, stopTradingLoop } = await import('./trading_loop.js');
-                    if (enable) {
-                        startTradingLoop();
-                        console.log(chalk.green(`\n[TRADING LOOP] Autopilot diaktifkan (TRADING_LOOP_ENABLED=true). Berjalan di background.🟢\n`));
-                    } else {
-                        stopTradingLoop();
-                        console.log(chalk.yellow(`\n[TRADING LOOP] Autopilot dinonaktifkan (TRADING_LOOP_ENABLED=false). Loop dihentikan.⏸️\n`));
-                    }
+                    console.log(chalk.yellow(`\n[TRADING LOOP] Modul trading loop dinonaktifkan di ANT CLI (TRADING_LOOP_ENABLED=${enable}).\n`));
                 } catch (e: any) {
                     console.log(chalk.red(`\n[ERROR] Gagal mengubah status loop: ${e.message}\n`));
                 }
@@ -760,17 +749,13 @@ async function main() {
         // Tangani Slash Commands (Core Tools)
         if (text.startsWith('/')) {
             try {
-                const { executeAgentCommand } = await import('./agent.js');
-                const agentResponse = await executeAgentCommand(text);
-                
-                if (agentResponse?.metadata?.action_type === 'CLEAR_CHAT') {
+                if (text === '/clear') {
                     contextHistory = [];
                     console.clear();
                     console.log(getAntAscii());
+                } else {
+                    console.log(`\n${chalk.magenta.bold('[CORE PROTOCOL]')} Perintah '${text}' diterima.\n`);
                 }
-                
-                const reply = agentResponse.data || JSON.stringify(agentResponse, null, 2);
-                console.log(`\n${chalk.magenta.bold('[CORE PROTOCOL]')}\n${reply}\n`);
             } catch (e: any) {
                 console.log(`\n${chalk.red.bold('[COMMAND ERROR]')} ${e.message}\n`);
             }

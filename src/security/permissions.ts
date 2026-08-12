@@ -7,11 +7,11 @@
 // "tidak perlu konfirmasi interaktif" — BUKAN "bebas risiko", makanya
 // argumennya tetap ditampilkan dan tetap melewati validator sebelum jalan.
 
-import type { ApprovalResult, ToolCall } from './types.js';
-import * as ui from './ui.js';
-import { isBrowserTool } from './browserTool.js';
+import type { ApprovalResult, ToolCall } from '../core/agent_loop/types.js';
+import * as ui from '../core/agent_loop/ui.js';
+import { isBrowserTool } from '../core/agent_loop/browserTool.js';
 import chalk from 'chalk';
-import { requestDomainApproval } from './browserPermissions.js';
+import { requestDomainApproval } from '../core/agent_loop/browserPermissions.js';
 
 // Tool yang dianggap read-only / tidak mengubah state eksternal secara
 // destruktif. Daftar ini sama seperti versi lama — dipindah ke sini saja

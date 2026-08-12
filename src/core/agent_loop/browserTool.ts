@@ -37,11 +37,13 @@ import type { EvidenceRecord } from './evidenceLedger.js';
 // Import lazy supaya modul ini tidak error di-load kalau 'playwright' belum
 // terinstal — error baru muncul saat browser tool benar-benar dipanggil,
 // dengan pesan yang jelas, bukan crash saat import.
-type PlaywrightModule = typeof import('playwright');
+// @ts-ignore
+type PlaywrightModule = any;
 let playwrightModule: PlaywrightModule | null = null;
 async function loadPlaywright(): Promise<PlaywrightModule> {
     if (playwrightModule) return playwrightModule;
     try {
+        // @ts-ignore
         playwrightModule = await import('playwright');
         return playwrightModule;
     } catch {
@@ -78,7 +80,7 @@ export function assertSafeUrl(rawUrl: string): { ok: boolean; reason?: string } 
 // Satu browser instance dipakai ulang antar-panggilan dalam proses yang
 // sama (mahal untuk launch tiap kali). Context baru dibuat per-navigasi
 // KECUALI persistSession=true, sesuai prinsip "profil bersih by default".
-let sharedBrowser: import('playwright').Browser | null = null;
+let sharedBrowser: any = null;
 
 async function getBrowser() {
     if (sharedBrowser) return sharedBrowser;
@@ -87,8 +89,8 @@ async function getBrowser() {
     return sharedBrowser;
 }
 
-let persistentContext: import('playwright').BrowserContext | null = null;
-let currentPage: import('playwright').Page | null = null;
+let persistentContext: any = null;
+let currentPage: any = null;
 
 async function getPage(persistSession: boolean) {
     const browser = await getBrowser();

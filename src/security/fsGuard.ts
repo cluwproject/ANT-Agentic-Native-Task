@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
-import { Logger } from './logger.js';
+import { Logger } from '../utils/logger.js';
 
 const BASE_DIR = process.cwd();
 const WORKSPACE_DIR = path.join(BASE_DIR, 'workspace');
