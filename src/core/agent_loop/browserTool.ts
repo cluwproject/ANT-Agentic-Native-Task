@@ -4,7 +4,7 @@
 // CATATAN ARSITEKTUR:
 // ANT adalah CLI/Node process, bukan Electron app — jadi tidak ada
 // "jendela browser" GUI seperti panel Browser di Claude Code Desktop. Yang
-// dibangun di sini adalah padanan fungsionalnya: Claude (lewat CLUW) bisa
+// dibangun di sini adalah padanan fungsionalnya: Claude (lewat ANT) bisa
 // menyuruh Chromium (headless atau headed) navigate/klik/screenshot sebuah
 // halaman, dengan model keamanan yang setara — profil bersih per sesi,
 // approval per-domain, dan bukti (screenshot) yang hash-nya dihitung dari

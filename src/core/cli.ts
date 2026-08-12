@@ -17,9 +17,9 @@ function readAntIdentity() {
     try {
         const rel = JSON.parse(fs.readFileSync(path.join(ANT_HOME, 'identity', 'relationship.json'), 'utf-8'));
         const usr = JSON.parse(fs.readFileSync(path.join(ANT_HOME, 'identity', 'user.json'), 'utf-8'));
-        return { owner: usr.owner || 'User', origin: rel.origin || 'Independent' };
+        return { owner: usr.owner || 'User', origin: rel.origin || 'ANT' };
     } catch {
-        return { owner: 'User', origin: 'Independent' };
+        return { owner: 'User', origin: 'ANT' };
     }
 }
 
@@ -32,7 +32,7 @@ function getAntAscii() {
   ➜  Version  : v0.1.0
   ➜  Origin   : ${identity.origin}
   ➜  Owner    : ${identity.owner}
-  ➜  Engine   : Independent Agentic Runtime
+  ➜  Engine   : ANT Agentic Runtime
 `);
 }
 
@@ -121,7 +121,7 @@ async function main() {
     if (args[0] === 'agent') {
         const subCommand = args[1];
         if (subCommand === 'list') {
-            console.log(chalk.cyan('\n🔍 CLUW AGENTS REGISTRY:'));
+            console.log(chalk.cyan('\n🔍 ANT AGENTS REGISTRY:'));
             try {
                 const agentsDir = path.join(process.cwd(), 'src', 'server', 'agents');
                 const files = await fs.promises.readdir(agentsDir);
@@ -483,7 +483,7 @@ async function main() {
                     if (lastMsgs.length > 0) {
                         console.log(chalk.cyan('\nKonteks Terakhir:'));
                         lastMsgs.forEach((m: any) => {
-                            const sender = m.role === 'user' ? 'You' : 'CLUW';
+                            const sender = m.role === 'user' ? 'You' : 'ANT';
                             console.log(chalk.dim(`  ${sender}: ${m.content?.substring(0, 120)}${m.content?.length > 120 ? '...' : ''}`));
                         });
                     }
@@ -680,7 +680,7 @@ async function main() {
                 console.log(`Gunakan perintah ini untuk mengelola Autopilot Exness $10-mu:`);
                 console.log(`• ${chalk.bold('/exness start')} - Menyalakan Exness MT5 Autopilot di background`);
                 console.log(`• ${chalk.bold('/exness stop')}  - Mematikan Exness MT5 Autopilot (kembali ke manual)`);
-                console.log(`• ${chalk.bold('/exness journal')} - Melihat log jurnal keputusan trading otonom CLUW\n`);
+                console.log(`• ${chalk.bold('/exness journal')} - Melihat log jurnal keputusan trading otonom ANT\n`);
                 continue;
             }
         }
@@ -746,7 +746,7 @@ async function main() {
                 if (lastMsgs.length > 0) {
                     console.log(chalk.cyan('\nKonteks Terakhir:'));
                     lastMsgs.forEach(m => {
-                        const sender = m.role === 'user' ? 'You' : 'CLUW';
+                        const sender = m.role === 'user' ? 'You' : 'ANT';
                         console.log(chalk.dim(`  ${sender}: ${m.content?.substring(0, 120)}${m.content?.length > 120 ? '...' : ''}`));
                     });
                 }

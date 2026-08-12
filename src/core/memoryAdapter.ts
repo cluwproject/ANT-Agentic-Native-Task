@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
  * 
  * Mengikuti filosofi "Flexible Solutions" (Poin 5 materi GEAR Google),
  * Adapter ini memisahkan logika AI dari format penyimpanan memori (JSON/Database).
- * Jika suatu saat CLUW bermigrasi ke database sungguhan (PostgreSQL/pgvector/Pinecone),
+ * Jika suatu saat ANT bermigrasi ke database sungguhan (PostgreSQL/pgvector/Pinecone),
  * kita cukup membuat class baru yang mengimplementasikan `IMemoryStore`.
  */
 export interface IMemoryItem {

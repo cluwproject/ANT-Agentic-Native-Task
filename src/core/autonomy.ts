@@ -1,7 +1,7 @@
 import { chat } from './ai.js';
 import { tieredChat } from './tiered_ai.js';
 import { getBrainConfig } from '../shared/data.js';
-import { CLUW_Bus } from './events.js';
+import { ANT_Bus } from './events.js';
 import { Logger } from '../utils/logger.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -15,7 +15,7 @@ export async function runSelfReflection() {
 
     // Use Semantic Search to find relevant context
     const { semanticSearch } = await import('./memory.js');
-    const recentContext = await semanticSearch("rencana ard, tugas cluw, status proyek", "semantic", 3);
+    const recentContext = await semanticSearch("rencana ard, tugas ant, status proyek", "semantic", 3);
     
     let contextBrief = recentContext.length > 0 
       ? recentContext.map(r => `[${r.key}]: ${typeof r.data === 'string' ? r.data.substring(0, 50) : 'Data kompleks'}`).join('; ')
@@ -32,7 +32,7 @@ export async function runSelfReflection() {
 
     const { content: insight } = await tieredChat(config, [{ role: 'user', content: prompt }], [], {}, "Analisis Autonomos.");
     
-    CLUW_Bus.emit('system.autonomous_event', {
+    ANT_Bus.emit('system.autonomous_event', {
         title: 'Cognitive Reflection',
         content: insight,
         type: 'insight',
@@ -46,8 +46,8 @@ export async function runSelfReflection() {
     
     if (isSpendingCap) {
       Logger.log('WARN', `Autonomy loop is hibernating: API Provider spending cap, quota limit, or insufficient balance reached.`, {}, 'AUTONOMY');
-      CLUW_Bus.emit('system.message', {
-        content: `⚠️ **[CLUW Autopilot Mode Hibernation]**\n\nHalo **Ard**, Autopilot / Autonomy loop saya saat ini masuk ke mode hibernasi karena saldo, kuota, atau batas pemakaian (Rate Limit / Quota Exceeded) API Provider (Gemini, DeepSeek, atau OpenAI) Anda habis.\n\nSilakan isi ulang saldo, tingkatkan batas kuota Anda, atau tunggu beberapa saat untuk mengaktifkan kembali fungsi otonom saya.`
+      ANT_Bus.emit('system.message', {
+        content: `⚠️ **[ANT Autopilot Mode Hibernation]**\n\nHalo **Ard**, Autopilot / Autonomy loop saya saat ini masuk ke mode hibernasi karena saldo, kuota, atau batas pemakaian (Rate Limit / Quota Exceeded) API Provider (Gemini, DeepSeek, atau OpenAI) Anda habis.\n\nSilakan isi ulang saldo, tingkatkan batas kuota Anda, atau tunggu beberapa saat untuk mengaktifkan kembali fungsi otonom saya.`
       });
     } else {
       Logger.log('ERROR', `Autonomy loop failed: ${e.message}`, {}, 'AUTONOMY');

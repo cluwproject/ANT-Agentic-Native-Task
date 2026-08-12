@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import { CLUW_Bus } from '../core/events.js';
+import { ANT_Bus } from '../core/events.js';
 
 const WORKSPACE_DIR = path.join(process.cwd(), 'workspace');
-const REASONING_LOG_FILE = path.join(WORKSPACE_DIR, 'cluw-reasoning.log');
-const DRIFT_LOG_FILE = path.join(WORKSPACE_DIR, 'cluw-intimacy-drift.log');
+const REASONING_LOG_FILE = path.join(WORKSPACE_DIR, 'ant-reasoning.log');
+const DRIFT_LOG_FILE = path.join(WORKSPACE_DIR, 'ant-intimacy-drift.log');
 
 // ── INTIMACY DRIFT PATTERNS ──────────────────────────────────────────────────
 // Dikalibrasi berdasarkan Relational Sovereignty Clause (soul.yaml v0.3)
@@ -59,7 +59,7 @@ export function initReasoningLogger() {
         fs.writeFileSync(DRIFT_LOG_FILE, `=== ANT: Intimacy Drift Monitor Initialized at ${new Date().toISOString()} ===\n`);
     }
 
-    CLUW_Bus.on('reasoning_stream', (data: { step: string, message: string, source?: string, timestamp?: string, details?: any }) => {
+    ANT_Bus.on('reasoning_stream', (data: { step: string, message: string, source?: string, timestamp?: string, details?: any }) => {
         const timestamp = data.timestamp || new Date().toISOString();
         let logEntry = `[${timestamp}] [${data.step.toUpperCase()}] ${data.message}\n`;
         
@@ -72,7 +72,7 @@ export function initReasoningLogger() {
     });
 
     // ── Drift Scan on final AI response content ──────────────────────────────
-    CLUW_Bus.on('response_finalized', (data: { content: string; model: string }) => {
+    ANT_Bus.on('response_finalized', (data: { content: string; model: string }) => {
         const drifts = checkIntimacyDrift(data.content);
         if (drifts.length > 0) {
             const timestamp = new Date().toISOString();

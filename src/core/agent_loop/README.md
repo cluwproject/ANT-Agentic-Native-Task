@@ -21,8 +21,8 @@ File lama Anda (satu file, ~230 baris) dipecah jadi 10 file:
 ## Browser tool — konteks dan cara pasang
 
 Ini jawaban atas pertanyaan Anda soal fitur in-app browser Claude Code
-Desktop (dirilis 10 Juli 2026): apakah bisa dibuat padanan untuk CLUW.
-Jawabannya ya, dengan penyesuaian karena CLUW adalah proses CLI/Node, bukan
+Desktop (dirilis 10 Juli 2026): apakah bisa dibuat padanan untuk ANT.
+Jawabannya ya, dengan penyesuaian karena ANT adalah proses CLI/Node, bukan
 Electron — jadi tidak ada "panel browser" GUI, tapi kapabilitasnya (Claude
 menyuruh Chromium navigate/klik/screenshot dengan model keamanan setara)
 sepenuhnya bisa dicapai lewat Playwright.
@@ -82,7 +82,7 @@ mesin Anda untuk memvalidasi bagian Playwright-nya secara langsung.
 **Yang belum saya buat (di luar scope permintaan ini, tapi perlu Anda
 pertimbangkan sebelum produksi):**
 - Persistensi `alwaysAllowedDomains` lintas restart proses (saat ini
-  hilang tiap CLUW di-restart).
+  hilang tiap ANT di-restart).
 - Rate-limiting untuk `browser_navigate` berulang ke domain yang sama
   (relevan untuk kasus bug-bounty recon Anda — jangan sampai scanning
   lewat browser tool dianggap traffic agresif oleh target).
@@ -177,7 +177,7 @@ ID tanpa syarat.
    `permissions.ts` — contoh: `shell_exec` sekarang dicek dulu terhadap
    beberapa pola berbahaya (`rm -rf /`, fork bomb, `mkfs`/`dd` ke device)
    sebelum sampai ke prompt konfirmasi. Ini baru contoh awal — silakan
-   tambah validator lain sesuai kebutuhan CLUW (mis. domain whitelist untuk
+   tambah validator lain sesuai kebutuhan ANT (mis. domain whitelist untuk
    `web_request`).
 
 7. **Hasil tool yang dipotong sekarang punya penanda eksplisit** (`[HASIL

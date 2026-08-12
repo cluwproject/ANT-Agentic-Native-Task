@@ -262,7 +262,7 @@ export function printToolFailure(toolName: string, args: Record<string, any> = {
 export function printApprovalBox(tool: string, risk: 'LOW' | 'MEDIUM' | 'HIGH', reason: string) {
     const riskColor = risk === 'HIGH' ? chalk.red.bold : risk === 'MEDIUM' ? chalk.yellow.bold : chalk.green.bold;
 
-    console.log(chalk.cyan('  🛡️  CLUW SECURE GATEWAY'));
+    console.log(chalk.cyan('  🛡️  ANT SECURE GATEWAY'));
     console.log(chalk.cyan('  │') + chalk.cyan('  Action      : ') + chalk.white(tool));
     console.log(chalk.cyan('  │') + chalk.cyan('  Risk Level  : ') + riskColor(risk));
     console.log(chalk.cyan('  │') + chalk.cyan('  Description : ') + chalk.italic(reason));

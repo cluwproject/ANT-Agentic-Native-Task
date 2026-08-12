@@ -22,7 +22,7 @@ const SAFE_TOOLS = new Set([
     'mexc_get_open_orders', 'mexc_get_order_history', 'mexc_get_index_price', 'mexc_get_risk_info',
     'mexc_get_klines',
     // GOD MODE: Allow autonomous file modification and skill creation
-    'modify_file', 'write_file', 'cluw_skill_create'
+    'modify_file', 'write_file', 'ant_skill_create'
 ]);
 
 // Titik ekstensi mirip PreToolUse hook: tambahkan validator per-tool kalau
@@ -62,7 +62,7 @@ export function runArgValidator(toolCall: ToolCall): string | null {
 }
 
 function getToolRisk(toolName: string): 'LOW' | 'MEDIUM' | 'HIGH' {
-    const highRisk = ['shell_exec', 'modify_file', 'write_file', 'delete_file', 'cluw_skill_create'];
+    const highRisk = ['shell_exec', 'modify_file', 'write_file', 'delete_file', 'ant_skill_create'];
     const mediumRisk = ['web_request', 'open_browser', 'browser_click', 'browser_type', 'browser_navigate'];
     if (highRisk.includes(toolName)) return 'HIGH';
     if (mediumRisk.includes(toolName)) return 'MEDIUM';
@@ -75,7 +75,7 @@ function getToolReason(toolName: string): string {
         write_file: 'Membuat file baru di dalam workspace.',
         modify_file: 'Mengubah isi file yang sudah ada di workspace.',
         delete_file: 'Menghapus file di dalam workspace.',
-        cluw_skill_create: 'Membuat atau memperbarui skrip skill otonom.',
+        ant_skill_create: 'Membuat atau memperbarui skrip skill otonom.',
         web_request: 'Mengirimkan request HTTP ke URL eksternal.',
         open_browser: 'Membuka instansi browser Playwright.',
         browser_click: 'Melakukan klik elemen pada halaman web.',
@@ -132,11 +132,11 @@ export async function requestApproval(
     const reason = getToolReason(toolCall.tool);
 
     // Diff & custom prompt for file edits
-    if (toolCall.tool === 'modify_file' || toolCall.tool === 'write_file' || toolCall.tool === 'cluw_skill_create') {
-        const filePath = toolCall.tool === 'cluw_skill_create' 
-            ? `skills/cluw_skills/${toolCall.args.fileName || toolCall.args.file || toolCall.args.path || toolCall.args.name || 'unknown.js'}` 
+    if (toolCall.tool === 'modify_file' || toolCall.tool === 'write_file' || toolCall.tool === 'ant_skill_create') {
+        const filePath = toolCall.tool === 'ant_skill_create' 
+            ? `skills/ant_skills/${toolCall.args.fileName || toolCall.args.file || toolCall.args.path || toolCall.args.name || 'unknown.js'}` 
             : (toolCall.args.file || toolCall.args.path || toolCall.args.fileName);
-        const fileContent = toolCall.tool === 'cluw_skill_create'
+        const fileContent = toolCall.tool === 'ant_skill_create'
             ? toolCall.args.code
             : (toolCall.args.content || toolCall.args.code);
 

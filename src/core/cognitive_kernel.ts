@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { Logger } from '../utils/logger.js';
-import { CLUW_Bus } from './events.js';
+import { ANT_Bus } from './events.js';
 
 const BASE_DIR = process.cwd();
 
@@ -119,8 +119,8 @@ export class PESKernel {
     const headPath = path.join(this.runtimeDir, `task_${state.taskId}.json`);
     await fs.writeFile(headPath, JSON.stringify(state, null, 2), 'utf-8');
 
-    // 4. Emit event to CLUW Sovereign Bus
-    CLUW_Bus.emit('pes.committed', {
+    // 4. Emit event to ANT Sovereign Bus
+    ANT_Bus.emit('pes.committed', {
       taskId: state.taskId,
       version: state.currentVersion,
       changedFiles
@@ -148,7 +148,7 @@ export class PESKernel {
     // Save rolled state over current HEAD
     await fs.writeFile(headPath, JSON.stringify(rolledState, null, 2), 'utf-8');
     
-    CLUW_Bus.emit('pes.rolled_back', {
+    ANT_Bus.emit('pes.rolled_back', {
       taskId,
       fromVersion: headState.currentVersion,
       toVersion: targetVersion
@@ -176,7 +176,7 @@ export class PESKernel {
     state.decisions.push(newDecision);
     await this.commitState(state, []);
     
-    CLUW_Bus.emit('pes.decision_recorded', { taskId, decision: newDecision });
+    ANT_Bus.emit('pes.decision_recorded', { taskId, decision: newDecision });
     return state;
   }
 }

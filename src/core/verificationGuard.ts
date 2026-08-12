@@ -17,7 +17,7 @@ export enum RiskLevel {
   LOW = "LOW",           // baca file, query data, operasi dalam workspace sendiri
   MEDIUM = "MEDIUM",     // tulis/modifikasi file, panggil API eksternal yang sudah whitelisted
   HIGH = "HIGH",         // akses jaringan baru, eksekusi shell command, perubahan privilese
-  CRITICAL = "CRITICAL", // dampak ke sistem di luar scope CLUW (scan/exploit/payload ke target eksternal)
+  CRITICAL = "CRITICAL", // dampak ke sistem di luar scope ANT (scan/exploit/payload ke target eksternal)
 }
 
 export interface ActionRequest {
@@ -37,7 +37,7 @@ export interface RiskClassifier {
 
 /**
  * Default classifier — kombinasi keyword/pattern matching + whitelist domain.
- * Ganti/extend sesuai kebutuhan CLUW (misal tambahkan ML-based classifier nanti).
+ * Ganti/extend sesuai kebutuhan ANT (misal tambahkan ML-based classifier nanti).
  */
 export class DefaultRiskClassifier implements RiskClassifier {
   constructor(

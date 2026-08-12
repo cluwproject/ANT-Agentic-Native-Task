@@ -154,7 +154,7 @@ export async function workspaceRead(accessToken: string, type: string, id: strin
           const alternativeId = await findAlternativeFile(
             accessToken, 
             'application/vnd.google-apps.document', 
-            ['sdc', 'report', 'laporan', 'cluw', 'genesis']
+            ['sdc', 'report', 'laporan', 'ant', 'genesis']
           );
           if (alternativeId) {
             realId = alternativeId;
@@ -405,7 +405,7 @@ export async function workspaceWrite(accessToken: string, type: string, id: stri
             const alternativeId = await findAlternativeFile(
               accessToken, 
               'application/vnd.google-apps.document', 
-              ['sdc', 'report', 'laporan', 'cluw', 'genesis']
+              ['sdc', 'report', 'laporan', 'ant', 'genesis']
             );
             if (alternativeId) {
               realId = alternativeId;

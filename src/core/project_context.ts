@@ -3,7 +3,7 @@
  * ANT & MINDBY — PROJECT CONTEXT INGESTION & XML SCAFFOLDING
  * ═══════════════════════════════════════════════════════════════
  * Terinspirasi dari arsitektur CLAUDE.md pada Claude Code.
- * Modul ini secara otonom mencari file `CLUW.md` atau `MINDBY.md` 
+ * Modul ini secara otonom mencari file `ANT.md` atau `MINDBY.md` 
  * di direktori proyek saat ini dan memuatnya ke dalam konteks kognitif.
  * ═══════════════════════════════════════════════════════════════
  */
@@ -12,7 +12,7 @@ import fs from 'fs';
 import path from 'path';
 
 export function getProjectRulesContext(workspacePath: string = process.cwd()): string {
-    const candidateFiles = ['CLUW.md', 'MINDBY.md', 'cluw.md', 'mindby.md'];
+    const candidateFiles = ['ANT.md', 'MINDBY.md', 'ant.md', 'mindby.md'];
     
     for (const fileName of candidateFiles) {
         const filePath = path.join(workspacePath, fileName);
@@ -31,7 +31,7 @@ export function getProjectRulesContext(workspacePath: string = process.cwd()): s
         }
     }
 
-    return '\n<project_instructions file="none">\n[Tidak ada file CLUW.md / MINDBY.md di direktori ini]\n</project_instructions>\n';
+    return '\n<project_instructions file="none">\n[Tidak ada file ANT.md / MINDBY.md di direktori ini]\n</project_instructions>\n';
 }
 
 export function buildXmlScaffolding(

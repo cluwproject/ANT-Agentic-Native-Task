@@ -24,14 +24,14 @@ export interface PluginInstance {
   diagnosticLog?: string;
 }
 
-const CLUW_GENESIS_ROOT = path.join(process.cwd(), 'cluw-genesis');
-const CORE_DIR = path.join(CLUW_GENESIS_ROOT, 'core');
-const PLUGINS_DIR = path.join(CLUW_GENESIS_ROOT, 'plugins');
-const CONFIG_DIR = path.join(CLUW_GENESIS_ROOT, 'config');
-const SANDBOX_DIR = path.join(CLUW_GENESIS_ROOT, 'sandbox');
+const ANT_ROOT = path.join(process.cwd(), 'ant');
+const CORE_DIR = path.join(ANT_ROOT, 'core');
+const PLUGINS_DIR = path.join(ANT_ROOT, 'plugins');
+const CONFIG_DIR = path.join(ANT_ROOT, 'config');
+const SANDBOX_DIR = path.join(ANT_ROOT, 'sandbox');
 
 export async function ensurePluginDirs() {
-  await fs.mkdir(CLUW_GENESIS_ROOT, { recursive: true }).catch(() => {});
+  await fs.mkdir(ANT_ROOT, { recursive: true }).catch(() => {});
   await fs.mkdir(CORE_DIR, { recursive: true }).catch(() => {});
   await fs.mkdir(PLUGINS_DIR, { recursive: true }).catch(() => {});
   await fs.mkdir(CONFIG_DIR, { recursive: true }).catch(() => {});

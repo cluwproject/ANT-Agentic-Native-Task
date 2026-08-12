@@ -1,4 +1,4 @@
-import { CLUW_Bus } from '../core/events.js';
+import { ANT_Bus } from '../core/events.js';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -26,8 +26,8 @@ export const Logger = {
     const logEntry = `[${timestamp}] [${level}]${tag ? ' [' + tag + ']' : ''}${channel}${model} ${message} ${detailsStr}\n`;
     
     // Neural Bus Broadcast
-    CLUW_Bus.emit('system.log', { level, message, timestamp, tag, details, model: details?.model, channel: details?.channel });
-    if (level === 'ERROR') CLUW_Bus.emit('system.error', { message, timestamp });
+    ANT_Bus.emit('system.log', { level, message, timestamp, tag, details, model: details?.model, channel: details?.channel });
+    if (level === 'ERROR') ANT_Bus.emit('system.error', { message, timestamp });
 
     // Console output with professional formatting
     const colors: any = { INFO: '\x1b[32m', WARN: '\x1b[33m', ERROR: '\x1b[31m', AI: '\x1b[36m', DEBUG: '\x1b[90m', reset: '\x1b[0m' };

@@ -7,7 +7,7 @@ dotenv.config();
 
 const commandArgs = process.argv.slice(2);
 if (commandArgs.length === 0) {
-    console.error("Usage: node scripts/cluw-supervisor.mjs <command>");
+    console.error("Usage: node scripts/ant-supervisor.mjs <command>");
     process.exit(1);
 }
 
@@ -22,7 +22,7 @@ if (commandArgs[0] === 'npx' && commandArgs.includes('tsx') && commandArgs.inclu
         if (tsxIdx >= 0) commandArgs.splice(tsxIdx, 1);
         commandArgs.unshift(tsxCli);
         commandArgs.unshift(process.execPath); // 'node'
-        console.log('\x1b[36m[CLUW SUPERVISOR] Detected `npx tsx watch` — invoking tsx CLI directly to keep watcher alive.\x1b[0m');
+        console.log('\x1b[36m[ANT SUPERVISOR] Detected `npx tsx watch` — invoking tsx CLI directly to keep watcher alive.\x1b[0m');
     }
 }
 
@@ -32,9 +32,9 @@ const BASE_URL = process.env.BASE_URL || '';
 const MODEL = process.env.CUSTOM_MODEL || '';
 
 async function askAIToHeal(errorLog) {
-    console.log('\n\x1b[33m[CLUW SUPERVISOR] 🧠 Crash detected! Consulting AI Healer...\x1b[0m');
+    console.log('\n\x1b[33m[ANT SUPERVISOR] 🧠 Crash detected! Consulting AI Healer...\x1b[0m');
     try {
-        const prompt = `CLUW Genesis crashed on boot. You are the autonomous supervisor (Self-Healer) written in Node.js.
+        const prompt = `ANT CLI crashed on boot. You are the autonomous supervisor (Self-Healer) written in Node.js.
 Here is the raw error log from stderr:
 
 \`\`\`
@@ -106,7 +106,7 @@ Output ONLY valid JSON. No markdown, no explanation. Just the raw JSON block tha
             return JSON.parse(match[0]);
         }
     } catch (e) {
-        console.error('\x1b[31m[CLUW SUPERVISOR] AI Healing failed:\x1b[0m ' + e.message);
+        console.error('\x1b[31m[ANT SUPERVISOR] AI Healing failed:\x1b[0m ' + e.message);
     }
     return null;
 }
@@ -114,7 +114,7 @@ Output ONLY valid JSON. No markdown, no explanation. Just the raw JSON block tha
 let activeChild = null;
 
 function startProcess() {
-    console.log(`\x1b[36m[CLUW SUPERVISOR] Starting System: ${commandArgs.join(' ')}\x1b[0m`);
+    console.log(`\x1b[36m[ANT SUPERVISOR] Starting System: ${commandArgs.join(' ')}\x1b[0m`);
     
     // Support cross-platform spawning
     const isWin = process.platform === 'win32';
@@ -128,7 +128,7 @@ function startProcess() {
     let errorLog = '';
 
     activeChild.on('error', (err) => {
-        console.error(`\n\x1b[31m[CLUW SUPERVISOR] Spawn Error: ${err.message}\x1b[0m`);
+        console.error(`\n\x1b[31m[ANT SUPERVISOR] Spawn Error: ${err.message}\x1b[0m`);
     });
 
     activeChild.stderr.on('data', (data) => {
@@ -138,21 +138,21 @@ function startProcess() {
 
     activeChild.on('close', async (code) => {
         if (code !== 0 && code !== null) {
-            console.log(`\n\x1b[31m[CLUW SUPERVISOR] Process crashed with exit code ${code}.\x1b[0m`);
+            console.log(`\n\x1b[31m[ANT SUPERVISOR] Process crashed with exit code ${code}.\x1b[0m`);
             if (API_KEY && errorLog.trim().length > 0) {
                 const action = await askAIToHeal(errorLog.substring(0, 5000)); // Limit to 5k chars
                 if (action) {
-                    console.log(`\x1b[32m[CLUW SUPERVISOR] Auto-Heal Action suggested:\x1b[0m`, action);
+                    console.log(`\x1b[32m[ANT SUPERVISOR] Auto-Heal Action suggested:\x1b[0m`, action);
                     
                     if (action.tool === 'shell_exec' && action.command) {
                         const { execSync } = await import('child_process');
-                        console.log(`\x1b[33m[CLUW SUPERVISOR] Executing: ${action.command}\x1b[0m`);
+                        console.log(`\x1b[33m[ANT SUPERVISOR] Executing: ${action.command}\x1b[0m`);
                         try {
                             execSync(action.command, { stdio: 'inherit' });
-                            console.log(`\x1b[32m[CLUW SUPERVISOR] Healing applied. Restarting engine...\x1b[0m\n`);
+                            console.log(`\x1b[32m[ANT SUPERVISOR] Healing applied. Restarting engine...\x1b[0m\n`);
                             setTimeout(startProcess, 1000);
                         } catch (e) {
-                            console.error(`\x1b[31m[CLUW SUPERVISOR] Healing command failed.\x1b[0m`);
+                            console.error(`\x1b[31m[ANT SUPERVISOR] Healing command failed.\x1b[0m`);
                             process.exit(1);
                         }
                     } else if (action.tool === 'edit_file' && action.file) {
@@ -161,14 +161,14 @@ function startProcess() {
                              if (content.includes(action.targetContent)) {
                                  content = content.replace(action.targetContent, action.replacementContent);
                                  fs.writeFileSync(action.file, content);
-                                 console.log(`\x1b[32m[CLUW SUPERVISOR] File ${action.file} patched successfully. Restarting engine...\x1b[0m\n`);
+                                 console.log(`\x1b[32m[ANT SUPERVISOR] File ${action.file} patched successfully. Restarting engine...\x1b[0m\n`);
                                  setTimeout(startProcess, 1000);
                              } else {
-                                 console.error(`\x1b[31m[CLUW SUPERVISOR] Patch failed: targetContent not found in ${action.file}.\x1b[0m`);
+                                 console.error(`\x1b[31m[ANT SUPERVISOR] Patch failed: targetContent not found in ${action.file}.\x1b[0m`);
                                  process.exit(1);
                              }
                          } catch(e) {
-                             console.error(`\x1b[31m[CLUW SUPERVISOR] File patch exception: \x1b[0m` + e.message);
+                             console.error(`\x1b[31m[ANT SUPERVISOR] File patch exception: \x1b[0m` + e.message);
                              process.exit(1);
                          }
                     } else {
@@ -181,14 +181,14 @@ function startProcess() {
                 process.exit(code);
             }
         } else {
-            console.log(`\x1b[32m[CLUW SUPERVISOR] Process exited cleanly.\x1b[0m`);
+            console.log(`\x1b[32m[ANT SUPERVISOR] Process exited cleanly.\x1b[0m`);
             process.exit(0);
         }
     });
 }
 
 const handleExit = () => {
-    console.log('\n\x1b[33m[CLUW SUPERVISOR] Interrupted by user (Ctrl+C). Shutting down gracefully...\x1b[0m');
+    console.log('\n\x1b[33m[ANT SUPERVISOR] Interrupted by user (Ctrl+C). Shutting down gracefully...\x1b[0m');
     if (activeChild && activeChild.pid) {
         try {
             activeChild.kill('SIGTERM');

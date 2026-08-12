@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import { Logger } from '../utils/logger.js';
-import { CLUW_Bus } from './events.js';
+import { ANT_Bus } from './events.js';
 
 const BASE_DIR = process.cwd();
 const WATCH_DIR = path.join(BASE_DIR, 'workspace');
 
 // ─────────────────────────────────────────────────────────────
-//  PROACTIVE ENGINE v1.0 — "CLUW yang Berdenyut"
+//  PROACTIVE ENGINE v1.0 — "ANT yang Berdenyut"
 //  Direkonstruksi dari stub menjadi sistem saraf aktif
 //  yang bereaksi terhadap perubahan konteks secara nyata.
 // ─────────────────────────────────────────────────────────────
@@ -46,19 +46,19 @@ export function startProactiveEngine() {
 
     Logger.log('INFO', `[Proactive] Context shift detected: ${filename} (${eventType})`, {}, 'AUTONOMY');
 
-    CLUW_Bus.emit('system.autonomous_event', {
+    ANT_Bus.emit('system.autonomous_event', {
       title: 'Perubahan Konteks Terdeteksi',
-      content: `📂 File \`${filename}\` berubah. CLUW siap membantu menganalisis dampaknya jika perlu.`,
+      content: `📂 File \`${filename}\` berubah. ANT siap membantu menganalisis dampaknya jika perlu.`,
       type: 'info',
       timestamp: new Date().toISOString()
     });
   });
 
-  // ─── AUTONOMOUS CLUW_Bus Listener: Pusat Saraf Proaktif ───
+  // ─── AUTONOMOUS ANT_Bus Listener: Pusat Saraf Proaktif ───
   // Ini adalah komponen yang sebelumnya hilang — consumer dari event bus
-  CLUW_Bus.on('system.healing_alert', async (data: any) => {
+  ANT_Bus.on('system.healing_alert', async (data: any) => {
     Logger.log('WARN', `[Proactive] Healing alert received: ${data.message}`, {}, 'AUTONOMY');
-    CLUW_Bus.emit('system.autonomous_event', {
+    ANT_Bus.emit('system.autonomous_event', {
       title: '⚕️ Auto-Healing Aktif',
       content: `Sistem mendeteksi anomali dan melakukan perbaikan mandiri: ${data.message}`,
       type: 'warning',
@@ -66,7 +66,7 @@ export function startProactiveEngine() {
     });
   });
 
-  CLUW_Bus.on('system.heartbeat', (data: any) => {
+  ANT_Bus.on('system.heartbeat', (data: any) => {
     // Setiap heartbeat, cek jika ada tugas yang perlu dilakukan proaktif
     const uptimeMinutes = Math.floor((data.uptime || 0) / 60);
     if (uptimeMinutes > 0 && uptimeMinutes % 60 === 0) {
@@ -92,7 +92,7 @@ export function startHeartbeat() {
       const sizeMB = (totalSize / (1024 * 1024)).toFixed(2);
 
       if (parseFloat(sizeMB) > 50) { // Alert jika memori > 50MB
-        CLUW_Bus.emit('system.autonomous_event', {
+        ANT_Bus.emit('system.autonomous_event', {
           title: '⚠️ Memory Warning',
           content: `Neural memory telah mencapai ${sizeMB}MB. Pertimbangkan untuk menjalankan konsolidasi memori.`,
           type: 'warning',

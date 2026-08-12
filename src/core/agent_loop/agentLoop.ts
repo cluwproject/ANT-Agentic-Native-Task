@@ -11,7 +11,7 @@
 // PERUBAHAN UTAMA vs versi lama:
 //  1. Logger yang dulu diimpor tapi tidak pernah dipakai, sekarang benar-benar
 //     mencatat setiap keputusan (approve/deny/error) — ini fondasi "Glass Box
-//     reasoning logger" yang Anda sebut sebagai komponen inti CLUW.
+//     reasoning logger" yang Anda sebut sebagai komponen inti ANT.
 //  2. MAX_ATTEMPTS yang habis tidak lagi diam-diam menghentikan loop — user
 //     diberi tahu secara eksplisit.
 //  3. Ctrl+C (SIGINT) ditangani dengan bersih, bukan langsung mematikan proses.
@@ -50,7 +50,7 @@ const MAX_VERIFICATION_RETRIES = 3;
 
 export function getSystemInstruction(): string {
     try {
-        const configPath = path.join(process.cwd(), 'config', 'cluw_identity.json');
+        const configPath = path.join(process.cwd(), 'config', 'ant_identity.json');
         if (fs.existsSync(configPath)) {
             const content = fs.readFileSync(configPath, 'utf8');
             const config = JSON.parse(content);
@@ -59,7 +59,7 @@ export function getSystemInstruction(): string {
             }
         }
     } catch (e) {
-        safeLog('warn', 'Gagal membaca cluw_identity.json, menggunakan fallback default', { error: String(e) });
+        safeLog('warn', 'Gagal membaca ant_identity.json, menggunakan fallback default', { error: String(e) });
     }
 
     return `[CONTEXT: TERMINAL CLI AGENT]\n` +

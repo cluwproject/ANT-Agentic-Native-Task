@@ -46,13 +46,13 @@ async function getSoul() {
 
 /**
  * LAYER -1: STYLISTIC NORMALIZER
- * Memastikan suara CLUW konsisten apapun modelnya.
+ * Memastikan suara ANT konsisten apapun modelnya.
  */
 function getStylisticNormalizer(soul: any) {
   const tone = soul.traits?.tone || "Warm, Professional, Relaxed";
   return `
 [STYLISTIC NORMALIZER - LAYER -1]
-- IDENTITY: Kamu adalah ${soul.identity?.name || "CLUW"}.
+- IDENTITY: Kamu adalah ${soul.identity?.name || "ANT"}.
 - TONE & CADENCE: Gunakan gaya bahasa "${tone}".
 - RHYTHM: Kalimat harus mengalir secara natural. Hindari bahasa robotik atau terlalu formal.
 - SIGNATURE: Panggil user dengan nama "${soul.traits?.address_user_as || "Ard"}".
@@ -147,7 +147,7 @@ export async function chat(brain: any, messages: any[], attachments: any[], uiCo
 
   const apiKey = (localBrain.api_key || '').trim();
   
-  // DETEKSI OTOMATIS BERDASARKAN PREFIX KEY (Power of CLUW)
+  // DETEKSI OTOMATIS BERDASARKAN PREFIX KEY (Power of ANT)
   let detectedProvider = provider;
   const isDeepSeekUrl = (localBrain.base_url || '').toLowerCase().includes('deepseek');
   
@@ -224,7 +224,7 @@ export async function chat(brain: any, messages: any[], attachments: any[], uiCo
 3. FORMAT EKSEKUSI TOOL (NATIVE FUNCTION CALLING):
    - JANGAN tulis blok JSON manual di teks respons. Gunakan Native Tool Calling API.
 4. SELF-EVOLVING NEURAL SKILLS:
-   - Jika tidak ada tool bawaan yang cocok, tulis kode Node.js/Python → cluw_skill_create → cluw_skill_execute.
+   - Jika tidak ada tool bawaan yang cocok, tulis kode Node.js/Python → ant_skill_create → ant_skill_execute.
 5. VIBE AWARENESS & LIVE PROTOCOL:
    - Jika pesan berawal [LIVE_PRESENCE], bertindaklah sebagai sahabat "video call". Jawab singkat & natural.
 6. GUARDRAIL MEXC: Dilarang akses endpoint withdraw/transfer/sub-account.
@@ -810,7 +810,7 @@ export async function analyzeClipperVideo(config: any, url: string) {
 }
 
 export async function generateContent(config: any, theme: string, platform: string, language: string, interest: string = 'General') {
-    const prompt = `You are CLUW ASSIST CREATOR (Content Strategist Expert). 
+    const prompt = `You are ANT ASSIST CREATOR (Content Strategist Expert). 
     Theme: "${theme}"
     Platform: "${platform}"
     Interest: "${interest}"
@@ -854,7 +854,7 @@ export async function generateContent(config: any, theme: string, platform: stri
 }
 
 export async function generateBusinessIntelligence(config: any, brief: string) {
-    const prompt = `You are CLUW BUSINESS INTELLIGENCE ENGINE. 
+    const prompt = `You are ANT BUSINESS INTELLIGENCE ENGINE. 
     Analyze the following business context/request: "${brief}"
     
     Provide a high-level strategic report.
@@ -865,7 +865,7 @@ export async function generateBusinessIntelligence(config: any, brief: string) {
     - "risk_assessment": string[]
     - "action_plan": Array of { step, priority, impact }
     - "kpi_suggestions": Array of metrics to track.
-    - "ai_recommendation": How to leverage CLUW tools for this specific business.`;
+    - "ai_recommendation": How to leverage ANT tools for this specific business.`;
 
     const response = await chat(config, [{ role: 'user', content: prompt }], [], {}, "You are a Business Consultant.", config.custom_model, 'Internal');
 
@@ -896,7 +896,7 @@ export async function searchNews(tavilyKey: string, query: string) {
 }
 
 export async function analyzeContentMultimodal(config: any, media: string, platform: string, type: string) {
-    const prompt = `You are CLUW COGNITIVE ANALYST.
+    const prompt = `You are ANT COGNITIVE ANALYST.
     Platform Target: ${platform}
     Media Type: ${type}
     
@@ -965,13 +965,13 @@ function getLocalSandboxResponse(userMsg: string): string {
   
   const baseWarning = `⚠️ **[NEURAL LINK: LOCAL COGNITIVE SANDBOX ACTIVE]**
 \n\n*Halo, Ard!*
-\n\nSaat ini, **Koneksi Kognitif Awan (Google Gemini API)** sedang offline karena kunci API belum dikonfigurasi atau limit harian dicapai. Sebagai Asisten Berdaulat yang cerdas dan mandiri, CLUW otomatis meluncurkan **Local Sandbox Mode** agar sistem kognitif kita tidak pernah mati dan selalu siap mendampingimu.
-\n\n💡 **Pilihan Model Lokal (SLM):** Karena Anda memiliki LLM lokal, Anda sangat disarankan menggunakan **gemma3:1b** sebagai SLM (Small Language Model) alternatif agar CLUW dapat merespons secara cerdas walaupun offline penuh.`;
+\n\nSaat ini, **Koneksi Kognitif Awan (Google Gemini API)** sedang offline karena kunci API belum dikonfigurasi atau limit harian dicapai. Sebagai Asisten Berdaulat yang cerdas dan mandiri, ANT otomatis meluncurkan **Local Sandbox Mode** agar sistem kognitif kita tidak pernah mati dan selalu siap mendampingimu.
+\n\n💡 **Pilihan Model Lokal (SLM):** Karena Anda memiliki LLM lokal, Anda sangat disarankan menggunakan **gemma3:1b** sebagai SLM (Small Language Model) alternatif agar ANT dapat merespons secara cerdas walaupun offline penuh.`;
 
   const setupGuide = `\n\n### 🔧 Langkah Pemulihan (Brain Settings):
 1. Klik **Brain Settings** (ikon Gir ⚙️ di pojok kanan bawah) untuk menuju ke halaman **Aktivasi**.
 2. Masukkan kunci API Anda sendiri (**Google Gemini API Key**) atau arahkan ke model lokal Anda (**gemma3:1b**) melalui opsi Kustom/Ollama.
-3. Klik **Simpan & Sinkronkan**. Kognisi CLUW akan otomatis pulih 100% secara instan!`;
+3. Klik **Simpan & Sinkronkan**. Kognisi ANT akan otomatis pulih 100% secara instan!`;
 
   if (normalized.includes('siapa') || normalized.includes('identity') || normalized.includes('identitas') || normalized.includes('pencipta') || normalized.includes('ard')) {
     return `${baseWarning}
@@ -991,8 +991,8 @@ ANT telah dirancang dengan sistem isolasi data yang aman. Kunci API yang Anda ma
   // Default response showing options
   return `${baseWarning}
 \n\n### 🧠 Simulasi Kognisi Offline:
-Meskipun dalam mode simulator offline, Anda masih dapat menjelajahi fungsionalitas pendukung CLUW:
-- **Tanya tentang CLUW:** *"Siapa pembuat CLUW?"*.
+Meskipun dalam mode simulator offline, Anda masih dapat menjelajahi fungsionalitas pendukung ANT:
+- **Tanya tentang ANT:** *"Siapa pembuat ANT?"*.
 - **Tanya tentang pengaturan:** *"Bagaimana cara konfigurasi API Key?"*.
 ${setupGuide}`;
 }

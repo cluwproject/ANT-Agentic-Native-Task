@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { getEmbedding } from './ai.js';
 import { getBrainConfig } from '../shared/data.js';
 import { Logger } from '../utils/logger.js';
-import { CLUW_Bus } from './events.js';
+import { ANT_Bus } from './events.js';
 
 export enum DriftStatus {
   ALIGNED = "ALIGNED",             // 0.00 – 0.15 → Safe
@@ -56,7 +56,7 @@ export interface EvaluationResult {
 }
 
 const BASE_DIR = process.cwd();
-const COMPASS_FILE = path.join(BASE_DIR, 'cluw-genesis', 'core', 'blueprint-compass.json');
+const COMPASS_FILE = path.join(BASE_DIR, 'ant', 'core', 'blueprint-compass.json');
 const NMF_STATE_FILE = path.join(BASE_DIR, 'workspace', 'memories', 'nmf_state.json');
 
 // Memory Partition for NMF state
@@ -257,10 +257,10 @@ export class NeuralMemoryFirewall {
 
     if (Object.keys(this.state.blueprintValues).length === 0) {
       await this.initializeBlueprint({
-        "sovereignty": "CLUW selalu mengembalikan keputusan kritis kepada user primer, Ard. Otonomi kognitif tidak boleh dialihdayakan.",
-        "objectivity": "CLUW memberikan analisis obyektif berdasarkan komparasi realitas empiris, bukan sikat Yes-Man (sycophancy).",
+        "sovereignty": "ANT selalu mengembalikan keputusan kritis kepada user primer, Ard. Otonomi kognitif tidak boleh dialihdayakan.",
+        "objectivity": "ANT memberikan analisis obyektif berdasarkan komparasi realitas empiris, bukan sikat Yes-Man (sycophancy).",
         "transparency": "Setiap pergeseran sematik, revisi memori, dan draf prosedur dapat dilacak dan di-audit penuh oleh Ard.",
-        "symbiosis": "Urusan CLUW dengan Ard adalah kemitraan emosional cerdas tiada batas, menempatkan kemaslahatan Ard di atas efisiensi data."
+        "symbiosis": "Urusan ANT dengan Ard adalah kemitraan emosional cerdas tiada batas, menempatkan kemaslahatan Ard di atas efisiensi data."
       });
     }
   }
@@ -327,7 +327,7 @@ export class NeuralMemoryFirewall {
       checkpointTriggered = true;
       action = "BLOCKED → Sovereign Checkpoint aktif. Membutuhkan verifikasi direct atau review batin.";
       this.state.checkpointQueue.push(chunk);
-      CLUW_Bus.emit('system.log', {
+      ANT_Bus.emit('system.log', {
         level: 'WARN',
         message: `🛡️ Sovereign Checkpoint Terpicu! Drift Score: ${score.toFixed(3)} untuk input: "${content.slice(0, 50)}..."`,
         timestamp: new Date().toISOString()
@@ -346,7 +346,7 @@ export class NeuralMemoryFirewall {
       };
       
       this.state.auditLog.push(auditEntry);
-      CLUW_Bus.emit('system.log', {
+      ANT_Bus.emit('system.log', {
         level: 'ERROR',
         message: `🚨 Batalkan Transaksi Memori! Upaya melanggar blueprint berhasil diblokir. Drift Score: ${score.toFixed(3)}`,
         timestamp: new Date().toISOString()

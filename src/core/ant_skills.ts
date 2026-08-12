@@ -5,11 +5,11 @@ import { promisify } from 'util';
 import { createHash } from 'crypto';
 import { Logger } from '../utils/logger.js';
 import { verifySkillSafety } from './skills.js';
-import { CLUW_Bus } from './events.js';
+import { ANT_Bus } from './events.js';
 
 const execAsync = promisify(exec);
 const BASE_DIR = process.cwd();
-const CLUW_SKILLS_DIR = path.join(BASE_DIR, 'workspace', 'skills', 'cluw_skills');
+const ANT_SKILLS_DIR = path.join(BASE_DIR, 'workspace', 'skills', 'ant_skills');
 const REGISTRY_DIR = path.join(BASE_DIR, 'workspace', 'registry');
 const SKILLS_MANIFEST_FILE = path.join(REGISTRY_DIR, 'skills_manifest.json');
 
@@ -19,12 +19,12 @@ function bumpVersion(version: string): string {
   return `${parts[0] || 1}.${parts[1]}.0`;
 }
 
-export async function ensureCluwSkillsDir() {
-  await fs.mkdir(CLUW_SKILLS_DIR, { recursive: true }).catch(() => {});
+export async function ensureAntSkillsDir() {
+  await fs.mkdir(ANT_SKILLS_DIR, { recursive: true }).catch(() => {});
   await fs.mkdir(REGISTRY_DIR, { recursive: true }).catch(() => {});
 }
 
-export interface CluwSkillInfo {
+export interface AntSkillInfo {
   fileName: string;
   type: 'javascript' | 'python' | 'unknown';
   size: number;
@@ -33,7 +33,7 @@ export interface CluwSkillInfo {
   threats: string[];
   version: string;
   lifecycle: 'draft' | 'testing' | 'production';
-  created_by: 'CLUW' | 'User';
+  created_by: 'ANT' | 'User';
   approved_by?: string;
   created_at: string;
 }
@@ -53,17 +53,17 @@ async function writeManifest(manifest: any[]) {
   await fs.writeFile(SKILLS_MANIFEST_FILE, JSON.stringify(manifest, null, 2), 'utf-8');
 }
 
-export async function listCluwSkills(): Promise<CluwSkillInfo[]> {
+export async function listAntSkills(): Promise<AntSkillInfo[]> {
   try {
-    await ensureCluwSkillsDir();
-    const files = await fs.readdir(CLUW_SKILLS_DIR);
+    await ensureAntSkillsDir();
+    const files = await fs.readdir(ANT_SKILLS_DIR);
     const manifest = await readManifest();
     let manifestUpdated = false;
-    const result: CluwSkillInfo[] = [];
+    const result: AntSkillInfo[] = [];
 
     for (const file of files) {
       if (file.startsWith('.')) continue; // ignore hidden files
-      const filePath = path.join(CLUW_SKILLS_DIR, file);
+      const filePath = path.join(ANT_SKILLS_DIR, file);
       try {
         const stats = await fs.stat(filePath);
         if (stats.isFile()) {
@@ -95,7 +95,7 @@ export async function listCluwSkills(): Promise<CluwSkillInfo[]> {
             threats: manifestEntry.threats,
             version: manifestEntry.version || '1.0.0',
             lifecycle: manifestEntry.lifecycle || 'draft',
-            created_by: manifestEntry.created_by || 'CLUW',
+            created_by: manifestEntry.created_by || 'ANT',
             approved_by: manifestEntry.approved_by,
             created_at: manifestEntry.created_at || stats.birthtime.toISOString()
           });
@@ -109,13 +109,13 @@ export async function listCluwSkills(): Promise<CluwSkillInfo[]> {
     
     return result;
   } catch (e: any) {
-    Logger.log('ERROR', `Gagal melist cluw_skills: ${e.message}`, {}, 'SYSTEM');
+    Logger.log('ERROR', `Gagal melist ant_skills: ${e.message}`, {}, 'SYSTEM');
     return [];
   }
 }
 
-export async function createCluwSkill(fileName: string, code: string): Promise<{ success: boolean; filePath: string }> {
-  await ensureCluwSkillsDir();
+export async function createAntSkill(fileName: string, code: string): Promise<{ success: boolean; filePath: string }> {
+  await ensureAntSkillsDir();
   
   // Prevent directory traversal
   const safeName = path.basename(fileName);
@@ -123,7 +123,7 @@ export async function createCluwSkill(fileName: string, code: string): Promise<{
     throw new Error('Nama file tidak valid (deteksi directory traversal).');
   }
 
-  const filePath = path.join(CLUW_SKILLS_DIR, safeName);
+  const filePath = path.join(ANT_SKILLS_DIR, safeName);
   await fs.writeFile(filePath, code, 'utf-8');
   
   // Safety check
@@ -143,7 +143,7 @@ export async function createCluwSkill(fileName: string, code: string): Promise<{
     lastUpdated: new Date().toISOString(),
     version: newVersion,
     lifecycle: existingEntry?.lifecycle || 'draft',
-    created_by: 'CLUW',
+    created_by: 'ANT',
     created_at: existingEntry?.created_at || new Date().toISOString(),
     approved_by: existingEntry?.approved_by
   };
@@ -156,14 +156,14 @@ export async function createCluwSkill(fileName: string, code: string): Promise<{
   
   // Emit notifications
   const friendlyStatus = safety.safe ? 'Aman' : 'Perlu Review';
-  CLUW_Bus.emit('system.notification', {
+  ANT_Bus.emit('system.notification', {
     title: 'Audit Trail',
     message: `🛡️ Skill baru [${safeName}] siap digunakan. Status: ${friendlyStatus}`,
     type: safety.safe ? 'success' : 'warning'
   });
   
   // Also log a system message in the chat
-  CLUW_Bus.emit('system.message', {
+  ANT_Bus.emit('system.message', {
     content: `🛡️ **[SYSTEM AUDIT]** Skill baru **${safeName}** telah terpasang. Status: **${friendlyStatus}**${!safety.safe ? ` (Ancaman terdeteksi: ${safety.threats.join(', ')})` : ''}`
   });
   
@@ -171,17 +171,17 @@ export async function createCluwSkill(fileName: string, code: string): Promise<{
   return { success: true, filePath };
 }
 
-export async function executeCluwSkill(fileName: string, args: string[] = []): Promise<{ success: boolean; stdout: string; stderr: string; cmd: string; evidence: { exit_code: number; duration_ms: number; timestamp: string; hash: string } }> {
-  await ensureCluwSkillsDir();
+export async function executeAntSkill(fileName: string, args: string[] = []): Promise<{ success: boolean; stdout: string; stderr: string; cmd: string; evidence: { exit_code: number; duration_ms: number; timestamp: string; hash: string } }> {
+  await ensureAntSkillsDir();
 
   const safeName = path.basename(fileName);
-  const filePath = path.join(CLUW_SKILLS_DIR, safeName);
+  const filePath = path.join(ANT_SKILLS_DIR, safeName);
 
   try {
     // Check if file exists
     await fs.access(filePath);
   } catch (e) {
-    throw new Error(`Skrip [${safeName}] tidak ditemukan di /cluw_skills/`);
+    throw new Error(`Skrip [${safeName}] tidak ditemukan di /ant_skills/`);
   }
 
   const ext = path.extname(safeName).toLowerCase();
@@ -239,8 +239,8 @@ export async function executeCluwSkill(fileName: string, args: string[] = []): P
   }
 }
 
-export async function promoteCluwSkill(fileName: string): Promise<{ success: boolean; newLifecycle: string }> {
-  await ensureCluwSkillsDir();
+export async function promoteAntSkill(fileName: string): Promise<{ success: boolean; newLifecycle: string }> {
+  await ensureAntSkillsDir();
   const safeName = path.basename(fileName);
   const manifest = await readManifest();
   const index = manifest.findIndex((m: any) => m.fileName === safeName);
@@ -256,7 +256,7 @@ export async function promoteCluwSkill(fileName: string): Promise<{ success: boo
   manifest[index] = { ...current, lifecycle: newLifecycle, approved_by: 'Ard' };
   await writeManifest(manifest);
 
-  CLUW_Bus.emit('system.notification', {
+  ANT_Bus.emit('system.notification', {
     title: 'Skill Promoted',
     message: `🚀 Skill [${safeName}] dipromosikan → ${newLifecycle.toUpperCase()}`,
     type: 'success'
@@ -266,11 +266,11 @@ export async function promoteCluwSkill(fileName: string): Promise<{ success: boo
   return { success: true, newLifecycle };
 }
 
-export function registerCluwSkillsRoutes(app: any) {
+export function registerAntSkillsRoutes(app: any) {
   // List current skills
-  app.get('/api/cluw-skills/list', async (_req: any, res: any) => {
+  app.get('/api/ant-skills/list', async (_req: any, res: any) => {
     try {
-      const list = await listCluwSkills();
+      const list = await listAntSkills();
       res.json({ success: true, skills: list });
     } catch (e: any) {
       res.status(500).json({ success: false, error: e.message });
@@ -278,13 +278,13 @@ export function registerCluwSkillsRoutes(app: any) {
   });
 
   // Create or modify custom skill
-  app.post('/api/cluw-skills/create', async (req: any, res: any) => {
+  app.post('/api/ant-skills/create', async (req: any, res: any) => {
     try {
       const { fileName, code } = req.body;
       if (!fileName || !code) {
         return res.status(400).json({ success: false, error: 'Nama file dan konten kode harus diisi.' });
       }
-      const result = await createCluwSkill(fileName, code);
+      const result = await createAntSkill(fileName, code);
       res.json(Object.assign({ success: true }, result));
     } catch (e: any) {
       res.status(500).json({ success: false, error: e.message });
@@ -292,13 +292,13 @@ export function registerCluwSkillsRoutes(app: any) {
   });
 
   // Execute custom skill
-  app.post('/api/cluw-skills/execute', async (req: any, res: any) => {
+  app.post('/api/ant-skills/execute', async (req: any, res: any) => {
     try {
       const { fileName, args } = req.body;
       if (!fileName) {
         return res.status(400).json({ success: false, error: 'Nama file harus disertakan.' });
       }
-      const result = await executeCluwSkill(fileName, args || []);
+      const result = await executeAntSkill(fileName, args || []);
       res.json(Object.assign({ success: true }, result));
     } catch (e: any) {
       res.status(500).json({ success: false, error: e.message });
@@ -306,10 +306,10 @@ export function registerCluwSkillsRoutes(app: any) {
   });
 
   // Promote skill lifecycle: draft → testing → production
-  app.post('/api/cluw-skills/promote/:fileName', async (req: any, res: any) => {
+  app.post('/api/ant-skills/promote/:fileName', async (req: any, res: any) => {
     try {
       const { fileName } = req.params;
-      const result = await promoteCluwSkill(fileName);
+      const result = await promoteAntSkill(fileName);
       res.json(result);
     } catch (e: any) {
       res.status(500).json({ success: false, error: e.message });
@@ -317,11 +317,11 @@ export function registerCluwSkillsRoutes(app: any) {
   });
 
   // Delete custom skill
-  app.delete('/api/cluw-skills/:fileName', async (req: any, res: any) => {
+  app.delete('/api/ant-skills/:fileName', async (req: any, res: any) => {
     try {
       const { fileName } = req.params;
       const safeName = path.basename(fileName);
-      const filePath = path.join(CLUW_SKILLS_DIR, safeName);
+      const filePath = path.join(ANT_SKILLS_DIR, safeName);
       
       await fs.unlink(filePath);
       

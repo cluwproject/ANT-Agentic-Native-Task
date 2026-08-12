@@ -1,4 +1,4 @@
-export const cluwToolsSchema = [
+export const antToolsSchema = [
   {
     name: "request_human_rescue",
     description: "Digunakan HANYA JIKA tertahan oleh halaman login, CAPTCHA, atau anti-bot (Cloudflare, dll) saat melakukan tugas otonom di web. Ini akan memanggil manusia (Ard) untuk membuka blokir web secara manual di layar mereka.",
@@ -204,7 +204,7 @@ export const cluwToolsSchema = [
     parameters: { type: "object", properties: {} }
   },
   {
-    name: "cluw_skill_create",
+    name: "ant_skill_create",
     description: "Menulis dan mendaftarkan custom skill (Node.js .js atau Python .py) baru.",
     parameters: {
       type: "object",
@@ -213,7 +213,7 @@ export const cluwToolsSchema = [
     }
   },
   {
-    name: "cluw_skill_execute",
+    name: "ant_skill_execute",
     description: "Menjalankan custom skill.",
     parameters: {
       type: "object",
@@ -508,7 +508,7 @@ export const cluwToolsSchema = [
     }
   },
   {
-    name: "cluw_eyes",
+    name: "ant_eyes",
     description: "Periksa berkas frontend/visual/layout (Eyes).",
     parameters: { type: "object", properties: {} }
   },
@@ -533,11 +533,11 @@ export const cluwToolsSchema = [
 ];
 
 export function getGeminiToolDeclarations() {
-  return [{ functionDeclarations: cluwToolsSchema }];
+  return [{ functionDeclarations: antToolsSchema }];
 }
 
 export function getAnthropicToolDeclarations() {
-  return cluwToolsSchema.map(t => ({
+  return antToolsSchema.map(t => ({
     name: t.name,
     description: t.description,
     input_schema: t.parameters
@@ -545,7 +545,7 @@ export function getAnthropicToolDeclarations() {
 }
 
 export function getOpenAIToolDeclarations() {
-  return cluwToolsSchema.map(t => ({
+  return antToolsSchema.map(t => ({
     type: "function",
     function: t
   }));

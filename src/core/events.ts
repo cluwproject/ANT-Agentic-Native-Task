@@ -1,4 +1,4 @@
 import { EventEmitter } from 'events';
 
-export const CLUW_Bus = new EventEmitter();
-CLUW_Bus.setMaxListeners(50);
+export const ANT_Bus = new EventEmitter();
+ANT_Bus.setMaxListeners(50);

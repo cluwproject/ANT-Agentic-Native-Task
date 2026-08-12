@@ -2,7 +2,7 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import { Logger } from '../utils/logger.js';
 import { executeAction } from './actions.js';
-import { CLUW_Bus } from './events.js';
+import { ANT_Bus } from './events.js';
 import { applyDecay } from './cognitive_architecture.js';
 
 export interface CustomSchedule {
@@ -117,7 +117,7 @@ export function startScheduler() {
         task.lastRun = now;
         try {
           Logger.log('INFO', `Running scheduled task: ${task.name}`, {}, 'SCHEDULER');
-          CLUW_Bus.emit('system.autonomous_event', {
+          ANT_Bus.emit('system.autonomous_event', {
             title: task.name,
             content: `Menjalankan prosedur internal kognitif.`,
             type: 'process',
@@ -126,7 +126,7 @@ export function startScheduler() {
           await task.action();
         } catch (e: any) {
           Logger.log('ERROR', `Task ${task.name} failed: ${e.message}`, {}, 'SCHEDULER');
-          CLUW_Bus.emit('system.autonomous_event', {
+          ANT_Bus.emit('system.autonomous_event', {
             title: task.name,
             content: `Gagal: ${e.message}`,
             type: 'error',
@@ -162,8 +162,8 @@ export function startScheduler() {
 
   // Heartbeat
   setInterval(() => {
-    Logger.log('DEBUG', 'CLUW Heartbeat: Systems Operational', {}, 'HEARTBEAT');
-    CLUW_Bus.emit('system.heartbeat', { uptime: process.uptime() });
+    Logger.log('DEBUG', 'ANT Heartbeat: Systems Operational', {}, 'HEARTBEAT');
+    ANT_Bus.emit('system.heartbeat', { uptime: process.uptime() });
   }, 60000 * 5); // Every 5 minutes
 
   // Trust Score Decay Check (Runs every 60 minutes)
@@ -197,7 +197,7 @@ export function startScheduler() {
       const { content: greeting } = await tieredChat(config, [{ role: 'user', content: prompt }], [], {}, `Sapaan ${timeOfDay} Cerdas.`);
       
       const message = `⚡ **Kernel Update**: ${greeting}`;
-      CLUW_Bus.emit('system.autonomous_event', { 
+      ANT_Bus.emit('system.autonomous_event', { 
         title: 'Kernel Update', 
         content: greeting, 
         type: 'insight',
@@ -210,7 +210,7 @@ export function startScheduler() {
       else if (hour >= 15 && hour < 18) greeting = "Selamat sore";
       else if (hour >= 18 || hour < 5) greeting = "Selamat malam";
 
-      CLUW_Bus.emit('system.autonomous_event', {
+      ANT_Bus.emit('system.autonomous_event', {
         title: 'Kernel Update',
         content: `${greeting}, Ard. Sistem telah melakukan optimalisasi rutin. Saya siap mendampingi agenda Anda hari ini.`,
         type: 'insight',
@@ -252,13 +252,13 @@ export function startScheduler() {
 
         // Simpan hasil ke workspace sebagai aksi nyata
         const reportPath = path.join(process.cwd(), 'workspace', `MORNING_NEWS_${jakartaTime.toISOString().split('T')[0]}.md`);
-        await fs.writeFile(reportPath, `# 🌞 CLUW MORNING NEWS - ${todayStr}\n\n${content}\n\n--- \n*Dihasilkan secara otomatis oleh ANT Kernels.*`);
+        await fs.writeFile(reportPath, `# 🌞 ANT MORNING NEWS - ${todayStr}\n\n${content}\n\n--- \n*Dihasilkan secara otomatis oleh ANT Kernels.*`);
         
         // Simpan tanda sudah jalan
         await fs.mkdir(path.dirname(newsCheckPath), { recursive: true }).catch(() => {});
         await fs.writeFile(newsCheckPath, todayStr);
 
-        CLUW_Bus.emit('system.autonomous_event', { 
+        ANT_Bus.emit('system.autonomous_event', { 
           title: '7 AM News Prepared', 
           content: 'Laporan berita pagi telah siap dan disimpan di workspace sebagai aksi nyata.', 
           type: 'success',
@@ -287,9 +287,9 @@ export function startScheduler() {
     try {
       const { consolidateMemories } = await import('./memory.js');
       await consolidateMemories();
-      CLUW_Bus.emit('system.autonomous_event', {
+      ANT_Bus.emit('system.autonomous_event', {
         title: '🧠 Memory Consolidated',
-        content: 'Konsolidasi memori episodik ke semantik selesai. CLUW telah mencerna pengalaman terbaru.',
+        content: 'Konsolidasi memori episodik ke semantik selesai. ANT telah mencerna pengalaman terbaru.',
         type: 'success',
         timestamp: new Date().toISOString()
       });

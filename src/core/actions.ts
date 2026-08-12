@@ -9,10 +9,10 @@ import { Logger } from '../utils/logger.js';
 
 const execAsync = promisify(exec);
 
-// CLUW Security: Regex blocklist untuk shell_exec — jauh lebih kuat dari blacklist array
+// ANT Security: Regex blocklist untuk shell_exec — jauh lebih kuat dari blacklist array
 const SHELL_BLOCKLIST_REGEX = /\b(rm\s+-[rRfFri]+|curl\s+[^|]*\|\s*(sh|bash|zsh)|wget\s+[^|]*\|\s*(sh|bash|zsh)|chmod\s+777|cat\s+.*\.env|base64\s+-d\s+.*\||eval\s*\(|exec\s*\(|mkfs|shutdown|reboot|dd\s+if=|passwd|useradd|usermod|visudo)\b/i;
 
-// CLUW Security: Validasi nama package npm (hanya alfanumerik, @, /, ., -)
+// ANT Security: Validasi nama package npm (hanya alfanumerik, @, /, ., -)
 const NPM_PACKAGE_SAFE_REGEX = /^(@[a-zA-Z0-9_-]+\/)?[a-zA-Z0-9._-]+([@][a-zA-Z0-9._^~><=*-]+)?$/;
 const BASE_DIR = process.cwd();
 const CORE_DIR = path.join(BASE_DIR, 'workspace', 'core');
@@ -136,7 +136,7 @@ export async function executeAction(actionName: string, details: any, attempts =
     // LAYER 6: TRUST GATE
     const trust = await getTrustScore(action);
     const isHighTrust = trust.score >= 85;
-    // BEBAS HAMBATAN: 'modify_file' dan 'cluw_skill_create' dihapus dari hardcaps
+    // BEBAS HAMBATAN: 'modify_file' dan 'ant_skill_create' dihapus dari hardcaps
     // agar ANT dapat bekerja secara otonom (Full Autonomy / God Mode)
     // untuk menulis dan memperbarui skill secara maraton tanpa tertahan Trust Gate.
     const hardcaps = ['shell_exec', 'npm_install', 'task_delete', 'delete_file'];
@@ -230,7 +230,7 @@ export async function executeAction(actionName: string, details: any, attempts =
                 };
                 const sandbox = vm.createContext({ console: sandboxConsole, Math, JSON, Array, Object, String, Number, Boolean, Date });
                 try {
-                    const script = new vm.Script(details.code, { filename: 'cluw_sandbox.js' });
+                    const script = new vm.Script(details.code, { filename: 'ant_sandbox.js' });
                     script.runInContext(sandbox, { timeout: 5000 }); // 5 detik timeout
                     return { status: 'success', stdout: outputLines.join('\n'), stderr: '' };
                 } catch (vmError: any) {
@@ -532,25 +532,25 @@ export async function executeAction(actionName: string, details: any, attempts =
                 const data = await runFullSecurityReport(details.target);
                 return { status: 'success', data };
             } else if (action === 'security_tech_fingerprint') {
-                const { executeCluwSkill } = await import('./cluw_skills.js');
-                const result = await executeCluwSkill('tech_fingerprinter.py', [details.url]);
+                const { executeAntSkill } = await import('./ant_skills.js');
+                const result = await executeAntSkill('tech_fingerprinter.py', [details.url]);
                 const data = JSON.parse(result.stdout || '{}');
                 return { status: 'success', data };
             } else if (action === 'security_dir_fuzz') {
-                const { executeCluwSkill } = await import('./cluw_skills.js');
+                const { executeAntSkill } = await import('./ant_skills.js');
                 const args = [details.url, '--wordlist', details.wordlist || 'minimal', '--threads', String(details.threads || 10)];
-                const result = await executeCluwSkill('dir_fuzzer.py', args);
+                const result = await executeAntSkill('dir_fuzzer.py', args);
                 const data = JSON.parse(result.stdout || '{}');
                 return { status: 'success', data };
             } else if (action === 'security_cookie_analyze') {
-                const { executeCluwSkill } = await import('./cluw_skills.js');
-                const result = await executeCluwSkill('cookie_analyzer.py', [details.url]);
+                const { executeAntSkill } = await import('./ant_skills.js');
+                const result = await executeAntSkill('cookie_analyzer.py', [details.url]);
                 const data = JSON.parse(result.stdout || '{}');
                 return { status: 'success', data };
             } else if (action === 'security_sqli_test') {
-                const { executeCluwSkill } = await import('./cluw_skills.js');
+                const { executeAntSkill } = await import('./ant_skills.js');
                 const args = [details.url, '--passive-only', '--level', String(details.level || 1)];
-                const result = await executeCluwSkill('sqli_tester.py', args);
+                const result = await executeAntSkill('sqli_tester.py', args);
                 const data = JSON.parse(result.stdout || '{}');
                 return { status: 'success', data };
             // ── END SECURITY AGENT ────────────────────────────────────────────
@@ -685,7 +685,7 @@ export async function executeAction(actionName: string, details: any, attempts =
                 }
                 // VULN-001 FIX: Advanced regex blocklist — cannot be bypassed unlike simple array
                 if (SHELL_BLOCKLIST_REGEX.test(command)) {
-                    throw new Error('SECURITY_VIOLATION: Command pattern matches restricted operations. Blocked by CLUW Sovereign Shield.');
+                    throw new Error('SECURITY_VIOLATION: Command pattern matches restricted operations. Blocked by ANT Sovereign Shield.');
                 }
                 
                 // UPGRADE: Agent is now allowed to modify core files via shell if approved
@@ -896,14 +896,14 @@ export async function executeAction(actionName: string, details: any, attempts =
                 let html = response.data;
                 if (typeof html !== 'string') html = JSON.stringify(html);
                 return { status: 'success', data: html.substring(0, 50000) };
-            } else if (action === 'cluw_skill_create') {
+            } else if (action === 'ant_skill_create') {
                 const fName = details.fileName || details.file || details.path || details.name;
                 if (!fName) throw new Error('Argument "fileName" is required.');
-                await logFileAudit('CLUW_SKILL_CREATE', fName, `Membuat skill baru dengan kode sepanjang ${details.code?.length || 0} karakter.`);
-                const { createCluwSkill } = await import('./cluw_skills.js');
-                const result = await createCluwSkill(fName, details.code || '');
+                await logFileAudit('ANT_SKILL_CREATE', fName, `Membuat skill baru dengan kode sepanjang ${details.code?.length || 0} karakter.`);
+                const { createAntSkill } = await import('./ant_skills.js');
+                const result = await createAntSkill(fName, details.code || '');
                 return { status: 'success', ...result };
-            } else if (action === 'cluw_eyes' || action === 'inspect_ui') {
+            } else if (action === 'ant_eyes' || action === 'inspect_ui') {
                 try {
                     // Real filesystem inspection — bukan hardcoded
                     const componentsPath = path.join(BASE_DIR, 'src', 'components');
@@ -942,9 +942,9 @@ export async function executeAction(actionName: string, details: any, attempts =
                 } catch (e: any) {
                     return { status: 'error', message: `Gagal membaca komponen UI: ${e.message}` };
                 }
-            } else if (action === 'cluw_skill_execute') {
-                const { executeCluwSkill } = await import('./cluw_skills.js');
-                const result = await executeCluwSkill(details.fileName, details.args || []);
+            } else if (action === 'ant_skill_execute') {
+                const { executeAntSkill } = await import('./ant_skills.js');
+                const result = await executeAntSkill(details.fileName, details.args || []);
                 return Object.assign({ status: 'success' }, result);
             } else if (action === 'whatsapp_send_message') {
                 const { sendWhatsAppMessage } = await import('../services/whatsapp.js');

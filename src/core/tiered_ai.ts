@@ -3,7 +3,7 @@ import path from 'path';
 import { chat, getEmbedding } from './ai.js';
 import { Logger } from '../utils/logger.js';
 import { semanticSearch, storeMemory } from './memory.js';
-import { CLUW_Bus } from './events.js';
+import { ANT_Bus } from './events.js';
 
 const BASE_DIR = process.cwd();
 const CACHE_FILE = path.join(BASE_DIR, 'workspace', 'memories', 'semantic_cache.json');
@@ -145,14 +145,14 @@ ${systemInstruction}`;
   
   // 1. Semantic Search for Context & Cache
   if (onStream) onStream('__STATUS:Mengakses Neural Memory (RAG Context)...__');
-  CLUW_Bus.emit('reasoning_stream', { step: 'perceive', message: 'Scanning Neural Memory for context.', source: 'TieredAI', details: { query: lastMessage } });
+  ANT_Bus.emit('reasoning_stream', { step: 'perceive', message: 'Scanning Neural Memory for context.', source: 'TieredAI', details: { query: lastMessage } });
   const relatedMemories = await semanticSearch(lastMessage, 'semantic', 5);
   
   // 1a. Semantic Cache Check (Very high confidence match)
   const cacheHit = relatedMemories.find(m => m.score > 0.98);
   if (cacheHit && !attachments?.length && !lastMessage.startsWith('/')) {
     // Genuine skip — emit event so UI stepper correctly stops early
-    CLUW_Bus.emit('reasoning_stream', { step: 'finalize', message: 'Absolute cache match found. Skipping deep reasoning.', source: 'TieredAI' });
+    ANT_Bus.emit('reasoning_stream', { step: 'finalize', message: 'Absolute cache match found. Skipping deep reasoning.', source: 'TieredAI' });
     if (onStream) onStream('__STATUS:Kecocokan absolut ditemukan di Neural Memory...__');
     if (onStream) onStream('__STATUS:Menyajikan hasil cache instan...__');
     return {
@@ -174,13 +174,13 @@ ${systemInstruction}`;
 
   // 2. Intelligence Tiering Analysis (STICKY MODE)
   if (onStream) onStream('__STATUS:Memastikan Jalur Kognitif (Sticky Mode)...__');
-  CLUW_Bus.emit('reasoning_stream', { step: 'analyze', message: 'Sticky Mode active. Bypassing complexity analysis.', source: 'TieredAI' });
+  ANT_Bus.emit('reasoning_stream', { step: 'analyze', message: 'Sticky Mode active. Bypassing complexity analysis.', source: 'TieredAI' });
   const tier = 'LLM';
   const reason = 'Sticky Mode: Single model utilization active.';
   
   // 3. Privacy Filter
   if (onStream) onStream('__STATUS:Deep Scan (Privacy & Security Guard)...__');
-  CLUW_Bus.emit('reasoning_stream', { step: 'analyze', message: 'Scanning for sensitive/PII data.', source: 'TieredAI' });
+  ANT_Bus.emit('reasoning_stream', { step: 'analyze', message: 'Scanning for sensitive/PII data.', source: 'TieredAI' });
   const { isSensitive } = filterSensitiveData(lastMessage);
   
   // Hybrid Strategy: Sticky Mode selalu LLM
@@ -507,8 +507,8 @@ Setelah </thought>, berikan balasan langsung: hangat, cerdas, tanpa over-claim, 
   // Extract thought if any for autonomy logging
   const thoughtMatch = finalContent.match(/<thought>([\s\S]*?)<\/thought>/);
   if (thoughtMatch) {
-    import('./events.js').then(({ CLUW_Bus }) => {
-      CLUW_Bus.emit('system.autonomous_event', {
+    import('./events.js').then(({ ANT_Bus }) => {
+      ANT_Bus.emit('system.autonomous_event', {
         type: 'PLANNING_SYNC',
         content: thoughtMatch[1].trim(),
         model: actualModel,
@@ -530,7 +530,7 @@ Setelah </thought>, berikan balasan langsung: hangat, cerdas, tanpa over-claim, 
 
       // Log to Hide Channel with drift-aware flag
       const isEmpty = !certaintyData!.doubt_points || certaintyData!.doubt_points.length === 0;
-      CLUW_Bus.emit('reasoning_stream', {
+      ANT_Bus.emit('reasoning_stream', {
         step: 'finalize',
         message: `Certainty declared: ${certaintyData!.confidence_level}% confidence. Doubt points: ${isEmpty ? 'NONE (⚠️ RED FLAG)' : certaintyData!.doubt_points.join(', ')}`,
         source: 'DoubtLayer',
@@ -538,15 +538,15 @@ Setelah </thought>, berikan balasan langsung: hangat, cerdas, tanpa over-claim, 
       });
     } catch (e) {
       // Parsing failed — log as doubt in itself
-      CLUW_Bus.emit('reasoning_stream', { step: 'analyze', message: 'Failed to parse certainty block — treating as unverified confidence.', source: 'DoubtLayer' });
+      ANT_Bus.emit('reasoning_stream', { step: 'analyze', message: 'Failed to parse certainty block — treating as unverified confidence.', source: 'DoubtLayer' });
     }
   }
   // ── COGNITIVE METRICS & DRIFT SCAN ─────────────────────────────────────────
-  CLUW_Bus.emit('response_finalized', { content: cleanContent, model: actualModel });
+  ANT_Bus.emit('response_finalized', { content: cleanContent, model: actualModel });
 
   // Emit Cognitive Metrics to Bus
-  import('./events.js').then(({ CLUW_Bus }) => {
-    CLUW_Bus.emit('system.cognitive_metrics', {
+  import('./events.js').then(({ ANT_Bus }) => {
+    ANT_Bus.emit('system.cognitive_metrics', {
       tier: effectiveTier,
       model: actualModel,
       reason,
@@ -571,10 +571,10 @@ Setelah </thought>, berikan balasan langsung: hangat, cerdas, tanpa over-claim, 
     const isVisionInsight = visionKeywords.some(kw => lowerMsg.includes(kw)) && finalContent.length > 20;
 
     if (effectiveTier === 'LLM' || lastMessage.length > 40 || hasEmotionalWeight || isVisionInsight) {
-      const insightPrompt = `Tugas: Ekstrak 1 kalimat wawasan (insight) tentang pengguna atau lingkungan fisiknya (fakta baru, benda unik, preferensi, atau suasana) berdasarkan interaksi ini untuk diingat CLUW selamanya.
+      const insightPrompt = `Tugas: Ekstrak 1 kalimat wawasan (insight) tentang pengguna atau lingkungan fisiknya (fakta baru, benda unik, preferensi, atau suasana) berdasarkan interaksi ini untuk diingat ANT selamanya.
       Note: Jika ini adalah mode Live/Vision, fokuslah pada objek yang baru dikenali di sekitar user.
       User: "${lastMessage}"
-      CLUW: "${finalContent.slice(0, 150)}..."
+      ANT: "${finalContent.slice(0, 150)}..."
       
       Aturan:
       - Gunakan POV orang ketiga (Contoh: "User memiliki setup monitor ganda").

@@ -60,7 +60,7 @@ export function listAlwaysAllowedDomains(): string[] {
     return Array.from(alwaysAllowedDomains);
 }
 
-/** Dipakai user/CLUW untuk mencabut "Always allow" — setara "Revoke di Settings". */
+/** Dipakai user/ANT untuk mencabut "Always allow" — setara "Revoke di Settings". */
 export function revokeAlwaysAllow(domain: string): boolean {
     return alwaysAllowedDomains.delete(domain);
 }

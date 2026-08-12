@@ -22,7 +22,7 @@ export interface ArdState {
   last_session_date: string;
   pending_reminders: Array<{ text: string; due?: string; created: string }>;
   conversation_style: 'formal' | 'casual' | 'technical' | 'creative';
-  known_context: string[]; // Fakta tentang Ard yang CLUW ingat
+  known_context: string[]; // Fakta tentang Ard yang ANT ingat
 }
 
 // ============================================================
@@ -152,7 +152,7 @@ export function detectMoodFromText(text: string): Partial<ArdState> {
   }
 
   // Deteksi proyek yang disebutkan
-  const projectMatches = text.match(/\b(cluw|genesis|saas|aplikasi|project|proyek|bisnis|startup|website|app)\b/gi) || [];
+  const projectMatches = text.match(/\b(ant|genesis|saas|aplikasi|project|proyek|bisnis|startup|website|app)\b/gi) || [];
   const projects = [...new Set(projectMatches.map(p => p.toLowerCase()))];
 
   const result: Partial<ArdState> = {
@@ -237,7 +237,7 @@ export function extractThoughtBlock(responseText: string): string | null {
 }
 
 // ============================================================
-// CAPABILITY MAP: Generate status kemampuan CLUW saat ini
+// CAPABILITY MAP: Generate status kemampuan ANT saat ini
 // ============================================================
 export async function generateCapabilityMap(brain: any): Promise<string> {
   const hasTavily = !!(brain.tavily_api_key && brain.tavily_api_key.trim().length > 5);

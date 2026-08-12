@@ -64,7 +64,7 @@ export async function getPartitionedMemoryStats(): Promise<PartitionedMemoryStat
   } catch {}
 
   try {
-    const identityPath = path.join(BASE_DIR, 'cluw-genesis', 'core', 'identity.json');
+    const identityPath = path.join(BASE_DIR, 'ant', 'core', 'identity.json');
     const identityJson = JSON.parse(await fs.readFile(identityPath, 'utf-8').catch(() => '{}'));
     if (identityJson.sovereign_rules) {
       constitutionCount = identityJson.sovereign_rules.length;
@@ -203,7 +203,7 @@ export async function consolidateMemories() {
       .map(([k, v]) => `[${k}]: ${typeof v.data === 'string' ? v.data.slice(0, 100) : JSON.stringify(v.data).slice(0, 100)}`)
       .join('\n');
     
-    const prompt = `Berikut adalah log kejadian episodik CLUW selama beberapa jam terakhir:\n\n${episodeSummary}\n\nExtract 3-5 pola atau fakta yang bisa dipelajari dari log ini. Format: JSON array of {key, pattern, confidence}.`;
+    const prompt = `Berikut adalah log kejadian episodik ANT selama beberapa jam terakhir:\n\n${episodeSummary}\n\nExtract 3-5 pola atau fakta yang bisa dipelajari dari log ini. Format: JSON array of {key, pattern, confidence}.`;
     
     const response = await chat(config, [{ role: 'user', content: prompt }], [], {}, 
       'Kamu adalah sistem konsolidasi memori. Ekstrak pola dari log kejadian.', 
