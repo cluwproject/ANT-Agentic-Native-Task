@@ -1,24 +1,40 @@
-# 🐜 ANT — Agentic Native Task
+# 🐜 ANT — Agentic Native Task (v0.1.0)
 
 > **You Ask. ANT Acts.**  
-> A Sovereign, Lightweight, Standalone Autonomous Agentic CLI built for Termux, Linux, and Cloud Environments.
+> A Sovereign, Standalone, On-Device Autonomous Agentic CLI with Inter-Model Mailbox Audit, OS Auto-Adaptation, and High-Trust Security.
 
 ---
 
 ## 🌟 Overview
 
-**ANT (Agentic Native Task)** is a next-generation autonomous command-line agent derived and refactored from the CLUW Genesis architecture. It provides an intelligent, self-healing, agentic environment capable of understanding goals, generating multi-step execution plans, delegating to specialized sub-agents, performing tool execution, and auto-correcting code errors.
+**ANT (Agentic Native Task)** is a next-generation autonomous command-line agent derived and evolved from the CLUW Genesis architecture. Built for high performance on local devices (Android Termux, Linux, macOS, and Windows), ANT operates with complete sovereignty, dynamic context continuity, cross-model relay auditing, and self-healing resilience.
 
 ---
 
-## ⚡ Key Features
+## ⚡ Key Features & Innovations
 
-- 🧠 **Sovereign AI Router**: Support for Google Gemini, Anthropic Claude, OpenAI, DeepSeek, and local Ollama models with automatic fallback & health tracking.
-- 🛠️ **Autonomous Tool Execution**: High-trust file ops, precision patching, AST syntax checks, git management, and interactive terminal paste protection.
-- 🤖 **Sub-Agent Delegation**: Spawn specialized child agents (`researcher`, `coder`, `tester`, `planner`) to solve complex sub-tasks.
-- 📋 **HTN Planning & Reflection Loop**: Automatic goal decomposition into High-Level Task Networks and self-reflection on errors.
-- 🔀 **Conversation Branching**: Save checkpoints and branch conversations (`/branch`) without losing context.
-- 🛡️ **Self-Healing Kernel**: Built-in environment diagnostic, trust-score gate, and automatic error resolution.
+### 1. 📬 `AntModelMailbox` (Inter-Model Relay & Audit System)
+- **Context Continuity Across Models**: When switching models (e.g. from `gemma4:31b-cloud` to `deepseek-r1`), the departing agent writes a structured handover briefing into `workspace/registry/mailbox/ledger.jsonl`.
+- **SHA-256 Hash-Chained Ledger**: Append-only, tamper-evident audit ledger (`entryHash` + `prevHash`) to verify chain integrity.
+- **Claim Verifier**: State machine verifying model claims against real execution evidence (`VERIFIED`, `UNVERIFIED`, `CONTRADICTED`, `NEEDS_INDEPENDENT_CHECK`).
+- **Circuit Breaker & Rate Limiter**: Atomic persistent rate-limiting (`circuit-state.json`) and operator hard-stop kill-switch.
+- **ATK-10 Prompt Injection Protection**: Sanitizes and escapes untrusted handover inputs into `<untrusted_handover>` XML delimiters.
+- **ARCR Channel Confinement**: Restricts agent communication channels and logs unauthorized side-channel attempts.
+
+### 2. 🌐 `ANT Adapt` (OS & Environment Auto-Sensing Engine)
+- **Cross-Platform Auto-Detection**: Detects Termux Proot, Linux, macOS, Windows CMD/PowerShell, and WSL.
+- **Dynamic Operator Profile**: Distinguishes Developer/Creator mode (`Ard`) from Public Operator mode, avoiding `root`/`rootlokal` misconceptions.
+
+### 3. 🛡️ Flexible 3-Way Approval Gate
+- **Interactive Approval Options**:
+  1. `Yes, approve once` (Sekali ini)
+  2. `Yes, approve all for this session` (Setuju semua / Jangan tanya lagi di sesi ini)
+  3. `No, reject` (Tolak / Batal)
+- **Session Auto-Approve Policy**: Remembers session policy when option 2 is chosen to allow uninterrupted execution.
+
+### 4. 🧠 Multi-Provider AI Gateway & SLM Guard
+- Supports Google Gemini, Anthropic Claude, OpenAI, DeepSeek, and local Ollama (`gemma4:31b-cloud`, etc.).
+- **SLM Micro-Prompting**: Automatically prunes heavy system prompts for lightweight local models (<3B) on mobile devices to prevent RAM/OOM crashes.
 
 ---
 
@@ -53,14 +69,13 @@ node bin/ant.js -p "Inspect the src directory and report file structure"
 node bin/ant.js --help
 ```
 
----
+### Model Switch & Mailbox Handover
 
-## 📜 Available NPM Scripts
-
-- `npm run ant` — Boot interactive ANT CLI.
-- `npm run typecheck` — Perform strict TypeScript type checking (`tsc --noEmit`).
-- `npm run build` — Compile TypeScript to `dist/` bundle with declarations and sourcemaps.
-- `npm run clean` — Remove `dist/` directory.
+```bash
+# In interactive chat:
+/model gemma4:31b-cloud
+/model deepseek-r1
+```
 
 ---
 
@@ -71,10 +86,12 @@ src/
 ├── core/
 │   ├── actions/          # Modular action handlers (file, shell, web, skill, browser)
 │   ├── ai/               # Multi-provider LLM router (Gemini, Claude, OpenAI, Ollama)
-│   │   ├── providers/    # Provider-specific call implementations
+│   │   ├── providers/    # Provider-specific callers (gemini, anthropic, openai)
 │   │   └── tiers/        # SLM vs LLM tier routing
-│   ├── agentic/          # Sub-agents, HTN planner, reflection loop, branching
+│   ├── agentic/          # Sub-agents, HTN planner, reflection loop, branching, mailbox
+│   │   └── mailbox/      # AntModelMailbox: fileLock, writer, circuitBreaker, claimVerifier, promptInjector, channelGuard
 │   ├── agent_loop/       # Core execution loop, UI loggers, permissions
+│   ├── ant_adapt.ts      # OS & Environment auto-sensing engine
 │   └── workspace/        # Workspace state and Google Drive/Sheets integration
 ├── security/             # FS Guard, Trust score gate, Permissions
 └── utils/                # Sovereign logger and prompt formatters
@@ -84,4 +101,4 @@ src/
 
 ## 🤝 License
 
-MIT License — Created by Ard (Renaldy Adri) for the ANT Sovereign Ecosystem.
+MIT License — Created by **Ard** for the ANT Sovereign Ecosystem under the CLUW Genesis heritage.
