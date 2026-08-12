@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.secret
+
+# Runtime data (workspace is created at runtime)
+workspace/sessions/
+workspace/memories/
+workspace/registry/
+workspace/logs/
+workspace/backups/
+workspace/temp/
+workspace/activity.log
+workspace/*.log
+data/
+.cache/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Migration scripts (one-off, not source)
+fix_imports.js
+migrate_*.js
+migrate_*.ts
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Misc
+*.pid
+*.seed
+*.pid.lock
