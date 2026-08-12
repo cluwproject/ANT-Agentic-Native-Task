@@ -1,4 +1,4 @@
-import { runCliAgentLoop, askUser, closeCli } from '../agents/cli_agent.js';
+import { runCliAgentLoop, askUser, closeCli } from './agent_loop/index.js';
 import { Logger } from '../utils/logger.js';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -70,53 +70,13 @@ async function main() {
         // Silently continue
     }
     
-    // Handle identity commands
-    if (args[0] === 'identity') {
-        const subCommand = args[1];
-        if (subCommand === 'status') {
-            try {
-                const { pathToFileURL } = await import('url');
-                const modulePath = path.join(process.cwd(), 'identity_core.js');
-                const url = pathToFileURL(modulePath).href;
-                const identityMod = await import(url);
-                const status = await identityMod.getSystemStatus();
-                const greeting = await identityMod.greetCreator({ user_name: 'Ard' });
-
-                console.log(chalk.cyan('\nCLUW IDENTITY STATUS:'));
-                console.log(chalk.cyan('╭──────────────────────────────────────────────╮'));
-                const printLine = (content: string) => {
-                    const innerWidth = 46;
-                    const clean = content.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
-                    const rawLength = clean.length;
-                    const padding = Math.max(0, innerWidth - rawLength);
-                    console.log(chalk.cyan('│') + content + ' '.repeat(padding) + chalk.cyan('│'));
-                };
-                printLine(` ${chalk.bold.white('Protocol       :')} ${chalk.green(status.protocol)}`);
-                printLine(` ${chalk.bold.white('Soul Integrity :')} ${chalk.green(status.soul_integrity)}`);
-                printLine(` ${chalk.bold.white('System Status  :')} ${chalk.green(status.status)}`);
-                printLine(chalk.dim('──────────────────────────────────────────────'));
-                printLine(` ${chalk.italic(greeting)}`);
-                console.log(chalk.cyan('╰──────────────────────────────────────────────╯\n'));
-            } catch (err: any) {
-                console.error(chalk.red(`Failed to load identity: ${err.message}`));
-            }
-            process.exit(0);
-        } else {
-            console.log(chalk.red(`Unknown identity subcommand: ${subCommand}`));
-            console.log('Gunakan:');
-            console.log('  npm run cluw identity status');
-            process.exit(1);
-        }
-    }
-
-    // Handle task commands
     if (args[0] === 'task') {
         const subCommand = args[1];
         if (subCommand === 'schedule') {
             const cronVal = args[2];
             const commandVal = args[3];
             if (!cronVal || !commandVal) {
-                console.error(chalk.red('Error: format salah. Contoh: npm run cluw task schedule "*/5 * * * *" "echo hello"'));
+                console.error(chalk.red('Error: format salah. Contoh: ant task schedule "*/5 * * * *" "echo hello"'));
                 process.exit(1);
             }
             try {
@@ -151,8 +111,8 @@ async function main() {
         } else {
             console.log(chalk.red(`Unknown task subcommand: ${subCommand}`));
             console.log('Gunakan:');
-            console.log('  npm run cluw task schedule "<cron>" "<command>"');
-            console.log('  npm run cluw task list');
+            console.log('  ant task schedule "<cron>" "<command>"');
+            console.log('  ant task list');
             process.exit(1);
         }
     }
@@ -194,7 +154,7 @@ async function main() {
         } else if (subCommand === 'run') {
             const agentName = args[2];
             if (!agentName) {
-                console.error(chalk.red('Error: Agent name required. Contoh: npm run cluw agent run security_agent google.com'));
+                console.error(chalk.red('Error: Agent name required. Contoh: ant agent run security_agent google.com'));
                 process.exit(1);
             }
             
@@ -247,8 +207,8 @@ async function main() {
         } else {
             console.log(chalk.red(`Unknown agent subcommand: ${subCommand}`));
             console.log('Gunakan:');
-            console.log('  npm run cluw agent list');
-            console.log('  npm run cluw agent run <name> [args] [--no-sandbox]');
+            console.log('  ant agent list');
+            console.log('  ant agent run <name> [args] [--no-sandbox]');
             process.exit(1);
         }
     }
@@ -278,7 +238,7 @@ async function main() {
     if (showHelp) {
         console.log(getAntAscii());
         console.log(chalk.bold('Penggunaan:'));
-        console.log('  npm run cluw [opsi]\n');
+        console.log('  ant [opsi]\n');
         console.log(chalk.bold('Opsi:'));
         console.log('  -p, --prompt "<prompt>"   Menjalankan perintah secara satu kali (one-shot mode) lalu keluar.');
         console.log('  -h, --help                Menampilkan panduan bantuan ini.');

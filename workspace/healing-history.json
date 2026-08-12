@@ -1,100 +1,18 @@
 [
   {
-    "timestamp": "2026-08-12T07:07:54.421Z",
-    "trigger": "CLI Startup Scan",
-    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
-    "anomaliesDetected": [],
-    "remediationsApplied": [],
-    "systemStatus": "Fully_Sane"
-  },
-  {
-    "timestamp": "2026-08-12T06:55:07.726Z",
-    "trigger": "CLI Startup Scan",
-    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
-    "anomaliesDetected": [],
-    "remediationsApplied": [],
-    "systemStatus": "Fully_Sane"
-  },
-  {
-    "timestamp": "2026-08-12T06:53:10.420Z",
-    "trigger": "CLI Startup Scan",
-    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
-    "anomaliesDetected": [],
-    "remediationsApplied": [],
-    "systemStatus": "Fully_Sane"
-  },
-  {
-    "timestamp": "2026-08-12T06:51:45.860Z",
-    "trigger": "CLI Startup Scan",
-    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
-    "anomaliesDetected": [],
-    "remediationsApplied": [],
-    "systemStatus": "Fully_Sane"
-  },
-  {
-    "timestamp": "2026-08-12T06:36:32.729Z",
-    "trigger": "CLI Startup Scan",
-    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
-    "anomaliesDetected": [],
-    "remediationsApplied": [],
-    "systemStatus": "Fully_Sane"
-  },
-  {
-    "timestamp": "2026-08-12T06:32:17.218Z",
-    "trigger": "CLI Startup Scan",
-    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
-    "anomaliesDetected": [],
-    "remediationsApplied": [],
-    "systemStatus": "Fully_Sane"
-  },
-  {
-    "timestamp": "2026-08-12T06:30:20.515Z",
-    "trigger": "CLI Startup Scan",
-    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
-    "anomaliesDetected": [],
-    "remediationsApplied": [],
-    "systemStatus": "Fully_Sane"
-  },
-  {
-    "timestamp": "2026-08-12T06:20:42.034Z",
-    "trigger": "CLI Startup Scan",
-    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
-    "anomaliesDetected": [],
-    "remediationsApplied": [],
-    "systemStatus": "Fully_Sane"
-  },
-  {
-    "timestamp": "2026-08-12T06:19:32.569Z",
-    "trigger": "CLI Startup Scan",
-    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
-    "anomaliesDetected": [],
-    "remediationsApplied": [],
-    "systemStatus": "Fully_Sane"
-  },
-  {
-    "timestamp": "2026-08-12T05:49:15.177Z",
+    "timestamp": "2026-08-12T07:20:38.924Z",
     "trigger": "CLI Startup Scan",
     "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
     "anomaliesDetected": [
-      "Direktori hilang: memories",
-      "Direktori hilang: backups",
-      "Direktori hilang: temp",
-      "Direktori hilang: logs",
       "File data krusial hilang: tasks.json",
       "File data krusial hilang: schedules.json",
-      "File data krusial hilang: creator_drafts.json",
-      "Data Memori Korup (Gagal Dekode JSON)"
+      "File data krusial hilang: creator_drafts.json"
     ],
     "remediationsApplied": [
-      "Membuat kembali direktori workspace/memories",
-      "Membuat kembali direktori workspace/backups",
-      "Membuat kembali direktori workspace/temp",
-      "Membuat kembali direktori workspace/logs",
       "Mengunduh/membuat kembali berkas kosong otonom: workspace/tasks.json",
       "Mengunduh/membuat kembali berkas kosong otonom: workspace/schedules.json",
-      "Mengunduh/membuat kembali berkas kosong otonom: workspace/creator_drafts.json",
-      "Reset memori sirkuit kognitif yang korup menjadi {}"
+      "Mengunduh/membuat kembali berkas kosong otonom: workspace/creator_drafts.json"
     ],
-    "systemStatus": "Escalated_Alert"
+    "systemStatus": "Remediated"
   }
 ]
