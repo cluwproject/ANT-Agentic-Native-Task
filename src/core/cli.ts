@@ -570,7 +570,14 @@ async function main() {
                 process.env.CLI_CUSTOM_MODEL = newModel;
                 process.env.CLI_AI_PROVIDER = newProvider;
 
-                console.log(chalk.green(`\n✅ Model CLI berhasil diganti ke: ${chalk.bold.white(newModel)}`));
+                try {
+                    const { setActiveModel } = await import('./agentic/mailbox/index.js');
+                    await setActiveModel(newModel, `/model ${newModel}`, `User mengganti model aktif ke ${newModel}`, `Model diganti ke ${newModel}. Mohon lanjutkan tugas bersama Ard dengan teliti.`);
+                } catch (mbErr: any) {
+                    console.log(chalk.dim(`   [Mailbox Notice]: ${mbErr.message}`));
+                }
+
+                console.log(chalk.green(`✅ Model CLI berhasil diganti ke: ${chalk.bold.white(newModel)}`));
                 console.log(chalk.dim(`   Provider otomatis diset ke: ${newProvider}`));
                 console.log(chalk.yellow(`   Ketik /new_chat jika model baru mulai berhalusinasi dengan konteks lama.\n`));
             } catch (e: any) {
