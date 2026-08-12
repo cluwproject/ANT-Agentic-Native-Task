@@ -281,6 +281,12 @@ async function main() {
     console.log(getAntAscii());
     console.log(chalk.dim('Memuat konfigurasi dan memori neural...'));
 
+    try {
+        const { printAdaptNotice } = await import('./ant_adapt.js');
+        const adaptNotice = await printAdaptNotice();
+        console.log(chalk.dim(adaptNotice));
+    } catch {}
+
     // Load and display Dashboard
     try {
         let brain = await getBrainConfig();
