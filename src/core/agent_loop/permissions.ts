@@ -1,11 +1,6 @@
 // ============================================================================
 // ANT — CLI Agent Loop — Permission / Approval Gate
 // ============================================================================
-// Pola ini meniru semangat sistem permission Claude Code: ada satu titik
-// tunggal (requestApproval) yang bisa diperluas jadi validator per-tool
-// (mirip PreToolUse hook) tanpa mengubah agentLoop.ts. "Safe" di sini berarti
-// "tidak perlu konfirmasi interaktif" — BUKAN "bebas risiko", makanya
-// argumennya tetap ditampilkan dan tetap melewati validator sebelum jalan.
 
 import type { ApprovalResult, ToolCall } from './types.js';
 import * as ui from './ui.js';
@@ -13,42 +8,39 @@ import { isBrowserTool } from './browserTool.js';
 import chalk from 'chalk';
 import { requestDomainApproval } from './browserPermissions.js';
 
-// Tool yang dianggap read-only / tidak mengubah state eksternal secara
-// destruktif. Daftar ini sama seperti versi lama — dipindah ke sini saja
-// supaya tidak tercampur dengan logika loop.
+let sessionAutoApprove = false;
+
+export function setSessionAutoApprove(auto: boolean) {
+    sessionAutoApprove = auto;
+}
+
+export function isSessionAutoApprove(): boolean {
+    return sessionAutoApprove;
+}
+
 const SAFE_TOOLS = new Set([
     'read_file', 'list_dir', 'env_check', 'web_request', 'image_generate', 'open_browser',
     'mexc_get_balance_futures', 'mexc_get_ticker_futures', 'mexc_get_open_positions',
     'mexc_get_open_orders', 'mexc_get_order_history', 'mexc_get_index_price', 'mexc_get_risk_info',
-    'mexc_get_klines',
-    // GOD MODE: Allow autonomous file modification and skill creation
-    'modify_file', 'write_file', 'ant_skill_create'
+    'mexc_get_klines'
 ]);
 
-// Titik ekstensi mirip PreToolUse hook: tambahkan validator per-tool kalau
-// perlu pengecekan ARGUMEN, bukan cuma nama tool. Return string alasan
-// untuk block otomatis, atau null jika lolos. Ini berlaku untuk semua tool,
-// termasuk yang ada di SAFE_TOOLS — supaya "safe" tidak berarti "tidak
-// pernah dicek sama sekali".
 type ArgValidator = (args: Record<string, any>) => string | null;
 
 const ARG_VALIDATORS: Record<string, ArgValidator> = {
     shell_exec: (args) => {
         const cmd = String(args?.command || '');
         const dangerousPatterns = [
-            /rm\s+-rf\s+\//,        // hapus paksa dari root
-            /:\(\)\{.*;\s*:.*\}/,   // fork bomb klasik
-            /mkfs(\.\w+)?\s+\/dev/, // format device
-            /dd\s+if=.*of=\/dev\/(sd|nvme|hd)/ // overwrite disk mentah
+            /rm\s+-rf\s+\//,
+            /:\(\)\{.*;\s*:.*\}/,
+            /mkfs(\.\w+)?\s+\/dev/,
+            /dd\s+if=.*of=\/dev\/(sd|nvme|hd)/
         ];
         if (dangerousPatterns.some(p => p.test(cmd))) {
             return `Perintah shell terdeteksi pola berisiko tinggi: "${cmd.slice(0, 80)}"`;
         }
         return null;
     }
-    // Tambahkan validator lain di sini, mis. web_request → batasi domain,
-    // atau mexc_* → pastikan tidak menyentuh endpoint order/eksekusi trading
-    // (saat ini semua mexc_* di daftar hanya endpoint GET/read-only).
 };
 
 export function isSafeTool(toolName: string): boolean {
@@ -89,10 +81,13 @@ export async function requestApproval(
     toolCall: ToolCall,
     askQuestion: (q: string) => Promise<string>
 ): Promise<ApprovalResult> {
-    // Browser tool punya model approval sendiri: per-DOMAIN, bukan per-nama-
-    // tool. "browser_navigate" selalu sama nama tool-nya terlepas tujuannya
-    // example.com atau situs internal sensitif — jadi approval Y/n generik
-    // di sini tidak cukup granular. Delegasikan ke browserPermissions.
+    if (sessionAutoApprove) {
+        ui.printToolCallHeader(toolCall.tool);
+        ui.printToolArgs(toolCall.args);
+        console.log(chalk.dim('  ⚡ Auto-approved by session policy (Don\'t ask again).'));
+        return { decision: 'approved', isSafe: false };
+    }
+
     if (isBrowserTool(toolCall.tool) && typeof toolCall.args?.url === 'string') {
         ui.printToolCallHeader(toolCall.tool);
         ui.printToolArgs(toolCall.args);
@@ -111,7 +106,6 @@ export async function requestApproval(
 
     const safe = isSafeTool(toolCall.tool);
 
-    // Validator argumen berjalan untuk SEMUA tool, termasuk yang "safe".
     const blockReason = runArgValidator(toolCall);
     if (blockReason) {
         ui.printToolCallHeader(toolCall.tool);
@@ -127,11 +121,9 @@ export async function requestApproval(
         return { decision: 'auto', isSafe: true };
     }
 
-    // Hitung risk & reason
     const risk = getToolRisk(toolCall.tool);
     const reason = getToolReason(toolCall.tool);
 
-    // Diff & custom prompt for file edits
     if (toolCall.tool === 'modify_file' || toolCall.tool === 'write_file' || toolCall.tool === 'ant_skill_create') {
         const filePath = toolCall.tool === 'ant_skill_create' 
             ? `skills/ant_skills/${toolCall.args.fileName || toolCall.args.file || toolCall.args.path || toolCall.args.name || 'unknown.js'}` 
@@ -141,33 +133,34 @@ export async function requestApproval(
             : (toolCall.args.content || toolCall.args.code);
 
         ui.printFileDiff(filePath, fileContent);
-        console.log(chalk.cyan('\n  shift+tab to auto-approve file edits'));
-        console.log(chalk.bold('Accept this file edit?'));
-        console.log('  1. Yes, accept this change');
-        console.log('  2. No, reject this change');
+        console.log(chalk.bold('\nAccept this file edit?'));
+        console.log('  1. Yes, accept this change (Sekali)');
+        console.log('  2. Yes, approve all for this session (Jangan tanya lagi)');
+        console.log('  3. No, reject this change (Tolak)');
         
         while (true) {
             const answer = await askQuestion(chalk.cyan('> '));
             const normalized = answer.trim().toLowerCase();
-            const approved = normalized === '' || normalized === '1' || normalized === 'y' || normalized === 'yes';
-            const denied = normalized === '2' || normalized === 'n' || normalized === 'no';
             
-            if (approved) {
+            if (normalized === '' || normalized === '1' || normalized === 'y' || normalized === 'yes') {
                 return { decision: 'approved', isSafe: false };
             }
-            if (denied) {
+            if (normalized === '2' || normalized === 'all' || normalized === 'always') {
+                setSessionAutoApprove(true);
+                console.log(chalk.green('  ✓ Auto-approve diaktifkan untuk sisa sesi ini.'));
+                return { decision: 'approved', isSafe: false };
+            }
+            if (normalized === '3' || normalized === 'n' || normalized === 'no') {
                 return { decision: 'denied', isSafe: false };
             }
-            console.log(chalk.yellow('Pilih 1 atau 2.'));
+            console.log(chalk.yellow('Pilih 1, 2, atau 3.'));
         }
     }
 
-    // Cetak approval box terstruktur
     ui.printApprovalBox(toolCall.tool, risk, reason);
 
-    // Interactive Loop
     while (true) {
-        const answer = await askQuestion('\n⚠️  Approve execution? (Y: Approve, N: Cancel, V: View Details): ');
+        const answer = await askQuestion('\n⚠️  Approve execution? (1/Y: Approve, 2/Always: Allow All Session, 3/N: Reject, V: Details): ');
         const normalized = answer.trim().toLowerCase();
         
         if (normalized === 'v' || normalized === 'view') {
@@ -177,7 +170,13 @@ export async function requestApproval(
             continue;
         }
         
-        const approved = normalized === '' || normalized === 'y' || normalized === 'yes';
+        if (normalized === '2' || normalized === 'always' || normalized === 'all' || normalized === 'a') {
+            setSessionAutoApprove(true);
+            console.log(chalk.green('  ✓ Auto-approve diaktifkan untuk sisa sesi ini.'));
+            return { decision: 'approved', isSafe: false };
+        }
+
+        const approved = normalized === '' || normalized === '1' || normalized === 'y' || normalized === 'yes';
         return { decision: approved ? 'approved' : 'denied', isSafe: false };
     }
 }
