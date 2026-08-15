@@ -18,6 +18,19 @@ build/
 *.key
 *.secret
 
+# Sovereign Assets, Proprietary Datasets & Private Vault
+*.jsonl
+ant-cyber-corps/datasets/
+workspace/ant-cyber-corps/datasets/
+workspace/datasets/
+workspace/custom_skills/
+workspace/private_skills/
+workspace/core/
+workspace/*.json
+DECISION_LOG.md
+test_ai.ts
+scratch/
+
 # Runtime data (workspace is created at runtime)
 workspace/sessions/
 workspace/memories/
@@ -42,7 +55,7 @@ Thumbs.db
 *.swo
 *~
 
-# Migration scripts (one-off, not source)
+# Migration & Scratch scripts
 fix_imports.js
 migrate_*.js
 migrate_*.ts
