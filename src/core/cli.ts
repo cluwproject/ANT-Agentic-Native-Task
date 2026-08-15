@@ -539,6 +539,111 @@ async function main() {
             continue;
         }
 
+        // ── AGY PLANNER: /plan ─────────────────────────────────────────
+        if (text.startsWith('/plan')) {
+            const goal = text.replace(/^\/plan\s*/, '').trim();
+            if (!goal) {
+                console.log(chalk.yellow('\n📋 HTN Execution Planner'));
+                console.log(chalk.dim('  Usage: /plan <goal_or_task_description>'));
+                console.log(chalk.dim('  Example: /plan Refactor authentication middleware to support OAuth2\n'));
+                continue;
+            }
+            console.log(chalk.cyan(`\n🧠 Generating HTN Multi-Step Execution Plan for: "${goal}"...\n`));
+            text = `Tolong buatkan rencana eksekusi terstruktur (HTN Execution Plan) bertahap untuk tujuan berikut: "${goal}". Pecah menjadi langkah-langkah konkret dan tentukan alat yang perlu dipanggil.`;
+            // Lanjut ke loop agen dengan konteks perencanaan eksplisit
+        }
+
+        // ── AGY CONVERSATION BRANCHING: /branch ─────────────────────────
+        if (text.startsWith('/branch')) {
+            const parts = text.split(' ');
+            const subCmd = parts[1]?.toLowerCase();
+            const branchArg = parts.slice(2).join(' ').trim();
+
+            const { createBranch, listBranches, loadBranch } = await import('./agentic/branching.js');
+
+            if (subCmd === 'list') {
+                const branches = await listBranches();
+                console.log(chalk.cyan('\n🌿 CONVERSATION BRANCHES:'));
+                if (branches.length === 0) {
+                    console.log(chalk.yellow('  No saved branches yet. Use /branch create <name> to fork one.'));
+                } else {
+                    branches.forEach((b, idx) => {
+                        console.log(`  ${chalk.bold(idx + 1)}. ${chalk.green(b)}`);
+                    });
+                }
+                console.log();
+                continue;
+            } else if (subCmd === 'create') {
+                if (!branchArg) {
+                    console.log(chalk.yellow('  Usage: /branch create <branch_name>'));
+                    continue;
+                }
+                const savedPath = await createBranch(branchArg, currentSessionId, contextHistory);
+                console.log(chalk.green(`  ✅ Branch '${branchArg}' saved successfully (${contextHistory.length} messages snapshot).`));
+                console.log(chalk.dim(`     Path: ${savedPath}\n`));
+                continue;
+            } else if (subCmd === 'checkout' || subCmd === 'load') {
+                if (!branchArg) {
+                    console.log(chalk.yellow('  Usage: /branch checkout <branch_name>'));
+                    continue;
+                }
+                const branch = await loadBranch(branchArg);
+                if (!branch) {
+                    console.log(chalk.red(`  ❌ Branch '${branchArg}' not found.`));
+                } else {
+                    contextHistory = [...branch.history];
+                    console.log(chalk.green(`  ✅ Switched to branch '${branchArg}' (${contextHistory.length} messages loaded).\n`));
+                }
+                continue;
+            } else {
+                console.log(chalk.cyan('\n🌿 CONVERSATION BRANCHING COMMANDS:'));
+                console.log(chalk.dim('  /branch list               List all saved branches'));
+                console.log(chalk.dim('  /branch create <name>      Save current context to a new branch'));
+                console.log(chalk.dim('  /branch checkout <name>    Switch active session to a branch\n'));
+                continue;
+            }
+        }
+
+        // ── GIT CHECKPOINT: /checkpoint ────────────────────────────────
+        if (text.startsWith('/checkpoint')) {
+            const msg = text.replace(/^\/checkpoint\s*/, '').trim() || `ANT Checkpoint: ${new Date().toISOString()}`;
+            console.log(chalk.cyan(`\n📦 Creating Git Checkpoint: "${msg}"...`));
+            try {
+                const { handleFileOps } = await import('./actions/file_ops.js');
+                const res: any = await handleFileOps('git_checkpoint', { message: msg }, path.join(process.cwd(), 'workspace'), process.cwd());
+                if (res?.status === 'success') {
+                    console.log(chalk.green(`  ✅ ${res.message}`));
+                    if (res.output) console.log(chalk.dim(`     ${res.output.split('\n')[0]}`));
+                } else {
+                    console.log(chalk.yellow(`  ℹ ${res?.message || 'No changes to checkpoint.'}`));
+                }
+            } catch (e: any) {
+                console.log(chalk.red(`  ❌ Checkpoint failed: ${e.message}`));
+            }
+            console.log();
+            continue;
+        }
+
+        // ── CUSTOM SKILLS: /skills ─────────────────────────────────────
+        if (text === '/skills' || text === '/skill list') {
+            console.log(chalk.cyan('\n🧩 AVAILABLE CUSTOM SKILLS:'));
+            try {
+                const { handleSkillOps } = await import('./actions/skill_ops.js');
+                const skillsRes: any = await handleSkillOps('ant_skill_list', {}, path.join(process.cwd(), 'workspace'), process.cwd());
+                if (skillsRes?.skills && skillsRes.skills.length > 0) {
+                    skillsRes.skills.forEach((s: any, idx: number) => {
+                        console.log(`  ${chalk.bold(idx + 1)}. ${chalk.green(s.fileName || s.name)} ${chalk.dim(`(${s.type || 'Custom Skill'})`)}`);
+                    });
+                } else {
+                    console.log(chalk.yellow('  No custom skills installed yet. Create one with `ant_skill_create`.'));
+                }
+            } catch (e: any) {
+                console.log(chalk.yellow(`  No custom skills available: ${e.message}`));
+            }
+            console.log();
+            continue;
+        }
+
         // ── MINDBY MEMORY: /store ──────────────────────────────────────
         if (text.startsWith('/store')) {
             const memoryContent = text.replace(/^\/store\s*/, '').trim();
