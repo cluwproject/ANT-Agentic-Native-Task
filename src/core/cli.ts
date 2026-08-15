@@ -1,5 +1,6 @@
 import { runCliAgentLoop, askUser, closeCli } from './agent_loop/index.js';
 import { Logger } from '../utils/logger.js';
+import { initCockroachDB, storeCockroachMemory, recallCockroachMemory, listCockroachMemories, setVaultMode, getVaultMode, checkCockroachHealth } from './mindby_cockroach.js';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
@@ -12,27 +13,36 @@ const BASE_DIR = process.cwd();
 const ANT_HOME = path.join(os.homedir(), '.ant');
 dotenv.config({ path: path.join(BASE_DIR, '.env') });
 
-// Baca identity file ANT
+// Read identity and user profile configuration
 function readAntIdentity() {
     try {
-        const rel = JSON.parse(fs.readFileSync(path.join(ANT_HOME, 'identity', 'relationship.json'), 'utf-8'));
-        const usr = JSON.parse(fs.readFileSync(path.join(ANT_HOME, 'identity', 'user.json'), 'utf-8'));
-        return { owner: usr.owner || 'User', origin: rel.origin || 'ANT' };
+        const owner = process.env.USER_NAME || 'User';
+        return {
+            creator: 'Renaldy Adri (Ard)',
+            origin: 'CLUW Genesis',
+            activeUser: owner,
+            collaborators: 'Agy, Gemma, Claude, DeepSeek, Ollama'
+        };
     } catch {
-        return { owner: 'User', origin: 'ANT' };
+        return {
+            creator: 'Renaldy Adri (Ard)',
+            origin: 'CLUW Genesis',
+            activeUser: 'User',
+            collaborators: 'Agy, Gemma, Claude, DeepSeek, Ollama'
+        };
     }
 }
 
 function getAntAscii() {
     const identity = readAntIdentity();
     return chalk.green(`
-  🐜 ANT — Agentic Native Task
+  ANT — Agentic Native Task
   You Ask. ANT Acts.
 
-  ➜  Version  : v0.1.0
-  ➜  Origin   : ${identity.origin}
-  ➜  Owner    : ${identity.owner}
-  ➜  Engine   : ANT Agentic Runtime
+  ➜  Version     : v0.1.0 (Hackathon Edition)
+  ➜  Origin      : ${identity.origin} (Founded by ${identity.creator})
+  ➜  Companion   : ${identity.activeUser}
+  ➜  Engine      : ANT Sovereign Runtime
 `);
 }
 
@@ -55,6 +65,15 @@ async function main() {
     const args = process.argv.slice(2);
     const currentSessionId = `cli-session-${Date.now()}`;
     
+    // Auth Check
+    try {
+        const { enforceAuthGate } = await import('../security/auth.js');
+        await enforceAuthGate();
+    } catch (e: any) {
+        console.error(chalk.red(`[FATAL] Auth System Error: ${e.message}`));
+        process.exit(1);
+    }
+
     // Auto-diagnose and heal before starting CLI
     try {
         const { SelfHealer } = await import('./healing.js');
@@ -117,7 +136,96 @@ async function main() {
         }
     }
     
-    // Handle agent commands
+    // Handle mailbox commands
+    if (args[0] === 'mailbox') {
+        const subCommand = args[1] || 'list';
+        const indexVal = args[2];
+        const ledgerPath = path.join(process.cwd(), 'workspace', 'registry', 'mailbox', 'ledger.jsonl');
+
+        try {
+            if (subCommand === 'verify') {
+                console.log(chalk.cyan('\n🔍 Memverifikasi Integritas Rantai Ledger Mailbox...'));
+                const { MailboxWriter } = await import('./agentic/mailbox/mailboxWriter.js');
+                const writer = new MailboxWriter();
+                const result = writer.verifyChainIntegrity();
+                if (result.valid) {
+                    console.log(chalk.green(`✅ Rantai hash valid. (${result.totalEntries} entri diverifikasi)`));
+                } else {
+                    console.log(chalk.red(`❌ KORUPSI TERDETEKSI pada entri #${result.failedAt}`));
+                    console.log(chalk.red(`   Alasan: ${result.reason}`));
+                }
+            } 
+            else if (subCommand === 'inspect' && indexVal) {
+                const idx = parseInt(indexVal, 10);
+                if (isNaN(idx) || idx < 1) {
+                    console.log(chalk.red('Error: Index harus berupa angka positif.'));
+                } else if (!fs.existsSync(ledgerPath)) {
+                    console.log(chalk.yellow('Mailbox kosong.'));
+                } else {
+                    const lines = fs.readFileSync(ledgerPath, 'utf-8').trim().split('\n').filter(Boolean);
+                    if (idx > lines.length) {
+                        console.log(chalk.red(`Error: Entri #${idx} tidak ditemukan. (Total: ${lines.length})`));
+                    } else {
+                        const entry = JSON.parse(lines[idx - 1]);
+                        console.log(chalk.cyan(`\n📬 DETAIL ENTRI #${idx}:`));
+                        console.log(JSON.stringify(entry, null, 2));
+                    }
+                }
+            } 
+            else if (subCommand === 'list') {
+                console.log(chalk.cyan('\n📬 ANT MODEL MAILBOX:'));
+                if (!fs.existsSync(ledgerPath)) {
+                    console.log(chalk.yellow('Mailbox kosong.'));
+                } else {
+                    const lines = fs.readFileSync(ledgerPath, 'utf-8').trim().split('\n').filter(Boolean);
+                    console.log(`Session: ${currentSessionId}\n`);
+                    const { MailboxWriter } = await import('./agentic/mailbox/mailboxWriter.js');
+                    const writer = new MailboxWriter();
+                    const chainStatus = writer.verifyChainIntegrity();
+                    
+                    if (!chainStatus.valid) {
+                         console.log(chalk.red(`⚠️ PERINGATAN: Integritas rantai hash rusak pada entri #${chainStatus.failedAt}\n`));
+                    }
+
+                    lines.forEach((line, i) => {
+                        try {
+                            const entry = JSON.parse(line);
+                            const id = String(i + 1).padStart(2, '0');
+                            const type = entry.type || 'UNKNOWN';
+                            const source = entry.sourceModel || 'Unknown';
+                            const target = entry.targetModel || 'Unknown';
+                            
+                            console.log(chalk.white(`┌───────────────────────────────────────────┐`));
+                            console.log(chalk.white(`│ ${id}  ${source.toUpperCase()} → ${target.toUpperCase()}`));
+                            console.log(chalk.white(`│     ${type}`));
+                            if (entry.claimVerificationStatus) {
+                                const statusColor = entry.claimVerificationStatus === 'VERIFIED' ? chalk.green : chalk.yellow;
+                                console.log(chalk.white(`│     Status Klaim: `) + statusColor(entry.claimVerificationStatus));
+                            }
+                            console.log(chalk.white(`│     Hash: ${entry.entryHash?.substring(0, 15)}...`));
+                            console.log(chalk.white(`└───────────────────────────────────────────┘`));
+                        } catch (e) {
+                             console.log(chalk.red(`[Error parsing entry ${i + 1}]`));
+                        }
+                    });
+                    
+                    console.log(chalk.dim(`\nGunakan: ant mailbox inspect <id> untuk melihat detail lengkap.`));
+                    console.log(chalk.dim(`Gunakan: ant mailbox verify untuk audit cryptographic ledger.`));
+                }
+            } 
+            else {
+                console.log(chalk.red(`Unknown mailbox subcommand: ${subCommand}`));
+                console.log('Gunakan:');
+                console.log('  ant mailbox list');
+                console.log('  ant mailbox inspect <id>');
+                console.log('  ant mailbox verify');
+            }
+        } catch (err: any) {
+             console.error(chalk.red(`\n[MAILBOX ERROR] ${err.message}`));
+        }
+        process.exit(0);
+    }
+    
     if (args[0] === 'agent') {
         const subCommand = args[1];
         if (subCommand === 'list') {
@@ -279,7 +387,7 @@ async function main() {
     }
 
     console.log(getAntAscii());
-    console.log(chalk.dim('Memuat konfigurasi dan memori neural...'));
+    console.log(chalk.dim('Loading system configuration & cognitive neural memories...'));
 
     try {
         const { printAdaptNotice } = await import('./ant_adapt.js');
@@ -293,45 +401,37 @@ async function main() {
         const activeModel = brain.custom_model || 'gemini-2.0-flash';
         const provider = brain.provider || 'Google Gemini';
 
+        const termWidth = Math.max(36, Math.min((process.stdout.columns || 80) - 2, 72));
+        const borderH = '─'.repeat(termWidth - 2);
+
         const printLine = (content: string) => {
-            const innerWidth = 58;
+            const innerWidth = termWidth - 2;
             const clean = content.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
             const rawLength = clean.length;
             const padding = Math.max(0, innerWidth - rawLength);
             console.log(chalk.cyan('│') + content + ' '.repeat(padding) + chalk.cyan('│'));
         };
 
-        console.log(chalk.cyan('╭──────────────────────────────────────────────────────────╮'));
+        console.log(chalk.cyan(`╭${borderH}╮`));
         printLine(`  ${chalk.bold.white('ANT — Agentic Native Task v0.1.0')}`);
         printLine('');
         printLine(`  ${chalk.cyan('Model:')} ${chalk.white(activeModel)} (${chalk.dim(provider)})`);
-        printLine(`  ${chalk.cyan('Cognitive Core:')} ${chalk.white('ANT Core')}`);
+        printLine(`  ${chalk.cyan('Cognitive Core:')} ${chalk.white('ANT Core (MindBy Powered)')}`);
         printLine(`  ${chalk.cyan('Session ID:')} ${chalk.white(currentSessionId)}`);
         printLine('');
         printLine(`  ${chalk.bold.green('Tips for getting started:')}`);
+        printLine(`  ${chalk.dim('• Type / to open interactive slash commands')}`);
         printLine(`  ${chalk.dim('• Type ! <command> to run a shell command inline')}`);
-        printLine(`  ${chalk.dim('• Type /new_chat to fresh cognitive session')}`);
+        printLine(`  ${chalk.dim('• Type /store <text> to persist cognitive memory')}`);
         printLine('');
-        console.log(chalk.cyan('╰──────────────────────────────────────────────────────────╯\n'));
+        console.log(chalk.cyan(`╰${borderH}╯\n`));
     } catch (e: any) {
-        console.log(chalk.yellow(`[DASHBOARD LOAD WARN] Gagal memuat info detail: ${e.message}\n`));
+        console.log(chalk.yellow(`[DASHBOARD LOAD WARN] Failed to load detail: ${e.message}\n`));
     }
 
-    // Auto-start Trading Loop if enabled in .env (AGY Autostart Alignment)
-    try {
-        const envPath = path.join(process.cwd(), '.env');
-        if (fs.existsSync(envPath)) {
-            const envContent = fs.readFileSync(envPath, 'utf-8');
-            const match = envContent.match(/^TRADING_LOOP_ENABLED=(true|false)/m);
-            if (match && match[1] === 'true') {
-                console.log(chalk.dim('ℹ Autopilot Trading Loop (disabled in ANT CLI).\n'));
-            }
-        }
-    } catch (e: any) {}
-
-    console.log(chalk.green('Sistem Siap! ANT berjalan dalam mode Standalone CLI.'));
-    console.log(chalk.dim('(Ketik "exit" atau "quit" untuk keluar)'));
-    console.log(chalk.dim('(Ketik "/help" untuk melihat perintah teknis)\n'));
+    console.log(chalk.green('System Ready. ANT is operating in Sovereign Agentic CLI mode.'));
+    console.log(chalk.dim('(Type "exit" or "quit" to disconnect)'));
+    console.log(chalk.dim('(Type "/" or "/help" to view interactive commands)\n'));
 
     // ── Project Auto-Detection ───────────────────────────────────────────────
     // Baca package.json / README untuk inject konteks proyek ke sesi baru
@@ -359,7 +459,7 @@ async function main() {
 
     while (true) {
         const input = await askUser(chalk.cyan('You ❯ '));
-        const text = input.trim();
+        let text = input.trim();
         
         if (!text) continue;
 
@@ -414,7 +514,8 @@ async function main() {
 
         // ── AGY CLI Alignment: Exit/Quit ────────────────────────────────
         if (text.toLowerCase() === 'exit' || text.toLowerCase() === 'quit' || text === '/exit' || text === '/quit') {
-            console.log(chalk.green('ANT: Sampai jumpa, Ard!'));
+            const identity = readAntIdentity();
+            console.log(chalk.green(`ANT: Session saved. Goodbye, ${identity.activeUser}!`));
             break;
         }
 
@@ -423,7 +524,89 @@ async function main() {
             contextHistory = [];
             console.clear();
             console.log(getAntAscii());
-            console.log(chalk.green('Sirkuit percakapan telah disegarkan. Lembaran baru dimulai, Ard!\n'));
+            console.log(chalk.green('Conversation circuit refreshed. Clean context initialized.\n'));
+            continue;
+        }
+
+        // ── MINDBY MEMORY: /store ──────────────────────────────────────
+        if (text.startsWith('/store')) {
+            const memoryContent = text.replace(/^\/store\s*/, '').trim();
+            if (!memoryContent) {
+                console.log(chalk.yellow('  Usage: /store <important_memory_content>'));
+                console.log(chalk.dim('  Example: /store Target final submission for CockroachDB Hackathon is August 18, 2026.'));
+                continue;
+            }
+            console.log(chalk.dim('  Persisting memory to Vault...'));
+            const success = await storeCockroachMemory(memoryContent, undefined, ['cli_user']);
+            if (success) {
+                console.log(chalk.green(`  ✅ Memory successfully stored to CockroachDB Cloud Serverless!`));
+            } else {
+                console.log(chalk.yellow(`  ℹ Memory saved to Local Vault (Offline).`));
+            }
+            continue;
+        }
+
+        // ── MINDBY MEMORY: /recall ─────────────────────────────────────
+        if (text.startsWith('/recall')) {
+            const query = text.replace(/^\/recall\s*/, '').trim();
+            if (!query) {
+                console.log(chalk.yellow('  Usage: /recall <keyword_or_topic>'));
+                continue;
+            }
+            console.log(chalk.cyan(`\n🔍 Searching semantic memories in CockroachDB for: "${query}"...`));
+            const memories = await recallCockroachMemory([], 5);
+            if (memories.length === 0) {
+                console.log(chalk.yellow('  No relevant memories found.'));
+            } else {
+                console.log(chalk.green(`  Found ${memories.length} relevant memories:`));
+                memories.forEach((m, idx) => {
+                    console.log(`  ${chalk.bold(idx + 1)}. ${m.content} ${chalk.dim(`(${m.createdAt})`)}`);
+                });
+            }
+            console.log();
+            continue;
+        }
+
+        // ── MINDBY MEMORY: /memories ───────────────────────────────────
+        if (text === '/memories') {
+            console.log(chalk.cyan('\n📚 STORED SEMANTIC MEMORIES IN DATABASE:'));
+            const memories = await listCockroachMemories(15);
+            if (memories.length === 0) {
+                console.log(chalk.yellow('  No semantic memories stored yet. Use /store to persist one.'));
+            } else {
+                memories.forEach((m, idx) => {
+                    console.log(`  ${chalk.cyan(`[#${idx + 1}]`)} ${m.content} ${chalk.dim(`• ${m.createdAt}`)}`);
+                });
+            }
+            console.log();
+            continue;
+        }
+
+        // ── MINDBY MEMORY: /vault ──────────────────────────────────────
+        if (text.startsWith('/vault')) {
+            const parts = text.split(' ');
+            const targetVault = parts[1]?.toLowerCase();
+            if (targetVault === 'cloud' || targetVault === 'local') {
+                setVaultMode(targetVault);
+                console.log(chalk.green(`  ✅ Active Memory Vault switched to: [${targetVault.toUpperCase()}]`));
+            } else {
+                console.log(chalk.cyan(`\n  Current Active Memory Vault: [${getVaultMode().toUpperCase()}]`));
+                console.log(chalk.dim('  Usage: /vault cloud  (Persist to CockroachDB Serverless)'));
+                console.log(chalk.dim('  Usage: /vault local  (Persist to local file-based offline vault)\n'));
+            }
+            continue;
+        }
+
+        // ── MINDBY MEMORY: /health ─────────────────────────────────────
+        if (text === '/health') {
+            console.log(chalk.cyan('\n🏥 SYSTEM & COGNITIVE MEMORY HEALTH AUDIT:'));
+            const health = await checkCockroachHealth();
+            console.log(`  • CockroachDB Status : ${health.status === 'CONNECTED' ? chalk.green('CONNECTED ✅') : chalk.yellow(health.status)}`);
+            console.log(`  • Engine Type        : ${chalk.white(health.details)}`);
+            console.log(`  • Total Memories     : ${chalk.cyan(health.totalMemories)} entries`);
+            console.log(`  • Evidence Ledgers   : ${chalk.cyan(health.totalEvidences)} verified proofs`);
+            console.log(`  • Active Vault       : ${chalk.bold.white(getVaultMode().toUpperCase())}`);
+            console.log();
             continue;
         }
 

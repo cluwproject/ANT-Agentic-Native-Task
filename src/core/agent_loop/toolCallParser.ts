@@ -1,16 +1,6 @@
 // ============================================================================
 // ANT — CLI Agent Loop — Tool Call Parser
 // ============================================================================
-// CATATAN ARSITEKTUR:
-// Versi lama memakai indexOf('{') sampai lastIndexOf('}') — bisa salah tangkap
-// kalau ada lebih dari satu blok {...} dalam teks (mis. model menjelaskan
-// format JSON sebagai contoh sebelum benar-benar memanggil tool).
-//
-// Modul ini menggantinya dengan dua strategi lebih andal:
-//  1. Fenced code block (\`\`\`json ... \`\`\`) — prioritas utama, format yang
-//     diminta di system instruction.
-//  2. Brace-counting scan yang menghormati string literal dan nested object —
-//     fallback jika model tidak memakai fenced block.
 
 import type { ToolCall } from './types.js';
 
@@ -18,6 +8,27 @@ export interface ParseResult {
     toolCalls: ToolCall[];
     cleanedText: string;
     parseError: boolean;
+}
+
+function cleanJsonString(str: string): string {
+    return str
+        .trim()
+        .replace(/,\s*([}\]])/g, '$1') // Remove trailing commas
+        .replace(/(?:\r\n|\r|\n)/g, '\n');
+}
+
+function tryParseJson(str: string): any {
+    try {
+        return JSON.parse(str);
+    } catch {
+        try {
+            // Attempt repair for unescaped newlines inside strings
+            const sanitized = str.replace(/(?<=:\s*"[^"]*)\n(?=[^"]*")/g, '\\n');
+            return JSON.parse(sanitized);
+        } catch {
+            return null;
+        }
+    }
 }
 
 export function parseToolCall(rawResponse: string): ParseResult {
@@ -31,44 +42,65 @@ export function parseToolCall(rawResponse: string): ParseResult {
     const toolCalls: ToolCall[] = [];
     let parseError = false;
 
-    // 1. Prioritaskan fenced code block eksplisit (Bisa lebih dari satu)
-    const fencedRegex = /\`\`\`(?:json)?\n([\s\S]*?)\n\`\`\`/g;
+    // 1. Prioritaskan format tag <action>...</action> (Format ANT Native v2 & ChatML)
+    const actionRegex = /<action>\s*([\s\S]*?)\s*<\/action>/gi;
     let match;
+    while ((match = actionRegex.exec(cleaned)) !== null) {
+        const rawAction = match[1].trim();
+        const parsed = tryParseJson(rawAction);
+        if (parsed) {
+            const toolName = parsed.tool || parsed.name || parsed.action;
+            const toolArgs = parsed.args || parsed.arguments || parsed.parameters || parsed;
+            if (toolName && typeof toolName === 'string') {
+                toolCalls.push({ tool: toolName, args: toolArgs });
+                cleaned = cleaned.replace(match[0], '');
+                continue;
+            }
+        }
+        parseError = true;
+    }
+
+    // 2. Fenced code blocks: ```json ... ``` atau ``` ... ```
+    const fencedRegex = /\`\`\`(?:json)?\s*\n([\s\S]*?)\n\`\`\`/gi;
     while ((match = fencedRegex.exec(cleaned)) !== null) {
-        if (match[1].includes('"tool"') || match[1].includes('"name"')) {
-            try {
-                const parsed = JSON.parse(match[1]);
-                const toolName = parsed.tool || parsed.name;
-                const toolArgs = parsed.args || parsed.arguments || parsed.parameters || {};
+        const blockContent = match[1].trim();
+        if (blockContent.includes('"tool"') || blockContent.includes('"name"') || blockContent.includes('"action"')) {
+            const parsed = tryParseJson(cleanJsonString(blockContent));
+            if (parsed) {
+                const toolName = parsed.tool || parsed.name || parsed.action;
+                const toolArgs = parsed.args || parsed.arguments || parsed.parameters || parsed;
                 if (toolName && typeof toolName === 'string') {
                     toolCalls.push({ tool: toolName, args: toolArgs });
-                    // Hapus block ini agar tidak double-parsed di fallback
                     cleaned = cleaned.replace(match[0], '');
+                    continue;
                 }
-            } catch {
-                parseError = true;
             }
+            parseError = true;
         }
     }
 
-    // 2. Fallback: brace-matching scan (Mencari semua blok JSON yang tersisa)
+    // 3. Fallback: brace-matching scan (Mencari semua blok JSON mandiri)
     let candidate: string | null;
-    while ((candidate = extractFirstBalancedJsonWithKey(cleaned, ['tool', 'name'])) !== null) {
-        try {
-            const parsed = JSON.parse(candidate);
-            const toolName = parsed.tool || parsed.name;
-            const toolArgs = parsed.args || parsed.arguments || parsed.parameters || {};
+    while ((candidate = extractFirstBalancedJsonWithKey(cleaned, ['tool', 'name', 'action'])) !== null) {
+        const parsed = tryParseJson(cleanJsonString(candidate));
+        if (parsed) {
+            const toolName = parsed.tool || parsed.name || parsed.action;
+            const toolArgs = parsed.args || parsed.arguments || parsed.parameters || parsed;
             
             if (toolName && typeof toolName === 'string') {
                 toolCalls.push({ tool: toolName, args: toolArgs });
                 cleaned = cleaned.replace(candidate, '');
-            } else {
-                // Hapus agar loop while tidak infinite
-                cleaned = cleaned.replace(candidate, '');
+                continue;
             }
-        } catch {
+        }
+        // Hapus kandidat agar tidak terjadi infinite loop
+        cleaned = cleaned.replace(candidate, '');
+    }
+
+    // 4. Deteksi kegagalan format sintaksis (misal model menulis "Langkah 1: Menulis script" tanpa code block yang valid)
+    if (toolCalls.length === 0) {
+        if (/\{\s*"(?:tool|action|name)"\s*:/i.test(cleaned)) {
             parseError = true;
-            cleaned = cleaned.replace(candidate, '');
         }
     }
 
@@ -76,10 +108,7 @@ export function parseToolCall(rawResponse: string): ParseResult {
 }
 
 /**
- * Cari objek JSON valid pertama dalam teks yang mengandung salah satu key tertentu,
- * dengan brace-counting yang benar (menghitung ulang setiap kali menemukan
- * '{' baru sebagai titik awal, mengabaikan kurung kurawal di dalam string
- * literal, dan menghormati escape character).
+ * Cari objek JSON valid pertama dalam teks yang mengandung salah satu key tertentu.
  */
 function extractFirstBalancedJsonWithKey(text: string, requiredKeys: string[]): string | null {
     for (let start = text.indexOf('{'); start !== -1; start = text.indexOf('{', start + 1)) {
@@ -103,7 +132,7 @@ function extractFirstBalancedJsonWithKey(text: string, requiredKeys: string[]): 
                     if (requiredKeys.some(key => candidate.includes(`"${key}"`))) {
                         return candidate;
                     }
-                    break; // objek ini tidak relevan, lanjut cari '{' berikutnya
+                    break;
                 }
             }
         }

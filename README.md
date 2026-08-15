@@ -1,104 +1,223 @@
-# 🐜 ANT — Agentic Native Task (v0.1.0)
+# ANT-CLI — Agentic Native Task
+### Sovereign Agentic Runtime with MindBy Persistent Cognitive Memory Engine
 
-> **You Ask. ANT Acts.**  
-> A Sovereign, Standalone, On-Device Autonomous Agentic CLI with Inter-Model Mailbox Audit, OS Auto-Adaptation, and High-Trust Security.
-
----
-
-## 🌟 Overview
-
-**ANT (Agentic Native Task)** is a next-generation autonomous command-line agent derived and evolved from the CLUW Genesis architecture. Built for high performance on local devices (Android Termux, Linux, macOS, and Windows), ANT operates with complete sovereignty, dynamic context continuity, cross-model relay auditing, and self-healing resilience.
+> **You Ask. ANT Acts. Memory Persists. Evidence Remains.**  
+> *Built for CockroachDB × AWS Hackathon 2026 — Track: Agentic Memory*
 
 ---
 
-## ⚡ Key Features & Innovations
+## 🌟 Executive Overview
 
-### 1. 📬 `AntModelMailbox` (Inter-Model Relay & Audit System)
-- **Context Continuity Across Models**: When switching models (e.g. from `gemma4:31b-cloud` to `deepseek-r1`), the departing agent writes a structured handover briefing into `workspace/registry/mailbox/ledger.jsonl`.
-- **SHA-256 Hash-Chained Ledger**: Append-only, tamper-evident audit ledger (`entryHash` + `prevHash`) to verify chain integrity.
-- **Claim Verifier**: State machine verifying model claims against real execution evidence (`VERIFIED`, `UNVERIFIED`, `CONTRADICTED`, `NEEDS_INDEPENDENT_CHECK`).
-- **Circuit Breaker & Rate Limiter**: Atomic persistent rate-limiting (`circuit-state.json`) and operator hard-stop kill-switch.
-- **ATK-10 Prompt Injection Protection**: Sanitizes and escapes untrusted handover inputs into `<untrusted_handover>` XML delimiters.
-- **ARCR Channel Confinement**: Restricts agent communication channels and logs unauthorized side-channel attempts.
+**ANT-CLI (Agentic Native Task)** is a model-agnostic, sovereign agent runtime engineered to turn natural-language intent into observable, verifiable action. 
 
-### 2. 🌐 `ANT Adapt` (OS & Environment Auto-Sensing Engine)
-- **Cross-Platform Auto-Detection**: Detects Termux Proot, Linux, macOS, Windows CMD/PowerShell, and WSL.
-- **Dynamic Operator Profile**: Distinguishes Developer/Creator mode (`Ard`) from Public Operator mode, avoiding `root`/`rootlokal` misconceptions.
-
-### 3. 🛡️ Flexible 3-Way Approval Gate
-- **Interactive Approval Options**:
-  1. `Yes, approve once` (Sekali ini)
-  2. `Yes, approve all for this session` (Setuju semua / Jangan tanya lagi di sesi ini)
-  3. `No, reject` (Tolak / Batal)
-- **Session Auto-Approve Policy**: Remembers session policy when option 2 is chosen to allow uninterrupted execution.
-
-### 4. 🧠 Multi-Provider AI Gateway & SLM Guard
-- Supports Google Gemini, Anthropic Claude, OpenAI, DeepSeek, and local Ollama (`gemma4:31b-cloud`, etc.).
-- **SLM Micro-Prompting**: Automatically prunes heavy system prompts for lightweight local models (<3B) on mobile devices to prevent RAM/OOM crashes.
-
----
-
-## 🚀 Quick Start
-
-### Installation
-
-```bash
-# Clone or navigate to the ant-cli directory
-cd /root/ant-cli
-
-# Install dependencies
-npm install
-
-# Perform typecheck & build production bundle
-npm run typecheck
-npm run build
-```
-
-### Usage
-
-```bash
-# Start interactive CLI mode
-npm run ant
-# or
-node bin/ant.js
-
-# One-shot command execution mode
-node bin/ant.js -p "Inspect the src directory and report file structure"
-
-# Show help menu
-node bin/ant.js --help
-```
-
-### Model Switch & Mailbox Handover
-
-```bash
-# In interactive chat:
-/model gemma4:31b-cloud
-/model deepseek-r1
-```
-
----
-
-## 📐 Project Architecture
+By unifying ANT's autonomous execution engine with **MindBy OS (Persistent Cognitive Memory Engine)**, ANT bridges the critical gap between **execution agency** and **long-term cognitive memory**:
+1. **Autonomous Agency:** ReAct loops, multi-step tool execution, sub-agents, and approval gates.
+2. **Persistent Agentic Memory:** 4-tier cognitive memory partitioning powered by **CockroachDB Serverless (Distributed Vector Indexing)** and **AWS Bedrock**.
+3. **Cryptographic Truth:** Tamper-proof audit trails (*Claim != Truth*) backed by SHA-256 evidence ledgers.
+4. **Cross-Model Interoperability:** Multi-model state handovers (`ANT-MAIL/1.0`) across local SLMs (`ant:1b`) and cloud reasoners.
 
 ```text
-src/
-├── core/
-│   ├── actions/          # Modular action handlers (file, shell, web, skill, browser)
-│   ├── ai/               # Multi-provider LLM router (Gemini, Claude, OpenAI, Ollama)
-│   │   ├── providers/    # Provider-specific callers (gemini, anthropic, openai)
-│   │   └── tiers/        # SLM vs LLM tier routing
-│   ├── agentic/          # Sub-agents, HTN planner, reflection loop, branching, mailbox
-│   │   └── mailbox/      # AntModelMailbox: fileLock, writer, circuitBreaker, claimVerifier, promptInjector, channelGuard
-│   ├── agent_loop/       # Core execution loop, UI loggers, permissions
-│   ├── ant_adapt.ts      # OS & Environment auto-sensing engine
-│   └── workspace/        # Workspace state and Google Drive/Sheets integration
-├── security/             # FS Guard, Trust score gate, Permissions
-└── utils/                # Sovereign logger and prompt formatters
+                 USER / OPERATOR (Ard)
+                           │
+                           ▼
+                      ┌─────────┐
+                      │   ANT   │ ◄── [Slash Menu / CLI / MCP]
+                      └────┬────┘
+                           │
+       ┌───────────────────┼───────────────────┐
+       ▼                   ▼                   ▼
+  HTN Planner       MindBy Memory OS       Tool Engine
+(ReAct Loop)       (4-Tier Partition)     (Terminal/Web/Git)
+       │                   │                   │
+       └───────────────────┼───────────────────┘
+                           ▼
+                    MODEL ADAPTERS
+       ┌───────────────────┼───────────────────┐
+       ▼                   ▼                   ▼
+  Local SLM             Cloud LLM          Vision / Observer
+  (ant:1b)          (AWS Bedrock/Ollama)     (MiniCPM-V)
+                           │
+                           ▼
+                 ┌───────────────────┐
+                 │  ANT MODEL RELAY  │ ◄── [AntModelMailbox]
+                 └─────────┬─────────┘
+                           │
+       ┌───────────────────┴───────────────────┐
+       ▼                                       ▼
+┌───────────────────────────────┐   ┌───────────────────────────────┐
+│       EVIDENCE LEDGER         │   │      COCKROACHDB CLOUD        │
+│   SHA-256 Kriptografis        │   │  Distributed Vector Indexing  │
+│   (Claim != Truth Verifier)   │   │  (768-dim Embeddings / ACID)  │
+└───────────────────────────────┘   └───────────────────────────────┘
 ```
 
 ---
 
-## 🤝 License
+## 🧠 MindBy Cognitive Memory Engine (on CockroachDB & AWS)
 
-MIT License — Created by **Ard** for the ANT Sovereign Ecosystem under the CLUW Genesis heritage.
+ANT integrates MindBy OS to provide production-grade, globally distributed persistent memory:
+
+### 1. 4-Tier Cognitive Memory Partitioning
+* **Working Memory (`context.json`):** Active conversation and task execution state.
+* **Episodic Memory (`episodic.json` & CockroachDB):** Experiential execution records, past error debugging solutions, and system events.
+* **Semantic Memory (`semantic_memories` Table):** 768-dimensional vector embeddings generated by AWS Bedrock (Amazon Titan Embeddings) and indexed in CockroachDB for fast cosine similarity search.
+* **Core & Procedural Memory (`core.json` & `procedures.json`):** Sovereign constitution (CLUW-Genesis), user preferences, and custom operational procedures.
+
+### 2. CockroachDB Distributed Vector Indexing
+* **Zero Consistency Gap:** Relational metadata, memory tags, and vector embeddings reside in the exact same ACID-compliant transaction.
+* **Distributed Cosine Search:**
+  ```sql
+  SELECT id, content, (1 - (embedding <=> $1::VECTOR(768))) AS score
+  FROM semantic_memories
+  ORDER BY score DESC LIMIT 5;
+  ```
+* **Always-On High Availability:** Multi-region persistence ensuring the agent's brain never suffers data loss or maintenance downtime.
+
+### 3. Dual-Vault Resilience Architecture
+* **Cloud Vault (`/vault cloud`):** Synchronizes with CockroachDB Serverless.
+* **Local Vault (`/vault local`):** Instant offline fallback to local vector store (Vectra) when internet connectivity is constrained (ideal for mobile Termux environments).
+
+---
+
+## 📬 AntModelMailbox & Evidence Ledger
+
+### 1. Inter-Model Handover Protocol (`ANT-MAIL/1.0`)
+When switching between different AI models (e.g. from local `ant:1b` to cloud `Claude 3.5 Sonnet` via AWS Bedrock), ANT produces a structured state handover:
+```json
+{
+  "protocol": "ANT-MAIL/1.0",
+  "type": "HANDOVER",
+  "from": "ant:1b",
+  "to": "bedrock_claude",
+  "taskState": "Analyzing system error logs",
+  "evidenceHash": "536e9a9df8041a144aa01ed1ea7699041baa7e9db7081acb9f5dc4fa838b37fe"
+}
+```
+
+### 2. Auditable by Design: `Claim != Truth`
+* Model outputs (even `<think>` blocks) are treated as **unverified claims**.
+* Every execution action (shell, file write, web search) generates a **SHA-256 evidence record**.
+* Claims only enter the ground-truth memory after being validated by the **Claim Verifier** and logged into CockroachDB's `evidence_ledger`.
+
+---
+
+## 🤖 The Native Brain: `ant:1b` (Operator SLM)
+
+ANT features a fine-tuned native Small Language Model (**`ant:1b`**, based on Gemma 3 1B) trained with LoRA for low-latency terminal orchestration:
+* **5 Pillars of Knowledge:**
+  1. *The Soul:* Sovereign identity, loyalty to creator (Ard), and CLUW-Genesis roots.
+  2. *The Body:* Runtime verification logic and evidence enforcement.
+  3. *The Hand:* Structured `<action>` tool execution (Shell, Web Search, File I/O, Mailbox).
+  4. *The Security:* Anti-spoofing protection and mandatory Approval Gate for destructive actions.
+  5. *The Chat:* Natural brainstorming and technical reasoning without hallucinating tool calls.
+
+---
+
+## 🎮 Interactive Terminal Slash Commands
+
+Type `/` in ANT-CLI to open the interactive autocomplete menu with real-time filtering:
+
+```text
+─────────────────────────────────────────────────────────────────────────────────
+> /
+─────────────────────────────────────────────────────────────────────────────────
+> /store                          Simpan memori semantik ke CockroachDB / Vault
+  /recall                         Cari memori masa lalu via Vector Search
+  /memories                       Lihat daftar memori semantik tersimpan
+  /vault                          Ganti brankas memori (CockroachDB cloud / local)
+  /mailbox                        Buka bilik inter-model relay & handover ledger
+  /health                         Audit status kesehatan CockroachDB & memori
+  /new_chat                       Mulai sesi percakapan baru (fresh context)
+  /resume                         Lanjutkan sesi sebelumnya by ID
+   ↓ 14 more
+```
+
+### Command Reference Table:
+
+| Command | Category | Description |
+| :--- | :---: | :--- |
+| **`/store <text>`** | Memory | Save important insight into CockroachDB Vector Memory |
+| **`/recall <query>`** | Memory | Semantic vector similarity search across past memories |
+| **`/memories`** | Memory | View all stored semantic memories in CockroachDB |
+| **`/vault [cloud\|local]`** | Memory | Toggle active vault (CockroachDB Cloud vs Local Offline) |
+| **`/mailbox`** | Agentic | Inspect inter-model relay handovers and evidence ledger |
+| **`/health`** | System | Audit CockroachDB connection, memory stats & evidence integrity |
+| **`/new_chat`** | Context | Refresh context circuit for a new clean task |
+| **`/resume [id]`** | Context | Restore previous session with context bridging |
+| **`/model [name]`** | Engine | Hot-swap active AI cognitive model (Ollama/Bedrock/OpenAI) |
+| **`/help`** | Info | Display full documentation and operational options |
+| **`/exit`** | System | Disconnect with opt-in memory consolidation ritual |
+
+---
+
+## 🚀 Quickstart & Setup
+
+### 1. Prerequisites
+* Node.js >= 20.0.0
+* CockroachDB Serverless Cluster (Free Tier on `cockroachlabs.cloud`)
+* (Optional) AWS Bedrock Credentials / Ollama for local inference
+
+### 2. Installation
+```bash
+git clone https://github.com/renaldyadri10/ant-cli.git
+cd ant-cli
+npm install
+```
+
+### 3. Environment Configuration (`.env`)
+Copy `.env.example` to `.env` and fill in your keys:
+```env
+USER_NAME=Ard
+AI_PROVIDER=ollama
+CUSTOM_MODEL=gpt-oss:120b-cloud
+
+# CockroachDB Serverless (Persistent Memory Layer)
+DATABASE_URL="postgresql://<user>:<pass>@<cluster>.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
+MEMORY_VAULT_MODE=cloud
+
+# AWS Bedrock (Titan Embeddings & Inference)
+AWS_ACCESS_KEY_ID=your_aws_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret
+AWS_REGION=us-east-1
+
+# Web Grounding
+TAVILY_API_KEY=your_tavily_key
+```
+
+### 4. Launching ANT-CLI
+
+You can run ANT-CLI using either of the two execution modes:
+
+* **Mode 1: `npm start` (Live Dev & Research Mode — Recommended)**
+  ```bash
+  npm start
+  ```
+  *Directly executes the TypeScript source via `tsx` for active prototyping.*
+
+* **Mode 2: `ant` (Global Standalone CLI Command)**
+  ```bash
+  # Compile binary
+  npm run build
+  
+  # Run directly from anywhere
+  ant
+  ```
+
+---
+
+## 🛠️ Technology Stack
+
+* **Persistent Memory:** CockroachDB Serverless (`VECTOR(768)` Distributed Indexing, ACID Transaction Ledger)
+* **Cloud Cognitive Engine:** AWS Bedrock (Amazon Titan Text Embeddings V2, Claude 3.5 Sonnet)
+* **Edge & Local SLM:** `ant:1b` (Gemma 3 1B fine-tuned via Unsloth / LoRA on Kaggle GPU)
+* **Runtime & Framework:** Node.js, TypeScript, Model Context Protocol (MCP), `pg`, Chalk
+
+---
+
+## 📜 Intellectual Property & Sovereign Declaration
+
+* **Creator / Operator:** Renaldy Adri (Ard)
+* **Parent Architecture:** CLUW-Genesis (Declared 27 July 2026)
+* **License:** [MIT License](LICENSE)
+
+*"Model AI bersifat sementara. Arsitektur kognitif dan memori bersifat berkelanjutan."*

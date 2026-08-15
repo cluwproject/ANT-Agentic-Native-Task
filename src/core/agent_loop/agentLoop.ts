@@ -75,10 +75,16 @@ export function getSystemInstruction(): string {
     `\`\`\`\n` +
     `Gunakan tag <thought> untuk berpikir sebelum bertindak. Fokus selesaikan tugas Ard!\n\n` +
     `[ATURAN PANGGILAN ALAT — WAJIB DIPATUHI]\n` +
-    `- Untuk melakukan tindakan (termasuk mengeksekusi skill atau membaca URL), Anda WAJIB memanggil JSON block. Menulis narasi "Aku akan mengeksekusi skill X" tanpa memberikan JSON block TIDAK AKAN mengeksekusi apa pun!\n` +
+    `- DILARANG KERAS berjanji "aku akan mengerjakannya di latar belakang" atau "sambil kamu istirahat aku akan buatkan". Anda TIDAK MEMILIKI thread latar belakang mandiri! Jika user meminta membuat file, script, atau roadmap, Anda WAJIB LANGSUNG memanggil tool di giliran ini juga!\n` +
+    `- UNTUK MEMBUAT ATAU MENULIS FILE: SELALU gunakan tool \`write_file\` (dengan properti \`file\` dan \`content\`). DILARANG menggunakan \`cat << 'EOF'\` atau \`printf\` di \`shell_exec\` karena rentan memicu Security Violation atau shell escape error.\n` +
+    `- Untuk melakukan tindakan (termasuk mengeksekusi skill atau membaca URL), Anda WAJIB memanggil JSON block atau tag <action>. Menulis narasi "Aku akan mengeksekusi X" tanpa memanggil tool TIDAK AKAN mengeksekusi apa pun!\n` +
     `- Jika Ard meminta menjalankan skill (misal: "gunakan skill social_resolver"), jalankan via shell_exec (misal: node social_resolver.cjs).\n` +
     `- Jika Ard memberikan URL, SELALU gunakan tool \`fetch_url_content\` untuk melihat isinya terlebih dahulu, jangan pernah berasumsi Anda tidak bisa membaca URL.\n` +
     `- Jangan pernah mengasumsikan keberhasilan eksekusi tool sebelum tool tersebut benar-benar dijalankan dan hasilnya dikembalikan kepada Anda di giliran berikutnya.\n\n` +
+    `[ATURAN PENCARIAN FILE & STRUKTUR LINUX — WAJIB DIPATUHI]\n` +
+    `- Sadari lingkungan sistem: Di Linux, direktori home untuk user 'root' berada di '/root' (atau '~' / '$HOME'), BUKAN '/home/root'. Direktori '/home' hanya untuk user biasa non-root.\n` +
+    `- Saat mencari file/folder proyek yang diminta user (misal: cluwgenesis, ant-cli), JANGAN PERNAH menjalankan perintah 'find /' dari root OS tanpa batas karena akan memindai seluruh OS (/proc, /sys, dll) dan terkena batas waktu timeout (30s).\n` +
+    `- Utamakan pencarian cepat terarah: periksa direktori induk '..', home user '/root' atau '~' (misal: 'find ~ -maxdepth 3 -name "*nama*"' atau 'ls -d /root/*nama* 2>/dev/null').\n\n` +
     `[ATURAN BUKTI — WAJIB DIPATUHI]\n` +
     `Anda TIDAK PERNAH boleh menulis sendiri: hash SHA-256, status "file berhasil dibaca", ` +
     `dimensi/metadata screenshot, atau klaim verifikasi lain. Nilai-nilai itu HANYA boleh berasal ` +
@@ -195,9 +201,22 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
 
             const { toolCalls, cleanedText, parseError } = parseToolCall(response);
 
-            if (parseError) {
+            if (parseError && toolCalls.length === 0) {
                 ui.printToolParseFailure();
-                safeLog('warn', 'Gagal parse tool call dari respons model', { response });
+                safeLog('warn', 'Gagal parse tool call dari respons model, memicu perbaikan format', { response });
+                currentMessages.push({ role: 'assistant', content: response });
+                currentMessages.push({
+                    role: 'user',
+                    content: `[SYSTEM TOOL REPAIR PROMPT]\nFormat tool call JSON yang Anda keluarkan tidak dapat di-parse atau rusak.\n` +
+                             `PANDUAN EKSEKUSI:\n` +
+                             `1. DILARANG berjanji 'akan mengerjakan di latar belakang' — panggil tool SEKARANG.\n` +
+                             `2. Untuk menulis file, gunakan tool "write_file" dengan format:\n` +
+                             `\`\`\`json\n{\n  "tool": "write_file",\n  "args": { "file": "nama_file.js", "content": "isi_file" }\n}\n\`\`\`\n` +
+                             `3. Untuk perintah terminal, gunakan "shell_exec".\n` +
+                             `Keluarkan tool call yang valid sekarang!`
+                });
+                attempts++;
+                continue;
             }
 
             // Gerbang verifikasi: tolak teks yang mengklaim bukti tanpa
@@ -233,6 +252,25 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
             await ui.printAssistantText(renderedText);
 
             if (toolCalls.length === 0) {
+                // --- GUARD: ANTI-BACKGROUND-HALU ---
+                const backgroundPromiseRegex = /(di\s+latar\s+belakang|di\s+balik\s+layar|sambil\s+.*istirahat|aku\s+akan\s+(terus\s+)?(membuat|membangun|menyiapkan|menulis|menyusun|mengumpulkan)\s+.*(nanti|di\s+latar|di\s+balik))/i;
+                if (backgroundPromiseRegex.test(cleanedText)) {
+                    safeLog('warn', 'Anti-Hallucination Guard menolak janji latar belakang palsu', { cleanedText });
+                    currentMessages.push({ role: 'assistant', content: response });
+                    currentMessages.push({
+                        role: 'user',
+                        content: `[SYSTEM SOVEREIGN DIRECTIVE — NO BACKGROUND HALU]\n` +
+                                 `PERINGATAN: DILARANG menjanjikan eksekusi di latar belakang atau sambil user istirahat!\n` +
+                                 `Anda TIDAK MEMILIKI background worker otomatis. Anda adalah agen terminal reaktif.\n` +
+                                 `Jika Anda menyatakan akan membuat folder, script, dataset, atau roadmap, Anda WAJIB LANGSUNG memanggil tool sekarang:\n` +
+                                 `- Gunakan 'write_file' untuk menulis file/script/dataset.\n` +
+                                 `- Gunakan 'shell_exec' untuk menjalankan perintah terminal.\n` +
+                                 `Keluarkan blok JSON tool sekarang untuk mengeksekusinya secara nyata!`
+                    });
+                    attempts++;
+                    continue;
+                }
+
                 // --- GUARD 2: FRESHNESS VALIDATOR ---
                 const { validateFreshness } = await import('./freshnessValidator.js');
                 const freshness = validateFreshness();

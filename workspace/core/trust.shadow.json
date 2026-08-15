@@ -1,0 +1,14 @@
+{
+  "fetch_url_content": {
+    "score": 35,
+    "consecutive_success": 0
+  },
+  "shell_exec": {
+    "score": 85,
+    "consecutive_success": 2
+  },
+  "get_current_weather": {
+    "score": 35,
+    "consecutive_success": 0
+  }
+}

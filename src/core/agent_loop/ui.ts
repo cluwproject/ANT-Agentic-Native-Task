@@ -14,25 +14,14 @@ import type { RoutingMetadata } from './types.js';
 import fs from 'fs';
 import path from 'path';
 
-marked.setOptions({
-    mangle: false,
-    headerIds: false,
-    renderer: new TerminalRenderer({
-        width: process.stdout.columns ? Math.max(80, process.stdout.columns - 4) : 120,
-        code: chalk.cyan,
-        strong: chalk.bold.white,
-        em: chalk.italic,
-        firstHeading: chalk.bold.magenta.underline,
-        heading: chalk.bold.magenta,
-        tab: 2,
-        tableOptions: {
-            style: { head: ['cyan'], border: ['gray'] },
-            wordWrap: true
-        }
-    }) as any
-});
+export function getTerminalWidth(): number {
+    const cols = process.stdout.columns || 80;
+    return Math.max(36, Math.min(cols - 2, 95));
+}
 
-const DIVIDER = chalk.dim('──────────────────────────────────────────────────────────');
+export function getDivider(): string {
+    return chalk.dim('─'.repeat(getTerminalWidth()));
+}
 
 export function startSpinner(text: string): any {
     const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
@@ -90,9 +79,22 @@ export function printThought(thought: string, durationSec: number = 0, estimated
     const tokenStr = estimatedTokens >= 1000 
         ? `${(estimatedTokens / 1000).toFixed(1)}k` 
         : `${estimatedTokens || Math.round(thought.length / 3.7)}`;
-    const durSec = durationSec || Math.round(thought.length / 500) || 1;
-    // Hanya tampilkan ringkasan 1 baris untuk menghemat ruang obrolan (Hide detail)
-    console.log(chalk.cyan(`\n▸ Thought for ${durSec}s, ${tokenStr} tokens ${chalk.dim('(Hidden)')}`));
+    const durSec = durationSec || Math.max(1, Math.round(thought.length / 500));
+    
+    // Extract clean topic headline from thought
+    const lines = thought.trim().split('\n').map(l => l.trim()).filter(Boolean);
+    let title = '';
+    if (lines.length > 0) {
+        const rawFirst = lines[0].replace(/^[\d#\-*.: ]+/, '').trim();
+        if (rawFirst && rawFirst.length >= 3 && rawFirst.length <= 65) {
+            title = rawFirst;
+        }
+    }
+
+    console.log(chalk.cyan(`\n▸ Thought for ${durSec}s, ${tokenStr} tokens`));
+    if (title) {
+        console.log(chalk.dim(`  ${title}`));
+    }
 }
 
 /** Render a beautiful unified-like git diff for file writes and edits */
@@ -159,13 +161,31 @@ export function printFileDiff(filePath: string, newContent: string) {
     console.log(chalk.dim('──────────────────────────────────────────────────────────────────'));
 }
 
-/** Prints assistant response indented for clarity */
+/** Prints assistant response cleanly with dynamic word-wrapping and turn boundaries */
 export async function printAssistantText(text: string) {
     if (!text.trim()) return;
+    const termWidth = getTerminalWidth();
+    marked.setOptions({
+        mangle: false,
+        headerIds: false,
+        renderer: new TerminalRenderer({
+            width: termWidth,
+            code: chalk.cyan,
+            strong: chalk.bold.white,
+            em: chalk.italic,
+            firstHeading: chalk.bold.magenta.underline,
+            heading: chalk.bold.magenta,
+            tab: 2,
+            tableOptions: {
+                style: { head: ['cyan'], border: ['gray'] },
+                wordWrap: true
+            }
+        }) as any
+    });
     const rendered = await marked(text);
     console.log(`\n${chalk.magenta.bold('ANT ❯')}`);
     console.log(rendered.trim());
-    console.log();
+    console.log('\n' + getDivider() + '\n');
 }
 
 /** Enclose tool call inside a continuous box boundary */
@@ -184,24 +204,27 @@ export function printToolSuccess(toolName: string, args: Record<string, any> = {
     if (toolName === 'read_file') {
         actionLabel = 'Read';
         argValue = args.file || args.path || '';
-    } else if (toolName === 'write_file') {
+    } else if (toolName === 'write_file' || toolName === 'create_file') {
         actionLabel = 'Write';
         argValue = args.file || args.path || '';
-    } else if (toolName === 'modify_file') {
+    } else if (toolName === 'modify_file' || toolName === 'edit_file') {
         actionLabel = 'Edit';
         argValue = args.file || args.path || '';
     } else if (toolName === 'list_dir') {
         actionLabel = 'ListDir';
         argValue = args.path || args.dir || '';
-    } else if (toolName === 'shell_exec') {
+    } else if (toolName === 'shell_exec' || toolName === 'exec') {
         actionLabel = 'Bash';
         argValue = args.command || '';
     } else if (toolName === 'grep_search') {
         actionLabel = 'Search';
-        argValue = args.query || '';
-    } else if (toolName === 'web_request') {
+        argValue = args.query || args.pattern || '';
+    } else if (toolName === 'web_request' || toolName === 'fetch_url_content') {
         actionLabel = 'Fetch';
         argValue = args.url || '';
+    } else if (toolName === 'manage_task') {
+        actionLabel = 'ManageTask';
+        argValue = args.action ? `${args.action} ${args.taskId || ''}` : JSON.stringify(args);
     } else {
         actionLabel = toolName.charAt(0).toUpperCase() + toolName.slice(1);
         argValue = typeof args === 'object' ? JSON.stringify(args) : String(args);
@@ -211,14 +234,14 @@ export function printToolSuccess(toolName: string, args: Record<string, any> = {
     let suffix = '';
 
     if (displayArg.length > 55) {
-        const prefixLen = 22;
-        const suffixLen = 25;
+        const prefixLen = 24;
+        const suffixLen = 24;
         displayArg = displayArg.slice(0, prefixLen) + '...' + displayArg.slice(-suffixLen);
         suffix = ' (ctrl+o to expand)';
     }
 
     const evidStr = evidenceId ? ` [EVID:${evidenceId}]` : '';
-    console.log(chalk.cyan(`● ${actionLabel}(${displayArg})${suffix}${chalk.dim(evidStr)}`));
+    console.log(chalk.cyan(`● ${actionLabel}(${displayArg})${suffix}`) + chalk.dim(evidStr));
 }
 
 export function printToolFailure(toolName: string, args: Record<string, any> = {}, error: string = '') {
@@ -228,24 +251,27 @@ export function printToolFailure(toolName: string, args: Record<string, any> = {
     if (toolName === 'read_file') {
         actionLabel = 'Read';
         argValue = args.file || args.path || '';
-    } else if (toolName === 'write_file') {
+    } else if (toolName === 'write_file' || toolName === 'create_file') {
         actionLabel = 'Write';
         argValue = args.file || args.path || '';
-    } else if (toolName === 'modify_file') {
+    } else if (toolName === 'modify_file' || toolName === 'edit_file') {
         actionLabel = 'Edit';
         argValue = args.file || args.path || '';
     } else if (toolName === 'list_dir') {
         actionLabel = 'ListDir';
         argValue = args.path || args.dir || '';
-    } else if (toolName === 'shell_exec') {
+    } else if (toolName === 'shell_exec' || toolName === 'exec') {
         actionLabel = 'Bash';
         argValue = args.command || '';
     } else if (toolName === 'grep_search') {
         actionLabel = 'Search';
-        argValue = args.query || '';
-    } else if (toolName === 'web_request') {
+        argValue = args.query || args.pattern || '';
+    } else if (toolName === 'web_request' || toolName === 'fetch_url_content') {
         actionLabel = 'Fetch';
         argValue = args.url || '';
+    } else if (toolName === 'manage_task') {
+        actionLabel = 'ManageTask';
+        argValue = args.action ? `${args.action} ${args.taskId || ''}` : JSON.stringify(args);
     } else {
         actionLabel = toolName.charAt(0).toUpperCase() + toolName.slice(1);
         argValue = typeof args === 'object' ? JSON.stringify(args) : String(args);
@@ -256,7 +282,7 @@ export function printToolFailure(toolName: string, args: Record<string, any> = {
         displayArg = displayArg.slice(0, 22) + '...' + displayArg.slice(-25) + ' (ctrl+o to expand)';
     }
 
-    console.log(chalk.red(`● ${actionLabel}(${displayArg}) failed: ${error}`));
+    console.log(chalk.cyan(`● ${actionLabel}(${displayArg})`) + chalk.red(` failed: ${error}`));
 }
 
 export function printApprovalBox(tool: string, risk: 'LOW' | 'MEDIUM' | 'HIGH', reason: string) {
@@ -282,11 +308,11 @@ export function printBlocked(reason: string) {
 
 /** Attempt limit reach message */
 export function printAttemptLimitReached(max: number) {
-    console.log('\n' + DIVIDER);
-    console.log(chalk.bold.red(`⛔ BATAS PERCOBAAN TERCAPAI (${max})`));
-    console.log(chalk.dim('Agent dihentikan paksa karena mencapai jumlah langkah maksimum.'));
-    console.log(chalk.dim('Tugas mungkin belum selesai — periksa hasil terakhir atau lanjutkan di sesi baru.'));
-    console.log(DIVIDER + '\n');
+    console.log('\n' + getDivider());
+    console.log(chalk.bold.red(`⛔ ATTEMPT LIMIT REACHED (${max})`));
+    console.log(chalk.dim('Agent was stopped because it reached the maximum step limit.'));
+    console.log(chalk.dim('Task may be incomplete — inspect the latest results or continue in a new session.'));
+    console.log(getDivider() + '\n');
 }
 
 /** Ctrl+C graceful cancel print */

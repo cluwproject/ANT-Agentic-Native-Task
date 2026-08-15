@@ -29,16 +29,77 @@ export async function handleWebOps(action: string, details: any, workspaceDir: s
         const { searchNews } = await import('../ai.js');
         const { getBrainConfig } = await import('../../shared/data.js');
         const config = await getBrainConfig();
-        
+
+        // ── LAYER 1: AUTHORITY DOMAIN FILTER ─────────────────────────────────
+        // ANT prioritizes authoritative technical sources over random blogs/opinions.
+        // Tier 1 = Official docs & specs. Tier 2 = Reputable community & repos.
+        const AUTHORITY_DOMAINS: Record<string, string[]> = {
+            tier1: [
+                'developer.mozilla.org', 'docs.python.org', 'nodejs.org/api',
+                'kotlinlang.org', 'docs.oracle.com', 'learn.microsoft.com',
+                'docs.github.com', 'pkg.go.dev', 'docs.rs',
+                'reactjs.org', 'nextjs.org', 'vuejs.org', 'angular.io',
+                'docs.docker.com', 'kubernetes.io/docs', 'docs.aws.amazon.com',
+                'cloud.google.com/docs', 'docs.anthropic.com', 'platform.openai.com/docs',
+            ],
+            tier2: [
+                'github.com', 'stackoverflow.com', 'npmjs.com',
+                'pypi.org', 'crates.io', 'pkg.go.dev',
+                'huggingface.co', 'arxiv.org', 'research.google',
+            ],
+        };
+
+        // Detect query category to dynamically select relevant domains
+        const q = (details.query || '').toLowerCase();
+        const isCoding = /javascript|typescript|python|rust|go|node|npm|pip|docker|kubernetes|api|library|package|framework|error|exception|syntax/.test(q);
+        const isAI = /model|llm|fine.?tun|lora|gguf|ollama|huggingface|transformers|pytorch|tensor/.test(q);
+
+        let enrichedQuery = details.query;
+        let domainHint = '';
+        if (isCoding) {
+            domainHint = AUTHORITY_DOMAINS.tier1.slice(0, 5).concat(AUTHORITY_DOMAINS.tier2.slice(0, 3)).join(' OR site:');
+            enrichedQuery = `${details.query} site:${domainHint}`;
+        } else if (isAI) {
+            domainHint = 'huggingface.co OR site:arxiv.org OR site:github.com OR site:pytorch.org OR site:docs.anthropic.com';
+            enrichedQuery = `${details.query} site:${domainHint}`;
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
+        const searchQuery = enrichedQuery || details.query;
+
         try {
             if (!config.tavily_api_key) throw new Error('Tavily API Key belum diset di pengaturan.');
-            const results = await searchNews(config.tavily_api_key, details.query);
-            return { status: 'success', results };
+            const results = await searchNews(config.tavily_api_key, searchQuery);
+
+            // ── LAYER 2: SOURCE AUTHORITY RANKING ────────────────────────────
+            // Tag each result with its authority tier so the model can prioritize.
+            const allDomains = [...AUTHORITY_DOMAINS.tier1, ...AUTHORITY_DOMAINS.tier2];
+            const ranked = (results || []).map((r: any) => {
+                const url = (r.url || r.link || '').toLowerCase();
+                const isTier1 = AUTHORITY_DOMAINS.tier1.some(d => url.includes(d));
+                const isTier2 = AUTHORITY_DOMAINS.tier2.some(d => url.includes(d));
+                return {
+                    ...r,
+                    authority_tier: isTier1 ? 1 : isTier2 ? 2 : 3,
+                    authority_note: isTier1
+                        ? '[OFFICIAL DOCS — High Trust]'
+                        : isTier2
+                        ? '[Community / Repo — Medium Trust]'
+                        : '[Unknown Source — Verify Before Use]',
+                };
+            }).sort((a: any, b: any) => a.authority_tier - b.authority_tier);
+            // ─────────────────────────────────────────────────────────────────
+
+            return {
+                status: 'success',
+                results: ranked,
+                ant_search_note: 'Results ranked by source authority. Trust Tier 1 (Official Docs) first. Cross-reference Tier 2/3 findings with Tier 1 before executing any code.',
+            };
         } catch (e: any) {
             Logger.log('WARN', `Tavily Search Failed (${e.message}). Engaging Autonomous Playwright Bridge...`, {}, 'SYSTEM');
             
             const { fallbackWebSearch } = await import('../agent_loop/browserTool.js');
-            const fallbackResult = await fallbackWebSearch(details.query);
+            const fallbackResult = await fallbackWebSearch(searchQuery);
             
             if (fallbackResult.fallback_error) {
                 if (fallbackResult.fallback_error === 'BOT_WALL_DETECTED') {
@@ -47,7 +108,11 @@ export async function handleWebOps(action: string, details: any, workspaceDir: s
                 return { status: 'error', message: 'Tavily offline & Fallback Bridge failed: ' + fallbackResult.fallback_error };
             }
             
-            return { status: 'success', results: fallbackResult.results, note: 'Results gathered via Autonomous Playwright Bridge (Tavily offline)' };
+            return {
+                status: 'success',
+                results: fallbackResult.results,
+                note: 'Results gathered via Autonomous Playwright Bridge (Tavily offline). Verify sources manually.',
+            };
         }
     }
 

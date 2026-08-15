@@ -244,6 +244,19 @@ export async function handleFileOps(action: string, details: any, workspaceDir: 
         }
     } 
 
+    if (action === 'git_commit' || action === 'git_checkpoint') {
+        const cwd = details.path ? path.resolve(workspaceDir, details.path) : baseDir;
+        const message = details.message || `ANT Checkpoint: ${new Date().toISOString()}`;
+        const files = details.files || '.';
+        try {
+            await execAsync(`git add ${files}`, { cwd });
+            const { stdout } = await execAsync(`git commit -m ${JSON.stringify(message)}`, { cwd });
+            return { status: 'success', tool: 'git_commit', message: `Checkpoint tersimpan: "${message}"`, output: stdout.trim() };
+        } catch (e: any) {
+            return { status: 'error', message: `git commit gagal (mungkin tidak ada perubahan yang di-stage): ${e.message}` };
+        }
+    } 
+
     if (action === 'syntax_check') {
         const fileName = details.file || details.path;
         const target = fileName ? `${fileName}` : '';

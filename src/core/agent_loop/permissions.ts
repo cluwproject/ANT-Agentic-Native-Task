@@ -8,18 +8,37 @@ import { isBrowserTool } from './browserTool.js';
 import chalk from 'chalk';
 import { requestDomainApproval } from './browserPermissions.js';
 
-let sessionAutoApprove = false;
-
-export function setSessionAutoApprove(auto: boolean) {
-    sessionAutoApprove = auto;
+export interface ExecutionPolicy {
+    scope: 'once' | 'session' | 'rejected';
+    tool: string;
+    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+    expiresAt: number | null;
 }
 
-export function isSessionAutoApprove(): boolean {
-    return sessionAutoApprove;
+const activePolicies: ExecutionPolicy[] = [];
+
+export function addSessionPolicy(tool: string, riskLevel: 'LOW' | 'MEDIUM' | 'HIGH') {
+    activePolicies.push({
+        scope: 'session',
+        tool,
+        riskLevel,
+        expiresAt: Date.now() + 1000 * 60 * 60 * 2 // 2 hours expiry
+    });
+}
+
+export function isToolAutoApproved(tool: string, riskLevel: 'LOW' | 'MEDIUM' | 'HIGH'): boolean {
+    const now = Date.now();
+    return activePolicies.some(policy => 
+        policy.scope === 'session' && 
+        policy.tool === tool &&
+        policy.riskLevel === riskLevel &&
+        (policy.expiresAt === null || policy.expiresAt > now)
+    );
 }
 
 const SAFE_TOOLS = new Set([
     'read_file', 'list_dir', 'env_check', 'web_request', 'image_generate', 'open_browser',
+    'git_status', 'git_diff', 'git_log', 'git_checkpoint', 'git_commit',
     'mexc_get_balance_futures', 'mexc_get_ticker_futures', 'mexc_get_open_positions',
     'mexc_get_open_orders', 'mexc_get_order_history', 'mexc_get_index_price', 'mexc_get_risk_info',
     'mexc_get_klines'
@@ -81,10 +100,12 @@ export async function requestApproval(
     toolCall: ToolCall,
     askQuestion: (q: string) => Promise<string>
 ): Promise<ApprovalResult> {
-    if (sessionAutoApprove) {
+    const risk = getToolRisk(toolCall.tool);
+    
+    if (isToolAutoApproved(toolCall.tool, risk)) {
         ui.printToolCallHeader(toolCall.tool);
         ui.printToolArgs(toolCall.args);
-        console.log(chalk.dim('  ⚡ Auto-approved by session policy (Don\'t ask again).'));
+        console.log(chalk.dim(`  ⚡ Auto-approved by execution policy [tool: ${toolCall.tool}, risk: ${risk}].`));
         return { decision: 'approved', isSafe: false };
     }
 
@@ -121,7 +142,6 @@ export async function requestApproval(
         return { decision: 'auto', isSafe: true };
     }
 
-    const risk = getToolRisk(toolCall.tool);
     const reason = getToolReason(toolCall.tool);
 
     if (toolCall.tool === 'modify_file' || toolCall.tool === 'write_file' || toolCall.tool === 'ant_skill_create') {
@@ -135,7 +155,7 @@ export async function requestApproval(
         ui.printFileDiff(filePath, fileContent);
         console.log(chalk.bold('\nAccept this file edit?'));
         console.log('  1. Yes, accept this change (Sekali)');
-        console.log('  2. Yes, approve all for this session (Jangan tanya lagi)');
+        console.log(`  2. Yes, approve all '${toolCall.tool}' for this session (Jangan tanya lagi)`);
         console.log('  3. No, reject this change (Tolak)');
         
         while (true) {
@@ -146,8 +166,8 @@ export async function requestApproval(
                 return { decision: 'approved', isSafe: false };
             }
             if (normalized === '2' || normalized === 'all' || normalized === 'always') {
-                setSessionAutoApprove(true);
-                console.log(chalk.green('  ✓ Auto-approve diaktifkan untuk sisa sesi ini.'));
+                addSessionPolicy(toolCall.tool, risk);
+                console.log(chalk.green(`  ✓ Auto-approve diaktifkan untuk aksi '${toolCall.tool}' (Risk: ${risk}).`));
                 return { decision: 'approved', isSafe: false };
             }
             if (normalized === '3' || normalized === 'n' || normalized === 'no') {
@@ -160,7 +180,7 @@ export async function requestApproval(
     ui.printApprovalBox(toolCall.tool, risk, reason);
 
     while (true) {
-        const answer = await askQuestion('\n⚠️  Approve execution? (1/Y: Approve, 2/Always: Allow All Session, 3/N: Reject, V: Details): ');
+        const answer = await askQuestion('\n⚠️  Approve execution? (1/Y: Approve, 2/Always: Allow Tool Session, 3/N: Reject, V: Details): ');
         const normalized = answer.trim().toLowerCase();
         
         if (normalized === 'v' || normalized === 'view') {
@@ -171,8 +191,8 @@ export async function requestApproval(
         }
         
         if (normalized === '2' || normalized === 'always' || normalized === 'all' || normalized === 'a') {
-            setSessionAutoApprove(true);
-            console.log(chalk.green('  ✓ Auto-approve diaktifkan untuk sisa sesi ini.'));
+            addSessionPolicy(toolCall.tool, risk);
+            console.log(chalk.green(`  ✓ Auto-approve diaktifkan untuk aksi '${toolCall.tool}' (Risk: ${risk}).`));
             return { decision: 'approved', isSafe: false };
         }
 
@@ -180,3 +200,4 @@ export async function requestApproval(
         return { decision: approved ? 'approved' : 'denied', isSafe: false };
     }
 }
+

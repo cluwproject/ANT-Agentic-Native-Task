@@ -14,80 +14,67 @@ export interface SlashCommand {
 }
 
 export const SLASH_COMMANDS: SlashCommand[] = [
-    { command: '/new_chat',          description: 'Mulai sesi percakapan baru (fresh context)' },
-    { command: '/clear',             description: 'Bersihkan layar & segar ulang sesi' },
-    { command: '/resume',            description: 'Lanjutkan sesi sebelumnya by ID' },
-    { command: '/model',             description: 'Ganti model AI yang sedang aktif' },
-    { command: '/session list',      description: 'Lihat semua sesi percakapan tersimpan' },
-    { command: '/session load',      description: 'Muat sesi percakapan by ID' },
-    { command: '/undo',              description: 'Restore file dari backup .bak terakhir' },
-    { command: '/loop start',        description: 'Aktifkan autopilot trading loop' },
-    { command: '/loop stop',         description: 'Matikan autopilot trading loop' },
-    { command: '/exness start',      description: 'Aktifkan Exness MT5 autopilot' },
-    { command: '/exness stop',       description: 'Matikan Exness MT5 autopilot' },
-    { command: '/exness journal',    description: 'Lihat jurnal keputusan trading otonom' },
-    { command: '/agent list',        description: 'Lihat daftar agen yang tersedia' },
-    { command: '/agent run',         description: 'Jalankan agen tertentu secara manual' },
-    { command: '/task schedule',     description: 'Jadwalkan tugas dengan cron expression' },
-    { command: '/task list',         description: 'Lihat daftar tugas terjadwal' },
-    { command: '/git status',        description: 'Lihat status perubahan Git' },
-    { command: '/git diff',          description: 'Lihat diff perubahan kode saat ini' },
-    { command: '/git log',           description: 'Lihat riwayat commit Git' },
-    { command: '/help',              description: 'Tampilkan semua perintah & opsi' },
-    { command: '/exit',              description: 'Keluar dari ANT — Agentic Native Task' },
+    { command: '/new_chat',          description: 'Start fresh conversation session (clear context)' },
+    { command: '/clear',             description: 'Clear screen and refresh active session' },
+    { command: '/store',             description: 'Store semantic memory into CockroachDB / Vault' },
+    { command: '/recall',            description: 'Recall past memories via Vector Similarity Search' },
+    { command: '/memories',          description: 'List all stored semantic memories in database' },
+    { command: '/vault',             description: 'Switch active memory vault (CockroachDB cloud / local)' },
+    { command: '/mailbox',           description: 'Open inter-model relay & handover ledger' },
+    { command: '/health',            description: 'Audit CockroachDB cluster & cognitive memory health' },
+    { command: '/resume',            description: 'Resume previous session by ID' },
+    { command: '/model',             description: 'Hot-swap active AI model (Ollama/Bedrock/OpenAI)' },
+    { command: '/session list',      description: 'View all saved conversation sessions' },
+    { command: '/session load',      description: 'Load conversation session by ID' },
+    { command: '/undo',              description: 'Restore file from latest .bak backup' },
+    { command: '/agent list',        description: 'List available custom agents' },
+    { command: '/agent run',         description: 'Execute specific agent manually' },
+    { command: '/task schedule',     description: 'Schedule background task with cron expression' },
+    { command: '/task list',         description: 'List registered scheduled tasks' },
+    { command: '/git status',        description: 'View Git repository working status' },
+    { command: '/git diff',          description: 'View current code diff changes' },
+    { command: '/git log',           description: 'View Git commit history logs' },
+    { command: '/help',              description: 'Display all commands and operational options' },
+    { command: '/exit',              description: 'Disconnect from ANT agent runtime' },
 ];
 
-const MAX_VISIBLE = 7;
+const MAX_VISIBLE = 8;
 
 function renderMenu(filtered: SlashCommand[], selectedIdx: number, query: string) {
+    const width = Math.min(process.stdout.columns || 80, 95);
+    const separator = chalk.dim('─'.repeat(width));
+
+    const lines: string[] = [];
+    lines.push(separator);
+    lines.push(chalk.cyan.bold('> ') + chalk.white.bold(query || '/'));
+    lines.push(separator);
+
     const totalRows = Math.min(filtered.length, MAX_VISIBLE);
     const startIdx = Math.max(0, selectedIdx - Math.floor(MAX_VISIBLE / 2));
     const visible = filtered.slice(startIdx, startIdx + MAX_VISIBLE);
     const remaining = filtered.length - startIdx - visible.length;
 
-    const width = process.stdout.columns || 80;
-    const borderH = '─'.repeat(width - 2);
-    const borderTop = chalk.dim(`┌${borderH}┐`);
-    const borderBot = chalk.dim(`└${borderH}┘`);
-
-    const lines: string[] = [];
-    lines.push(borderTop);
-
     visible.forEach((cmd, i) => {
         const absIdx = startIdx + i;
         const isSelected = absIdx === selectedIdx;
 
-        const prefix = isSelected ? chalk.cyan('  ❯ ') : '    ';
-        const cmdStr = isSelected ? chalk.cyan.bold(cmd.command.padEnd(22)) : chalk.white(cmd.command.padEnd(22));
-        const descStr = chalk.dim(cmd.description.slice(0, width - 32));
+        const prefix = isSelected ? chalk.cyan.bold('> ') : '  ';
+        const cmdFormatted = isSelected ? chalk.cyan.bold(cmd.command.padEnd(30)) : chalk.white(cmd.command.padEnd(30));
+        
+        const rawDesc = cmd.description;
+        const maxDescLen = Math.max(10, width - 36);
+        const descShort = rawDesc.length > maxDescLen ? rawDesc.slice(0, maxDescLen - 3) + '...' : rawDesc;
+        const descFormatted = isSelected ? chalk.white(descShort) : chalk.dim(descShort);
 
-        const content = `${prefix}${cmdStr} ${descStr}`;
-        const cleanLen = content.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').length;
-        const pad = ' '.repeat(Math.max(0, width - 2 - cleanLen));
-
-        lines.push(chalk.dim('│') + content + pad + chalk.dim('│'));
+        lines.push(`${prefix}${cmdFormatted}  ${descFormatted}`);
     });
 
     if (remaining > 0) {
-        const moreStr = `    ${chalk.dim(`↓ ${remaining} more`)}`;
-        const cleanLen = moreStr.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').length;
-        const pad = ' '.repeat(Math.max(0, width - 2 - cleanLen));
-        lines.push(chalk.dim('│') + moreStr + pad + chalk.dim('│'));
+        lines.push(chalk.dim(`   ↓ ${remaining} more`));
     }
 
-    const footer = '  ' + chalk.dim('↑/↓ Navigate') + '  ' + chalk.dim('Enter Select') + '  ' + chalk.dim('Tab Complete') + '  ' + chalk.dim('Esc Cancel');
-    const cleanFooterLen = footer.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').length;
-    const footerPad = ' '.repeat(Math.max(0, width - 2 - cleanFooterLen));
-
-    lines.push(chalk.dim(`├${borderH}┤`));
-    lines.push(chalk.dim('│') + footer + footerPad + chalk.dim('│'));
-    lines.push(borderBot);
-
-    process.stdout.write('\n');
-    process.stdout.write(lines.join('\n'));
-    const menuLines = lines.length + 1;
-
-    return menuLines;
+    process.stdout.write(lines.join('\n') + '\n');
+    return lines.length;
 }
 
 function clearMenu(menuLines: number) {
@@ -102,7 +89,6 @@ function clearMenu(menuLines: number) {
  * tidak mendukung raw mode (environment non-TTY).
  */
 export async function showSlashMenu(initialChar: string = '/'): Promise<string | null> {
-    // tsx dapat merusak stdin.isTTY — gunakan stdout sebagai fallback check
     const isTTY = !!(process.stdout.isTTY || process.stdin.isTTY);
     if (!isTTY || process.env.CI || process.env.TERM === 'dumb') {
         return null;
@@ -117,18 +103,11 @@ export async function showSlashMenu(initialChar: string = '/'): Promise<string |
             c.command.toLowerCase().startsWith(query.toLowerCase())
         );
 
-        // Redraw prompt line dengan query saat ini
-        const redrawPrompt = () => {
-            process.stdout.write('\x1B[2K\x1B[0G'); // clear line
-            process.stdout.write(chalk.cyan('You ❯ ') + chalk.white(query));
-        };
-
         const redraw = () => {
             const f = filtered();
             if (menuLines > 0) clearMenu(menuLines);
-            redrawPrompt();
             if (query.startsWith('/') && f.length > 0) {
-                if (selectedIdx >= f.length) selectedIdx = f.length - 1;
+                if (selectedIdx >= f.length) selectedIdx = Math.max(0, f.length - 1);
                 menuLines = renderMenu(f, selectedIdx, query);
             } else {
                 menuLines = 0;
@@ -137,7 +116,6 @@ export async function showSlashMenu(initialChar: string = '/'): Promise<string |
 
         const cleanup = (result: string | null) => {
             if (menuLines > 0) clearMenu(menuLines);
-            process.stdout.write('\x1B[2K\x1B[0G');
             process.stdin.setRawMode(false);
             process.stdin.pause();
             process.stdin.removeAllListeners('data');
@@ -149,7 +127,6 @@ export async function showSlashMenu(initialChar: string = '/'): Promise<string |
         process.stdin.setEncoding('utf8');
 
         // Initial draw
-        redrawPrompt();
         const f = filtered();
         if (f.length > 0) menuLines = renderMenu(f, selectedIdx, query);
 
@@ -192,8 +169,15 @@ export async function showSlashMenu(initialChar: string = '/'): Promise<string |
             if (key === '\u007f' || key === '\b') {
                 if (query.length > 0) {
                     query = query.slice(0, -1);
+                    if (query.length === 0) {
+                        cleanup(null);
+                        return;
+                    }
                     selectedIdx = 0;
                     redraw();
+                } else {
+                    cleanup(null);
+                    return;
                 }
                 return;
             }

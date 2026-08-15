@@ -64,6 +64,48 @@ export const antToolsSchema = [
     }
   },
   {
+    name: "git_checkpoint",
+    description: "Menyimpan snapshot / commit Git pada repositori proyek saat ini sebagai checkpoint kemajuan tugas.",
+    parameters: {
+      type: "object",
+      properties: {
+        message: { type: "string", description: "Pesan checkpoint / commit deskriptif." },
+        files: { type: "string", description: "File yang di-stage (default: '.')" },
+        path: { type: "string", description: "Direktori repo (opsional)" }
+      },
+      required: ["message"]
+    }
+  },
+  {
+    name: "git_status",
+    description: "Melihat status perubahan file pada repositori Git.",
+    parameters: {
+      type: "object",
+      properties: { path: { type: "string" } }
+    }
+  },
+  {
+    name: "git_diff",
+    description: "Melihat perbedaan kode git diff sebelum dan sesudah perubahan.",
+    parameters: {
+      type: "object",
+      properties: {
+        file: { type: "string" },
+        staged: { type: "boolean" }
+      }
+    }
+  },
+  {
+    name: "git_log",
+    description: "Melihat riwayat log commit / checkpoint Git sebelumnya.",
+    parameters: {
+      type: "object",
+      properties: {
+        n: { type: "number", description: "Jumlah log commit (default: 5)" }
+      }
+    }
+  },
+  {
     name: "shell_exec",
     description: "Eksekusi terminal (Prioritaskan npx, grep, git, tsc, vite).",
     parameters: {

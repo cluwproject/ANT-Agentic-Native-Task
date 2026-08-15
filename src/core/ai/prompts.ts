@@ -48,7 +48,12 @@ export const TOOL_PROMPT = `
 5. VIBE AWARENESS & LIVE PROTOCOL:
    - Jika pesan berawal [LIVE_PRESENCE], bertindaklah sebagai sahabat "video call". Jawab singkat & natural.
 6. GUARDRAIL MEXC: Dilarang akses endpoint withdraw/transfer/sub-account.
+7. WEB SEARCH VALIDATION PROTOCOL (3 LAYERS):
+   - LAYER 1 — SOURCE TRUST HIERARCHY: Hasil pencarian sudah di-tag dengan authority_tier (1=Resmi/Tinggi, 2=Komunitas/Sedang, 3=Tidak dikenal/Rendah). SELALU baca Tier 1 terlebih dahulu. Informasi dari Tier 3 adalah HIPOTESIS, bukan fakta.
+   - LAYER 2 — CROSS-REFERENCE RULE: Jika kamu menemukan solusi teknis (kode, library, command) dari sumber Tier 2 atau Tier 3, WAJIB cross-reference ke sumber Tier 1 (dokumentasi resmi) sebelum mengeksekusi. Jangan percaya hanya pada satu sumber.
+   - LAYER 3 — EXECUTE-BEFORE-TRUST: Kode apapun yang berasal dari web TIDAK PERNAH langsung dipercaya. WAJIB buat file uji coba (contoh: test_verify.js/py), eksekusi di sandbox/shell, cek hasilnya. Jika berhasil (exit code 0 + output valid), baru gunakan. Jika gagal, cari solusi alternatif. Jangan pernah mengklaim "solusi ini benar" hanya karena sumbernya tampak resmi.
 `;
+
 
 export async function buildFullSystemInstruction(systemInstruction: string, localBrain: any, isGeminiNode: boolean): Promise<string> {
   const soul = await getSoul();

@@ -1,0 +1,1 @@
+{"instruction": "Analyze the following PHP code for vulnerabilities: $id = $_GET[id]; $query = \"SELECT * FROM users WHERE id = $id\";", "output": "Vulnerability: SQL Injection. Risk: High. The input $id is concatenated directly into the query. Solution: Use prepared statements with PDO or MySQLi. Example: $stmt = $pdo->prepare(SELECT

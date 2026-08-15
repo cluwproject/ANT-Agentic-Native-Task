@@ -1,5 +1,109 @@
 [
   {
+    "timestamp": "2026-08-15T05:26:07.004Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
+    "timestamp": "2026-08-15T01:30:03.457Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
+    "timestamp": "2026-08-15T01:13:26.253Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
+    "timestamp": "2026-08-15T01:03:22.999Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
+    "timestamp": "2026-08-15T00:20:30.887Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
+    "timestamp": "2026-08-14T23:44:35.672Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
+    "timestamp": "2026-08-14T04:36:15.983Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
+    "timestamp": "2026-08-13T09:06:58.069Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
+    "timestamp": "2026-08-13T06:05:41.261Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
+    "timestamp": "2026-08-13T05:26:17.157Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
+    "timestamp": "2026-08-13T05:14:02.683Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
+    "timestamp": "2026-08-12T23:15:02.316Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
+    "timestamp": "2026-08-12T11:48:35.870Z",
+    "trigger": "CLI Startup Scan",
+    "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",
+    "anomaliesDetected": [],
+    "remediationsApplied": [],
+    "systemStatus": "Fully_Sane"
+  },
+  {
     "timestamp": "2026-08-12T08:29:23.138Z",
     "trigger": "CLI Startup Scan",
     "thresholdChecked": "Anomaly alert threshold: max 5. Sliding error-rate limit: max 10/min (Current rate: 0/min)",

@@ -96,7 +96,9 @@ export async function tieredChat(
   const isFlashModel = (m: string) => m.includes('flash') || m.includes('mini') || m.includes('haiku');
   const customIsFlash = brain.custom_model && isFlashModel(brain.custom_model);
   
-  if (isDeepSeek) {
+  if (isOllama) {
+    modelToUse = brain.custom_model || 'llama3.2';
+  } else if (isDeepSeek) {
     modelToUse = (customIsFlash || !brain.custom_model) ? 'deepseek-v4-pro' : brain.custom_model;
   } else if (isOpenAI) {
     modelToUse = (customIsFlash || !brain.custom_model) ? 'gpt-4o' : brain.custom_model;
