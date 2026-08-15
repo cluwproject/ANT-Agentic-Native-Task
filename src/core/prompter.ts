@@ -3,7 +3,7 @@
  * ANT — ROCK-SOLID NATIVE PROMPTER WITH DYNAMIC SLASH TRIGGER
  * ════════════════════════════════════════════════════════════════════
  * - Native line editing & wrapping (zero text stutter / no duplication)
- * - Real-time slash menu trigger on '/'
+ * - Real-time slash menu trigger on '/' and instant Enter fallback
  * - Clean cancellation on Backspace / Esc
  * - Tab completion across all registered slash commands
  * ════════════════════════════════════════════════════════════════════
@@ -30,8 +30,11 @@ export async function askUser(promptText: string = 'You ❯ '): Promise<string> 
         const onKeypress = async (str: string, key: readline.Key) => {
             if (isHandled) return;
 
-            // Trigger interactive slash menu only when '/' is pressed at start of prompt
-            if ((rl as any).line === '' && (str === '/' || (key && key.name === 'slash'))) {
+            const lineVal = ((rl as any).line || '').trim();
+            const isSlashKey = str === '/' || (key && (key.name === 'slash' || key.sequence === '/'));
+
+            // Trigger interactive slash menu when '/' is pressed at start of prompt
+            if (isSlashKey && (lineVal === '' || lineVal === '/')) {
                 isHandled = true;
                 if (process.stdin.isTTY) {
                     process.stdin.removeListener('keypress', onKeypress);
@@ -49,14 +52,22 @@ export async function askUser(promptText: string = 'You ❯ '): Promise<string> 
             process.stdin.on('keypress', onKeypress);
         }
 
-        rl.question(promptText, (answer) => {
+        rl.question(promptText, async (answer) => {
             if (isHandled) return;
             isHandled = true;
             if (process.stdin.isTTY) {
                 process.stdin.removeListener('keypress', onKeypress);
             }
             rl.close();
-            resolve(answer.trim());
+
+            const trimmed = (answer || '').trim();
+            // If user typed '/' or '/help' and pressed Enter, open interactive slash menu
+            if (trimmed === '/' || trimmed === '/help') {
+                const selected = await showSlashMenu('/');
+                resolve(selected ? selected.trim() : '');
+            } else {
+                resolve(trimmed);
+            }
         });
     });
 }

@@ -463,6 +463,17 @@ async function main() {
         
         if (!text) continue;
 
+        // ── Interactive Slash Menu Trigger (/ or /help) ─────────────────
+        if (text === '/' || text === '/help') {
+            const { showSlashMenu } = await import('./slash_menu.js');
+            const selected = await showSlashMenu('/');
+            if (selected && selected.trim()) {
+                text = selected.trim();
+            } else {
+                continue;
+            }
+        }
+
         // Clear and collapse large pasted text inputs visually
         const lines = input.split('\n');
         if (lines.length > 2 || input.length > 250) {
