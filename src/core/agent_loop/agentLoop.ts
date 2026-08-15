@@ -248,8 +248,17 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                 continue;
             }
 
+            const genDurationMs = Math.max(100, Date.now() - startTime);
+            const genDurationSec = (genDurationMs / 1000).toFixed(1);
+            const outputTokens = Math.max(1, Math.round(cleanedText.length / 3.7));
+            const speedTokPerSec = (outputTokens / (genDurationMs / 1000)).toFixed(1);
+
             const renderedText = renderEvidenceTags(cleanedText);
-            await ui.printAssistantText(renderedText);
+            await ui.printAssistantText(renderedText, {
+                durationSec: genDurationSec,
+                tokens: outputTokens,
+                speed: speedTokPerSec
+            });
 
             if (toolCalls.length === 0) {
                 // --- GUARD: ANTI-BACKGROUND-HALU ---

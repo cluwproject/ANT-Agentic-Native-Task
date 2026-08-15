@@ -161,8 +161,14 @@ export function printFileDiff(filePath: string, newContent: string) {
     console.log(chalk.dim('──────────────────────────────────────────────────────────────────'));
 }
 
-/** Prints assistant response cleanly with dynamic word-wrapping and turn boundaries */
-export async function printAssistantText(text: string) {
+export interface ResponseMetrics {
+    durationSec: number | string;
+    tokens?: number;
+    speed?: number | string;
+}
+
+/** Prints assistant response cleanly with dynamic word-wrapping, generation metrics, and turn boundaries */
+export async function printAssistantText(text: string, metrics?: ResponseMetrics) {
     if (!text.trim()) return;
     const termWidth = getTerminalWidth();
     marked.setOptions({
@@ -185,6 +191,12 @@ export async function printAssistantText(text: string) {
     const rendered = await marked(text);
     console.log(`\n${chalk.magenta.bold('ANT ❯')}`);
     console.log(rendered.trim());
+
+    if (metrics && metrics.durationSec) {
+        const tokInfo = metrics.tokens ? ` (${metrics.tokens} tokens${metrics.speed ? `, ${metrics.speed} tok/s` : ''})` : '';
+        console.log(chalk.dim(`\n⚡ Response generated in ${metrics.durationSec}s${tokInfo}`));
+    }
+
     console.log('\n' + getDivider() + '\n');
 }
 
