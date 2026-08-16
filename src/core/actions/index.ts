@@ -101,7 +101,19 @@ export async function updateTrustScore(action: string, success: boolean) {
 }
 
 export async function executeAction(actionName: string, details: any, attempts = 3, context?: any) {
-    const action = actionName.trim();
+    let action = actionName.trim();
+    
+    // Graceful alias mapping for hallucinated model tool calls
+    if (action === 'container.exec' || action === 'bash' || action === 'cmd' || action === 'execute' || action === 'run_command') {
+        action = 'shell_exec';
+        if (details && Array.isArray(details.cmd)) {
+            details.command = details.cmd.join(' ');
+        } else if (details && details.cmd && typeof details.cmd === 'string') {
+            details.command = details.cmd;
+        } else if (details && details.code && typeof details.code === 'string') {
+            details.command = details.code;
+        }
+    }
     
     const trust = await getTrustScore(action);
     const isHighTrust = trust.score >= 85;
