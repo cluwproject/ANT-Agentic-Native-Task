@@ -12,6 +12,27 @@ const SHELL_BLOCKLIST_REGEX = /\b(rm\s+-[rRfFri]+|curl\s+[^|]*\|\s*(sh|bash|zsh)
 const NPM_PACKAGE_SAFE_REGEX = /^(@[a-zA-Z0-9_-]+\/)?[a-zA-Z0-9._-]+([@][a-zA-Z0-9._^~><=*-]+)?$/;
 
 export async function handleShellOps(action: string, details: any, workspaceDir: string, baseDir: string, context?: any, isHighTrust = false) {
+    if (action === 'run_tests') {
+        const command = details.command || process.env.ANT_TEST_COMMAND || 'npm test';
+        if (!/\b(?:npm|pnpm|yarn|node)\b/.test(command)) {
+            throw new Error('SECURITY_VIOLATION: run_tests hanya menerima perintah test Node.js yang disetujui.');
+        }
+        try {
+            const { stdout, stderr } = await execAsync(command, {
+                cwd: baseDir,
+                timeout: 120000,
+                signal: context?.abortSignal
+            });
+            return { status: 'success', command, stdout, stderr, exitCode: 0 };
+        } catch (error: any) {
+            return {
+                status: 'error', command, error: error.message,
+                stdout: error.stdout || '', stderr: error.stderr || '',
+                exitCode: typeof error.code === 'number' ? error.code : 1
+            };
+        }
+    }
+
     if (action === 'execute_js') {
         const outputLines: string[] = [];
         const sandboxConsole = { 
@@ -129,10 +150,10 @@ export async function handleShellOps(action: string, details: any, workspaceDir:
         }
 
         try {
-            const { stdout, stderr } = await execAsync(command, { timeout: 30000 });
-            return { status: 'success', stdout, stderr };
+            const { stdout, stderr } = await execAsync(command, { timeout: 30000, signal: context?.abortSignal });
+            return { status: 'success', stdout, stderr, exitCode: 0 };
         } catch (cmdError: any) {
-            return { status: 'error', error: cmdError.message, stdout: cmdError.stdout || '', stderr: cmdError.stderr || '' };
+            return { status: 'error', error: cmdError.message, stdout: cmdError.stdout || '', stderr: cmdError.stderr || '', exitCode: typeof cmdError.code === 'number' ? cmdError.code : 1 };
         }
     }
 

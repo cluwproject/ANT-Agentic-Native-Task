@@ -70,6 +70,12 @@ export function getModelDescription(modelName: string): { description: string; b
             badge: 'Long Context'
         };
     }
+    if (m.includes('nemotron') || m.includes('nemo')) {
+        return {
+            description: 'Frontier reasoning model for structured agentic workflows and coding.',
+            badge: 'Cloud Frontier'
+        };
+    }
     if (m.includes('gemma') || m.includes('31b') || m.includes('27b')) {
         return {
             description: 'Balanced agentic coding model for everyday work & high precision.',
@@ -162,13 +168,13 @@ export async function getDiscoverableModels(
     // 3. Fallback defaults if list is still empty
     if (modelMap.size === 0) {
         const defaults = [
+            'gemma4:31b-cloud',
+            'gpt-oss:120b-cloud',
+            'nemotron-3-super:cloud',
             'deepseek-v4-flash:cloud',
             'kimi-k2.7-code:cloud',
-            'gpt-oss:120b-cloud',
-            'gemma4:31b-cloud',
             'qwen2.5:0.5b',
-            'minicpm-v4.6:latest',
-            'ant:1b'
+            'minicpm-v4.6:latest'
         ];
         defaults.forEach(d => modelMap.set(d, {}));
     }
@@ -191,13 +197,23 @@ export async function getDiscoverableModels(
         });
     }
 
-    // Sort: Current model first, then default, then others
+    // Sort: Current model first, then default, then prioritize gemma4, gpt-oss, nemotron, cloud models
     result.sort((a, b) => {
         if (a.isCurrent) return -1;
         if (b.isCurrent) return 1;
         if (a.isDefault) return -1;
         if (b.isDefault) return 1;
-        return a.name.localeCompare(b.name);
+        const priority = (name: string) => {
+            const n = name.toLowerCase();
+            if (n.includes('gemma4') && n.includes('cloud')) return 0;
+            if (n.includes('gpt-oss') && n.includes('cloud')) return 1;
+            if (n.includes('nemotron') && n.includes('cloud')) return 2;
+            if (n.includes('cloud')) return 3;
+            if (n.includes('0.5b') || n.includes('1b')) return 4;
+            return 5;
+        };
+        const priorityDiff = priority(a.name) - priority(b.name);
+        return priorityDiff !== 0 ? priorityDiff : a.name.localeCompare(b.name);
     });
 
     return result;

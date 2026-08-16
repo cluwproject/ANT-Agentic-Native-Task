@@ -110,7 +110,7 @@ export function renderEvidenceTags(text: string): string {
         if (!foundRecords.includes(record)) {
             foundRecords.push(record);
         }
-        return `[🔍 Bukti: ${id}]`;
+        return `[Bukti: ${id}]`;
     });
 
     if (foundRecords.length > 0) {

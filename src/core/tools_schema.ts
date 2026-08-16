@@ -141,6 +141,16 @@ export const antToolsSchema = [
     }
   },
   {
+    name: "run_tests",
+    description: "Menjalankan test proyek yang relevan setelah perubahan kode. Gunakan tanpa argumen untuk menjalankan npm test; command opsional hanya untuk test Node.js yang lebih spesifik.",
+    parameters: {
+      type: "object",
+      properties: {
+        command: { type: "string", description: "Perintah test Node.js opsional, misalnya 'npm run typecheck'." }
+      }
+    }
+  },
+  {
     name: "grep_search",
     description: "Mencari pola teks / string / regex di dalam file proyek dengan ripgrep.",
     parameters: {

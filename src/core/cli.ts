@@ -47,13 +47,13 @@ function readAntIdentity() {
 function getAntAscii() {
     const identity = readAntIdentity();
     return chalk.green(`
-  ANT — Agentic Native Task
+  ANT -- Agentic Native Task
   You Ask. ANT Acts.
 
-  ➜  Version     : v0.3.0 (Hackathon Edition)
-  ➜  Origin      : ${identity.origin} (Founded by ${identity.creator})
-  ➜  Companion   : ${identity.activeUser}
-  ➜  Engine      : ANT Sovereign Runtime
+  >  Version     : v0.3.0 (Hackathon Edition)
+  >  Origin      : ${identity.origin} (Founded by ${identity.creator})
+  >  Companion   : ${identity.activeUser}
+  >  Engine      : ANT Sovereign Runtime
 `);
 }
 
@@ -90,11 +90,11 @@ async function main() {
         const { SelfHealer } = await import('./healing.js');
         const diagnosis = await SelfHealer.diagnose('CLI Startup Scan');
         if (diagnosis.anomaliesDetected.length > 0) {
-            console.log(chalk.yellow(`\n⚠️  [SELF-HEALER] Terdeteksi ${diagnosis.anomaliesDetected.length} anomali pada sistem.`));
+            console.log(chalk.yellow(`\n[SELF-HEALER] Terdeteksi ${diagnosis.anomaliesDetected.length} anomali pada sistem.`));
             diagnosis.remediationsApplied.forEach(r => {
                 console.log(chalk.green(`  ✓ ${r}`));
             });
-            console.log(chalk.green(`🎉 Semua anomali telah diperbaiki secara otonom!\n`));
+            console.log(chalk.green(`[OK] Semua anomali telah diperbaiki secara otonom.\n`));
         }
     } catch (e: any) {
         // Silently continue
@@ -113,13 +113,13 @@ async function main() {
                 const { addCustomSchedule, loadCustomSchedules } = await import('./scheduler.js');
                 await loadCustomSchedules();
                 const id = await addCustomSchedule(cronVal, commandVal);
-                console.log(chalk.green(`\n🎉 Success! Task registered: "${commandVal}" with cron "${cronVal}" (ID: ${id})`));
+                console.log(chalk.green(`\n[OK] Task registered: "${commandVal}" with cron "${cronVal}" (ID: ${id})`));
             } catch (err: any) {
                 console.error(chalk.red(`Failed to schedule task: ${err.message}`));
             }
             process.exit(0);
         } else if (subCommand === 'list') {
-            console.log(chalk.cyan('\n📅 REGISTERED CUSTOM SCHEDULES:'));
+            console.log(chalk.cyan('\n[SCHEDULES] REGISTERED CUSTOM SCHEDULES:'));
             try {
                 const { customSchedules, loadCustomSchedules } = await import('./scheduler.js');
                 await loadCustomSchedules();
@@ -155,14 +155,14 @@ async function main() {
 
         try {
             if (subCommand === 'verify') {
-                console.log(chalk.cyan('\n🔍 Memverifikasi Integritas Rantai Ledger Mailbox...'));
+                console.log(chalk.cyan('\n[Verifying] Memverifikasi Integritas Rantai Ledger Mailbox...'));
                 const { MailboxWriter } = await import('./agentic/mailbox/mailboxWriter.js');
                 const writer = new MailboxWriter();
                 const result = writer.verifyChainIntegrity();
                 if (result.valid) {
-                    console.log(chalk.green(`✅ Rantai hash valid. (${result.totalEntries} entri diverifikasi)`));
+                    console.log(chalk.green(`[OK] Rantai hash valid. (${result.totalEntries} entri diverifikasi)`));
                 } else {
-                    console.log(chalk.red(`❌ KORUPSI TERDETEKSI pada entri #${result.failedAt}`));
+                    console.log(chalk.red(`[ERROR] Korupsi terdeteksi pada entri #${result.failedAt}`));
                     console.log(chalk.red(`   Alasan: ${result.reason}`));
                 }
             } 
@@ -178,13 +178,13 @@ async function main() {
                         console.log(chalk.red(`Error: Entri #${idx} tidak ditemukan. (Total: ${lines.length})`));
                     } else {
                         const entry = JSON.parse(lines[idx - 1]);
-                        console.log(chalk.cyan(`\n📬 DETAIL ENTRI #${idx}:`));
+                        console.log(chalk.cyan(`\n[MAILBOX ENTRY #${idx}]:`));
                         console.log(JSON.stringify(entry, null, 2));
                     }
                 }
             } 
             else if (subCommand === 'list') {
-                console.log(chalk.cyan('\n📬 ANT MODEL MAILBOX:'));
+                console.log(chalk.cyan('\n[ANT MODEL MAILBOX]:'));
                 if (!fs.existsSync(ledgerPath)) {
                     console.log(chalk.yellow('Mailbox kosong.'));
                 } else {
@@ -195,7 +195,7 @@ async function main() {
                     const chainStatus = writer.verifyChainIntegrity();
                     
                     if (!chainStatus.valid) {
-                         console.log(chalk.red(`⚠️ PERINGATAN: Integritas rantai hash rusak pada entri #${chainStatus.failedAt}\n`));
+                         console.log(chalk.red(`[WARN] Integritas rantai hash rusak pada entri #${chainStatus.failedAt}\n`));
                     }
 
                     lines.forEach((line, i) => {
@@ -240,7 +240,7 @@ async function main() {
     if (args[0] === 'agent') {
         const subCommand = args[1];
         if (subCommand === 'list') {
-            console.log(chalk.cyan('\n🔍 ANT AGENTS REGISTRY:'));
+            console.log(chalk.cyan('\n[REGISTRY] ANT AGENTS REGISTRY:'));
             try {
                 const agentsDir = path.join(process.cwd(), 'src', 'server', 'agents');
                 const files = await fs.promises.readdir(agentsDir);
@@ -299,7 +299,7 @@ async function main() {
                 process.exit(1);
             }
             
-            console.log(chalk.cyan(`\n🚀 Memulai Agent: ${agentName} [Sandbox: ${sandbox ? 'ON' : 'OFF'}]...`));
+            console.log(chalk.cyan(`\n[Starting] Agent: ${agentName} [Sandbox: ${sandbox ? 'ON' : 'OFF'}]...`));
             
             try {
                 const fileExt = files.find(f => f.startsWith(agentName + '.'))?.endsWith('.ts') ? '.js' : '.js';
@@ -526,11 +526,11 @@ async function main() {
                 const bakPath = path.join(BASE_DIR, target.endsWith('.bak') ? target : target + '.bak');
                 const origPath = bakPath.replace(/\.bak$/, '');
                 if (!fs.existsSync(bakPath)) {
-                    console.log(chalk.red(`  ❌ Backup tidak ditemukan: ${target}.bak`));
+                    console.log(chalk.red(`  [ERROR] Backup tidak ditemukan: ${target}.bak`));
                 } else {
                     await fs.promises.copyFile(bakPath, origPath);
                     await fs.promises.unlink(bakPath);
-                    console.log(chalk.green(`  ✅ Berhasil restore: ${path.relative(BASE_DIR, origPath)} (backup dihapus)`));
+                    console.log(chalk.green(`  [OK] Berhasil restore: ${path.relative(BASE_DIR, origPath)} (backup dihapus)`));
                 }
             }
             continue;
@@ -556,12 +556,12 @@ async function main() {
         if (text.startsWith('/plan')) {
             const goal = text.replace(/^\/plan\s*/, '').trim();
             if (!goal) {
-                console.log(chalk.yellow('\n📋 HTN Execution Planner'));
+                console.log(chalk.yellow('\n[PLANNER] HTN Execution Planner'));
                 console.log(chalk.dim('  Usage: /plan <goal_or_task_description>'));
                 console.log(chalk.dim('  Example: /plan Refactor authentication middleware to support OAuth2\n'));
                 continue;
             }
-            console.log(chalk.cyan(`\n🧠 Generating HTN Multi-Step Execution Plan for: "${goal}"...\n`));
+            console.log(chalk.cyan(`\n[Planner] Generating HTN Multi-Step Execution Plan for: "${goal}"...\n`));
             text = `Tolong buatkan rencana eksekusi terstruktur (HTN Execution Plan) bertahap untuk tujuan berikut: "${goal}". Pecah menjadi langkah-langkah konkret dan tentukan alat yang perlu dipanggil.`;
             // Lanjut ke loop agen dengan konteks perencanaan eksplisit
         }
@@ -576,7 +576,7 @@ async function main() {
 
             if (subCmd === 'list') {
                 const branches = await listBranches();
-                console.log(chalk.cyan('\n🌿 CONVERSATION BRANCHES:'));
+                console.log(chalk.cyan('\n[BRANCHES] CONVERSATION BRANCHES:'));
                 if (branches.length === 0) {
                     console.log(chalk.yellow('  No saved branches yet. Use /branch create <name> to fork one.'));
                 } else {
@@ -592,7 +592,7 @@ async function main() {
                     continue;
                 }
                 const savedPath = await createBranch(branchArg, currentSessionId, contextHistory);
-                console.log(chalk.green(`  ✅ Branch '${branchArg}' saved successfully (${contextHistory.length} messages snapshot).`));
+                console.log(chalk.green(`  [OK] Branch '${branchArg}' saved successfully (${contextHistory.length} messages snapshot).`));
                 console.log(chalk.dim(`     Path: ${savedPath}\n`));
                 continue;
             } else if (subCmd === 'checkout' || subCmd === 'load') {
@@ -602,14 +602,14 @@ async function main() {
                 }
                 const branch = await loadBranch(branchArg);
                 if (!branch) {
-                    console.log(chalk.red(`  ❌ Branch '${branchArg}' not found.`));
+                    console.log(chalk.red(`  [ERROR] Branch '${branchArg}' not found.`));
                 } else {
                     contextHistory = [...branch.history];
-                    console.log(chalk.green(`  ✅ Switched to branch '${branchArg}' (${contextHistory.length} messages loaded).\n`));
+                    console.log(chalk.green(`  [OK] Switched to branch '${branchArg}' (${contextHistory.length} messages loaded).\n`));
                 }
                 continue;
             } else {
-                console.log(chalk.cyan('\n🌿 CONVERSATION BRANCHING COMMANDS:'));
+                console.log(chalk.cyan('\n[BRANCHES] CONVERSATION BRANCHING COMMANDS:'));
                 console.log(chalk.dim('  /branch list               List all saved branches'));
                 console.log(chalk.dim('  /branch create <name>      Save current context to a new branch'));
                 console.log(chalk.dim('  /branch checkout <name>    Switch active session to a branch\n'));
@@ -620,18 +620,18 @@ async function main() {
         // ── GIT CHECKPOINT: /checkpoint ────────────────────────────────
         if (text.startsWith('/checkpoint')) {
             const msg = text.replace(/^\/checkpoint\s*/, '').trim() || `ANT Checkpoint: ${new Date().toISOString()}`;
-            console.log(chalk.cyan(`\n📦 Creating Git Checkpoint: "${msg}"...`));
+            console.log(chalk.cyan(`\n[Checkpoint] Creating Git Checkpoint: "${msg}"...`));
             try {
                 const { handleFileOps } = await import('./actions/file_ops.js');
                 const res: any = await handleFileOps('git_checkpoint', { message: msg }, path.join(process.cwd(), 'workspace'), process.cwd());
                 if (res?.status === 'success') {
-                    console.log(chalk.green(`  ✅ ${res.message}`));
+                    console.log(chalk.green(`  [OK] ${res.message}`));
                     if (res.output) console.log(chalk.dim(`     ${res.output.split('\n')[0]}`));
                 } else {
-                    console.log(chalk.yellow(`  ℹ ${res?.message || 'No changes to checkpoint.'}`));
+                    console.log(chalk.yellow(`  [Info] ${res?.message || 'No changes to checkpoint.'}`));
                 }
             } catch (e: any) {
-                console.log(chalk.red(`  ❌ Checkpoint failed: ${e.message}`));
+                console.log(chalk.red(`  [ERROR] Checkpoint failed: ${e.message}`));
             }
             console.log();
             continue;
@@ -639,7 +639,7 @@ async function main() {
 
         // ── CUSTOM SKILLS: /skills ─────────────────────────────────────
         if (text === '/skills' || text === '/skill list') {
-            console.log(chalk.cyan('\n🧩 AVAILABLE CUSTOM SKILLS:'));
+            console.log(chalk.cyan('\n[SKILLS] AVAILABLE CUSTOM SKILLS:'));
             try {
                 const { handleSkillOps } = await import('./actions/skill_ops.js');
                 const skillsRes: any = await handleSkillOps('ant_skill_list', {}, path.join(process.cwd(), 'workspace'), process.cwd());
@@ -676,7 +676,7 @@ async function main() {
             // 2. Coba simpan ke Cloud CockroachDB dengan embedding nyata
             const cloudSuccess = await storeCockroachMemory(memoryContent, embedding.length > 0 ? embedding : undefined, ['cli_user']);
             if (cloudSuccess) {
-                console.log(chalk.green(`  ✅ Memory synced to Cloud CockroachDB & Local Vault (vector: ${embedding.length > 0 ? '768-dim' : 'text only'})`));
+                console.log(chalk.green(`  [OK] Memory synced to Cloud CockroachDB & Local Vault (vector: ${embedding.length > 0 ? '768-dim' : 'text only'})`));
             } else {
                 // 3. Offline: antrikan ke pending_sync.json untuk sinkronisasi nanti
                 const syncQueuePath = path.join(process.cwd(), 'workspace', 'memories', 'pending_sync.json');
@@ -686,9 +686,9 @@ async function main() {
                     try { queue = JSON.parse(await fs.promises.readFile(syncQueuePath, 'utf-8')); } catch {}
                     queue.push({ content: memoryContent, embedding, tags: ['cli_user'], timestamp: new Date().toISOString() });
                     await fs.promises.writeFile(syncQueuePath, JSON.stringify(queue, null, 2));
-                    console.log(chalk.green(`  ✅ Memory saved to Local Vault + queued for cloud sync (${queue.length} pending).`));
+                    console.log(chalk.green(`  [OK] Memory saved to Local Vault + queued for cloud sync (${queue.length} pending).`));
                 } catch {
-                    console.log(chalk.green(`  ✅ Memory saved to Local Vault (Offline Native).`));
+                    console.log(chalk.green(`  [OK] Memory saved to Local Vault (Offline Native).`));
                 }
             }
             continue;
@@ -701,7 +701,7 @@ async function main() {
                 console.log(chalk.yellow('  Usage: /recall <keyword_or_topic>'));
                 continue;
             }
-            console.log(chalk.cyan(`\n🔍 Searching semantic memories for: "${query}"...`));
+            console.log(chalk.cyan(`\n[Recall] Searching semantic memories for: "${query}"...`));
 
             // 1. Cari di Local Semantic Memory (Vector Cosine + Lexical Fallback)
             const { semanticSearch } = await import('./memory.js');
@@ -754,13 +754,13 @@ async function main() {
 
         // ── MINDBY MEMORY: /memories ───────────────────────────────────
         if (text === '/memories') {
-            console.log(chalk.cyan('\n📚 STORED SEMANTIC MEMORIES IN DATABASE:'));
+            console.log(chalk.cyan('\n[MEMORIES] STORED SEMANTIC MEMORIES IN DATABASE:'));
             const memories = await listCockroachMemories(15);
             if (memories.length === 0) {
                 console.log(chalk.yellow('  No semantic memories stored yet. Use /store to persist one.'));
             } else {
                 memories.forEach((m, idx) => {
-                    console.log(`  ${chalk.cyan(`[#${idx + 1}]`)} ${m.content} ${chalk.dim(`• ${m.createdAt}`)}`);
+                    console.log(`  ${chalk.cyan(`[#${idx + 1}]`)} ${m.content} ${chalk.dim(`* ${m.createdAt}`)}`);
                 });
             }
             console.log();
@@ -771,7 +771,7 @@ async function main() {
         if (text.startsWith('/swarm')) {
             const args = text.replace(/^\/swarm\s*/, '').trim();
             const targetPath = args || process.cwd();
-            console.log(chalk.cyan.bold('\n🐜 ANT-CYBER-CORPS — Initiating Swarm Audit...'));
+            console.log(chalk.cyan.bold('\n[ANT-CYBER-CORPS] Initiating Swarm Audit...'));
             try {
                 const { launchSwarmAudit, renderSwarmReport } = await import('./agentic/swarm_orchestrator.js');
                 const result = await launchSwarmAudit(
@@ -792,10 +792,10 @@ async function main() {
                 let queue: any[] = [];
                 try { queue = JSON.parse(await fs.promises.readFile(syncQueuePath, 'utf-8')); } catch {}
                 if (queue.length === 0) {
-                    console.log(chalk.cyan('  ✓ No pending memories to sync. Cloud vault is up to date.'));
+                    console.log(chalk.cyan('  [OK] No pending memories to sync. Cloud vault is up to date.'));
                     continue;
                 }
-                console.log(chalk.cyan(`\n☁️  Syncing ${queue.length} offline memories to CockroachDB...`));
+                console.log(chalk.cyan(`\n[Sync] Syncing ${queue.length} offline memories to CockroachDB...`));
                 let synced = 0;
                 const failed: any[] = [];
                 for (const item of queue) {
@@ -804,9 +804,9 @@ async function main() {
                     else failed.push(item);
                 }
                 await fs.promises.writeFile(syncQueuePath, JSON.stringify(failed, null, 2));
-                console.log(chalk.green(`  ✅ Synced: ${synced}/${queue.length} memories. Remaining in queue: ${failed.length}.`));
+                console.log(chalk.green(`  [OK] Synced: ${synced}/${queue.length} memories. Remaining in queue: ${failed.length}.`));
                 if (failed.length > 0) {
-                    console.log(chalk.yellow('  ⚠️  Some memories failed to sync — will retry on next /sync.'));
+                    console.log(chalk.yellow('  [WARN] Some memories failed to sync -- will retry on next /sync.'));
                 }
             } catch (e: any) {
                 console.log(chalk.red(`  Sync Error: ${e.message}`));
@@ -820,7 +820,7 @@ async function main() {
             const targetVault = parts[1]?.toLowerCase();
             if (targetVault === 'cloud' || targetVault === 'local') {
                 setVaultMode(targetVault);
-                console.log(chalk.green(`  ✅ Active Memory Vault switched to: [${targetVault.toUpperCase()}]`));
+                console.log(chalk.green(`  [OK] Active Memory Vault switched to: [${targetVault.toUpperCase()}]`));
             } else {
                 console.log(chalk.cyan(`\n  Current Active Memory Vault: [${getVaultMode().toUpperCase()}]`));
                 console.log(chalk.dim('  Usage: /vault cloud  (Persist to CockroachDB Serverless)'));
@@ -831,9 +831,9 @@ async function main() {
 
         // ── MINDBY MEMORY: /health ─────────────────────────────────────
         if (text === '/health') {
-            console.log(chalk.cyan('\n🏥 SYSTEM & COGNITIVE MEMORY HEALTH AUDIT:'));
+            console.log(chalk.cyan('\n[HEALTH] SYSTEM & COGNITIVE MEMORY HEALTH AUDIT:'));
             const health = await checkCockroachHealth();
-            console.log(`  • CockroachDB Status : ${health.status === 'CONNECTED' ? chalk.green('CONNECTED ✅') : chalk.yellow(health.status)}`);
+            console.log(`  • CockroachDB Status : ${health.status === 'CONNECTED' ? chalk.green('CONNECTED [OK]') : chalk.yellow(health.status)}`);
             console.log(`  • Engine Type        : ${chalk.white(health.details)}`);
             console.log(`  • Total Memories     : ${chalk.cyan(health.totalMemories)} entries`);
             console.log(`  • Evidence Ledgers   : ${chalk.cyan(health.totalEvidences)} verified proofs`);
@@ -1001,11 +1001,11 @@ async function main() {
                     console.log(chalk.dim(`   [Mailbox Notice]: ${mbErr.message}`));
                 }
 
-                console.log(chalk.green(`✅ Model CLI berhasil diganti ke: ${chalk.bold.white(newModel)}`));
+                console.log(chalk.green(`[OK] Model CLI berhasil diganti ke: ${chalk.bold.white(newModel)}`));
                 console.log(chalk.dim(`   Provider otomatis diset ke: ${newProvider}`));
                 console.log(chalk.yellow(`   Ketik /new_chat jika model baru mulai berhalusinasi dengan konteks lama.\n`));
             } catch (e: any) {
-                console.log(chalk.red(`❌ Gagal memperbarui .env: ${e.message}\n`));
+                console.log(chalk.red(`[ERROR] Gagal memperbarui .env: ${e.message}\n`));
             }
             continue;
         }
@@ -1018,7 +1018,7 @@ async function main() {
                 continue;
             }
             
-            console.log(chalk.dim(`\n🛠️  Menjalankan perintah shell: ${shellCommand}`));
+            console.log(chalk.dim(`\n[Bash] Menjalankan perintah shell: ${shellCommand}`));
             try {
                 const { executeAction } = await import('./actions.js');
                 const context = { manual_approval: true };

@@ -67,7 +67,7 @@ export function printRoutingStatus(metadata: RoutingMetadata, lastModel: string)
     const currentReason = metadata.reason || '-';
 
     if (lastModel && lastModel !== currentModel) {
-        console.log(chalk.yellow(`\n🔄 [Brain Swapped] `) + chalk.dim(`${lastModel} ──► `) + chalk.green.bold(currentModel) + chalk.dim(` (${currentReason})` + '\n'));
+        console.log(chalk.yellow(`\n[Model Changed] `) + chalk.dim(`${lastModel} -> `) + chalk.green.bold(currentModel) + chalk.dim(` (${currentReason})` + '\n'));
     } else {
         console.log(chalk.dim(`Cognitive Route: ${chalk.cyan(currentTier)} (${chalk.white(currentModel)} via ${chalk.white(currentProvider)}) [Reason: ${chalk.italic(currentReason)}]` + '\n'));
     }
@@ -100,7 +100,7 @@ export function printThought(thought: string, durationSec: number = 0, estimated
 /** Render a beautiful unified-like git diff for file writes and edits */
 export function printFileDiff(filePath: string, newContent: string) {
     const absolutePath = path.resolve(process.cwd(), 'workspace', filePath);
-    console.log(chalk.cyan(`\n📄 FILE TARGET: ${chalk.bold(filePath)}`));
+    console.log(chalk.cyan(`\nFILE TARGET: ${chalk.bold(filePath)}`));
     console.log(chalk.dim('──────────────────────────────────────────────────────────────────'));
 
     let oldLines: string[] = [];
@@ -194,7 +194,7 @@ export async function printAssistantText(text: string, metrics?: ResponseMetrics
 
     if (metrics && metrics.durationSec) {
         const tokInfo = metrics.tokens ? ` (${metrics.tokens} tokens${metrics.speed ? `, ${metrics.speed} tok/s` : ''})` : '';
-        console.log(chalk.dim(`\n⚡ Response generated in ${metrics.durationSec}s${tokInfo}`));
+        console.log(chalk.dim(`\nResponse generated in ${metrics.durationSec}s${tokInfo}`));
     }
 
     console.log('\n' + getDivider() + '\n');
@@ -300,7 +300,7 @@ export function printToolFailure(toolName: string, args: Record<string, any> = {
 export function printApprovalBox(tool: string, risk: 'LOW' | 'MEDIUM' | 'HIGH', reason: string) {
     const riskColor = risk === 'HIGH' ? chalk.red.bold : risk === 'MEDIUM' ? chalk.yellow.bold : chalk.green.bold;
 
-    console.log(chalk.cyan('  🛡️  ANT SECURE GATEWAY'));
+    console.log(chalk.cyan('  ANT SECURE GATEWAY'));
     console.log(chalk.cyan('  │') + chalk.cyan('  Action      : ') + chalk.white(tool));
     console.log(chalk.cyan('  │') + chalk.cyan('  Risk Level  : ') + riskColor(risk));
     console.log(chalk.cyan('  │') + chalk.cyan('  Description : ') + chalk.italic(reason));
@@ -311,17 +311,17 @@ export function printAutoExecuteNotice() {
 }
 
 export function printDenied() {
-    console.log(chalk.red('✖ Eksekusi dibatalkan oleh pengguna.\n'));
+    console.log(chalk.red('[Cancelled] Eksekusi dibatalkan oleh pengguna.\n'));
 }
 
 export function printBlocked(reason: string) {
-    console.log(chalk.bgRed.white.bold(' ⛔ DIBLOKIR OTOMATIS ') + ' ' + chalk.red(reason) + '\n');
+    console.log(chalk.red.bold('[BLOCKED] ') + chalk.red(reason) + '\n');
 }
 
 /** Attempt limit reach message */
 export function printAttemptLimitReached(max: number) {
     console.log('\n' + getDivider());
-    console.log(chalk.bold.red(`⛔ ATTEMPT LIMIT REACHED (${max})`));
+    console.log(chalk.bold.red(`[LIMIT REACHED] Attempt limit reached (${max})`));
     console.log(chalk.dim('Agent was stopped because it reached the maximum step limit.'));
     console.log(chalk.dim('Task may be incomplete — inspect the latest results or continue in a new session.'));
     console.log(getDivider() + '\n');
@@ -329,11 +329,11 @@ export function printAttemptLimitReached(max: number) {
 
 /** Ctrl+C graceful cancel print */
 export function printCancelled() {
-    console.log('\n' + chalk.bold.yellow('⏸  Dibatalkan oleh pengguna (SIGINT). Sesi dihentikan dengan aman.\n'));
+    console.log('\n' + chalk.yellow('[Interrupted] Dibatalkan oleh pengguna (SIGINT). Sesi dihentikan dengan aman.\n'));
 }
 
 export function printConnectionError(message: string) {
-    console.log(chalk.red(`\n✖ Gagal terhubung ke model Kognitif: ${message}`));
+    console.log(chalk.red(`\n[Connection Error] Gagal terhubung ke model Kognitif: ${message}`));
 }
 
 export function printToolParseFailure() {

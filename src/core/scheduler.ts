@@ -196,7 +196,7 @@ export function startScheduler() {
       
       const { content: greeting } = await tieredChat(config, [{ role: 'user', content: prompt }], [], {}, `Sapaan ${timeOfDay} Cerdas.`);
       
-      const message = `⚡ **Kernel Update**: ${greeting}`;
+      const message = `**Kernel Update**: ${greeting}`;
       ANT_Bus.emit('system.autonomous_event', { 
         title: 'Kernel Update', 
         content: greeting, 

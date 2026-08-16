@@ -105,7 +105,7 @@ export async function requestApproval(
     if (isToolAutoApproved(toolCall.tool, risk)) {
         ui.printToolCallHeader(toolCall.tool);
         ui.printToolArgs(toolCall.args);
-        console.log(chalk.dim(`  ⚡ Auto-approved by execution policy [tool: ${toolCall.tool}, risk: ${risk}].`));
+        console.log(chalk.dim(`  Auto-approved by execution policy [tool: ${toolCall.tool}, risk: ${risk}].`));
         return { decision: 'approved', isSafe: false };
     }
 

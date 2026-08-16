@@ -141,6 +141,7 @@ export async function runCliAgentLoop(
     let verificationRetries = 0;
 
     const onSigint = () => {
+        if (cancelled) return;
         cancelled = true;
         ui.printCancelled();
     };
@@ -154,12 +155,19 @@ export async function runCliAgentLoop(
     const isResearchMode = researchTriggerRegex.test(initialMessage);
     
     let baseSystemInstruction = getSystemInstruction();
+    baseSystemInstruction += `\n\n[PRE-FLIGHT TEST-FIRST GUARD -- REQUIRED]
+Aturan Eksekusi Mutlak:
+1. JANGAN langsung menjalankan prosedur besar/destruktif dalam satu langkah tunggal.
+2. SELALU buat/tes/verifikasi dulu step kecil (dry-run/test minimal) sebelum modifikasi file atau eksekusi kritis untuk menghindari attention explosion dan halusinasi.
+3. Eksekusi satu langkah terverifikasi pada satu waktu.
+4. Jangan gunakan emoji atau icon dekoratif pada output respons.
+`;
     if (isResearchMode) {
-        console.log(chalk.magenta.bold('\n🧠 [Auto-Route] Deteksi intensi "Riset". Mengaktifkan Deep Think Protocol & Analisis Mendalam...'));
+        console.log(chalk.cyan.bold('\n[Auto-Route] Deteksi intensi "Riset". Mengaktifkan Deep Think Protocol & Analisis Mendalam...'));
         baseSystemInstruction += `\n\n[MODE RISET OTOMATIS AKTIF]
 User telah memicu mode riset. Ikuti aturan mutlak berikut:
 1. Gunakan mode penalaran mendalam (Deep Think) untuk mengeksplorasi masalah ini.
-2. Wajib berikan label/header "🔎 HASIL RISET (DEEP THINK)" di awal jawaban akhirmu.
+2. Wajib berikan label/header "[HASIL RISET -- DEEP THINK]" di awal jawaban akhirmu.
 3. Wajib cantumkan daftar "Sumber Data" di bagian akhir jawaban (sebutkan file, web, atau memori yang kamu gunakan).`;
     }
 
