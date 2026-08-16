@@ -936,34 +936,27 @@ async function main() {
             }
 
             if (!newModel) {
-                const modelRegex = /(?:AI_MODEL|CUSTOM_MODEL|CLI_CUSTOM_MODEL|ANT_SWARM_MODEL|ANT_GRAY_[0-9]_MODEL)[A-Z_]*=([^\n\r#]+)/g;
-                let match;
-                const models = new Set<string>();
-                while ((match = modelRegex.exec(envContent)) !== null) {
-                    const cleaned = match[1]?.trim();
-                    if (cleaned && !cleaned.includes('<') && !cleaned.includes('your_')) {
-                        models.add(cleaned);
-                    }
-                }
-                // Fallback default models if set is empty
-                if (models.size === 0) {
-                    models.add('gemma4:31b-cloud');
-                    models.add('ant:1b');
-                    models.add('gpt-oss:120b-cloud');
-                    models.add('kimi-k2.7-code:cloud');
-                    models.add('qwen2.5:0.5b');
-                }
-                const modelList = Array.from(models);
-                
-                console.log(chalk.cyan('\n📋 Daftar Model Tersedia (dari .env / System):'));
-                modelList.forEach((m, idx) => {
-                    console.log(`  ${chalk.bold(idx + 1)}. ${m}`);
+                const { getDiscoverableModels, renderModelSelectorHeader, formatModelEntryLine } = await import('./model_manager.js');
+                const brain = await getBrainConfig();
+                const currentModel = brain.custom_model || process.env.CUSTOM_MODEL || process.env.AI_MODEL || 'gemini-2.0-flash';
+                const defaultModel = process.env.AI_MODEL || process.env.CUSTOM_MODEL || 'deepseek-v4-flash:cloud';
+                const modelEntries = await getDiscoverableModels(currentModel, defaultModel, envContent);
+
+                renderModelSelectorHeader();
+
+                const maxRawLen = Math.max(
+                    ...modelEntries.map(e => e.name.length + (e.isCurrent ? 10 : e.isDefault ? 10 : e.badge ? e.badge.length + 3 : 0)),
+                    30
+                );
+
+                modelEntries.forEach((entry, idx) => {
+                    console.log(formatModelEntryLine(entry, idx, maxRawLen + 3));
                 });
-                
+
                 const answer = await askUser(chalk.yellow('\n  Pilih nomor atau ketik nama model baru: '));
                 const num = parseInt(answer.trim());
-                if (!isNaN(num) && num > 0 && num <= modelList.length) {
-                    newModel = modelList[num - 1];
+                if (!isNaN(num) && num > 0 && num <= modelEntries.length) {
+                    newModel = modelEntries[num - 1].name;
                 } else if (answer.trim()) {
                     newModel = answer.trim();
                 } else {
