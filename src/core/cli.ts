@@ -652,12 +652,19 @@ async function main() {
                 console.log(chalk.dim('  Example: /store Target final submission for CockroachDB Hackathon is August 18, 2026.'));
                 continue;
             }
-            console.log(chalk.dim('  Persisting memory to Vault...'));
-            const success = await storeCockroachMemory(memoryContent, undefined, ['cli_user']);
-            if (success) {
-                console.log(chalk.green(`  ✅ Memory successfully stored to CockroachDB Cloud Serverless!`));
+            console.log(chalk.dim('  Persisting memory to Dual-Vault...'));
+
+            // 1. Simpan ke Local 4-Tier Memory Vault (Offline & Termux Native)
+            const memKey = `mem_${Date.now()}`;
+            const { storeMemory } = await import('./memory.js');
+            await storeMemory('semantic', memKey, memoryContent, ['cli_user', 'operator']);
+
+            // 2. Simpan ke Cloud CockroachDB jika aktif
+            const cloudSuccess = await storeCockroachMemory(memoryContent, undefined, ['cli_user']);
+            if (cloudSuccess) {
+                console.log(chalk.green(`  ✅ Memory synced to Cloud CockroachDB & Local Vault!`));
             } else {
-                console.log(chalk.yellow(`  ℹ Memory saved to Local Vault (Offline).`));
+                console.log(chalk.green(`  ✅ Memory saved to Local 4-Tier Vault (Offline Native).`));
             }
             continue;
         }
@@ -669,14 +676,49 @@ async function main() {
                 console.log(chalk.yellow('  Usage: /recall <keyword_or_topic>'));
                 continue;
             }
-            console.log(chalk.cyan(`\n🔍 Searching semantic memories in CockroachDB for: "${query}"...`));
-            const memories = await recallCockroachMemory([], 5);
-            if (memories.length === 0) {
-                console.log(chalk.yellow('  No relevant memories found.'));
+            console.log(chalk.cyan(`\n🔍 Searching semantic memories for: "${query}"...`));
+
+            // 1. Cari di Local Semantic Memory (Vector Cosine + Lexical Fallback)
+            const { semanticSearch } = await import('./memory.js');
+            const localHits = await semanticSearch(query, 'semantic', 5);
+
+            // 2. Cari di CockroachDB Cloud jika aktif
+            let cloudHits: any[] = [];
+            try {
+                cloudHits = await recallCockroachMemory([], 5);
+            } catch {}
+
+            const allHits: Array<{ content: string; score: number; source: string; date?: string }> = [];
+
+            localHits.forEach(h => {
+                const textVal = typeof h.data === 'string' ? h.data : JSON.stringify(h.data);
+                allHits.push({
+                    content: textVal,
+                    score: Math.round((h.score || 0) * 100),
+                    source: 'Local Vault',
+                    date: h.updatedAt ? new Date(h.updatedAt).toLocaleDateString() : undefined
+                });
+            });
+
+            cloudHits.forEach(c => {
+                if (!allHits.some(h => h.content === c.content)) {
+                    allHits.push({
+                        content: c.content,
+                        score: Math.round((c.score || 0.8) * 100),
+                        source: 'CockroachDB Cloud',
+                        date: c.createdAt ? new Date(c.createdAt).toLocaleDateString() : undefined
+                    });
+                }
+            });
+
+            if (allHits.length === 0) {
+                console.log(chalk.yellow('  No relevant semantic memories found.'));
             } else {
-                console.log(chalk.green(`  Found ${memories.length} relevant memories:`));
-                memories.forEach((m, idx) => {
-                    console.log(`  ${chalk.bold(idx + 1)}. ${m.content} ${chalk.dim(`(${m.createdAt})`)}`);
+                console.log(chalk.green(`  Found ${allHits.length} relevant memories:`));
+                allHits.forEach((m, idx) => {
+                    const matchLabel = chalk.cyan(`[${m.score}% match]`);
+                    const sourceLabel = chalk.dim(`[${m.source}]`);
+                    console.log(`  ${chalk.bold(idx + 1)}. ${m.content} ${matchLabel} ${sourceLabel}`);
                 });
             }
             console.log();

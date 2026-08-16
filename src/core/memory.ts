@@ -145,32 +145,50 @@ export async function storeMemory(layer: 'working' | 'episodic' | 'semantic' | '
   }
 }
 
-export async function semanticSearch(query: string, layer: 'episodic' | 'semantic' | 'core' = 'semantic', limit = 3) {
+export async function semanticSearch(query: string, layer: 'episodic' | 'semantic' | 'core' = 'semantic', limit = 5) {
   try {
     const filePath = layer === 'episodic' ? EPISODIC_FILE : 
                      layer === 'semantic' ? SEMANTIC_FILE : CORE_FILE;
     
-    const data = await fs.readFile(filePath, 'utf-8');
+    const data = await fs.readFile(filePath, 'utf-8').catch(() => '{}');
     const memory: Record<string, MemoryEntry> = JSON.parse(data);
     
     const config = await getBrainConfig();
-    const queryVector = await getEmbedding(config, query);
+    let queryVector: number[] | null = null;
+    try {
+      queryVector = await getEmbedding(config, query);
+    } catch {
+      queryVector = null;
+    }
     
-    if (!queryVector) return [];
+    const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 1);
 
     const results = Object.entries(memory)
       .map(([key, entry]) => {
-        if (!entry.embedding) return { key, data: entry.data, score: 0 };
+        const entryText = typeof entry.data === 'string' ? entry.data : JSON.stringify(entry.data);
+        const lowerEntry = entryText.toLowerCase();
+
+        let score = 0;
+
+        if (queryVector && entry.embedding && entry.embedding.length > 0) {
+          // 1. Neural Vector Cosine Similarity (768-dim)
+          const dotProduct = queryVector.reduce((acc: number, val: number, i: number) => acc + val * (entry.embedding![i] || 0), 0);
+          const mag1 = Math.sqrt(queryVector.reduce((acc: number, val: number) => acc + val * val, 0));
+          const mag2 = Math.sqrt(entry.embedding.reduce((acc: number, val: number) => acc + val * val, 0));
+          score = (mag1 && mag2) ? (dotProduct / (mag1 * mag2)) : 0;
+        } else {
+          // 2. Lexical & Tag-Weighted Fallback Search (Zero-Dependency Offline)
+          let termHits = 0;
+          for (const term of queryTerms) {
+            if (lowerEntry.includes(term)) termHits++;
+          }
+          const tagHits = (entry.tags || []).filter(tag => queryTerms.includes(tag.toLowerCase())).length;
+          score = queryTerms.length > 0 ? (termHits / queryTerms.length) * 0.7 + (tagHits > 0 ? 0.3 : 0) : 0;
+        }
         
-        // Cosine Similarity
-        const dotProduct = queryVector.reduce((acc: number, val: number, i: number) => acc + val * (entry.embedding![i] || 0), 0);
-        const mag1 = Math.sqrt(queryVector.reduce((acc: number, val: number) => acc + val * val, 0));
-        const mag2 = Math.sqrt(entry.embedding.reduce((acc: number, val: number) => acc + val * val, 0));
-        const score = dotProduct / (mag1 * mag2);
-        
-        return { key, data: entry.data, score, updatedAt: entry.updatedAt };
+        return { key, data: entry.data, score, updatedAt: entry.updatedAt, tags: entry.tags };
       })
-      .filter(r => r.score > 0.7)
+      .filter(r => r.score > 0.4)
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
 
