@@ -95,13 +95,46 @@ export async function setActiveModel(
 
         Logger.log('INFO', `Handover written to mailbox: ${prevModelId} -> ${newModelId}`, {}, 'MAILBOX');
 
-        console.log('\n' + chalk.cyan('╭──────────────────────────────────────────────────────────╮'));
-        console.log(chalk.cyan('│') + chalk.bold.yellow(' 📬 INTER-MODEL HANDOVER MAILBOX                          ') + chalk.cyan('│'));
-        console.log(chalk.cyan('│') + chalk.dim(` Timestamp : ${savedEnvelope.timestamp.slice(0, 19).replace('T', ' ')} UTC`) + ' '.repeat(17) + chalk.cyan('│'));
-        console.log(chalk.cyan('│') + ` From      : ${chalk.bold.green(prevModelId)} ──► To: ${chalk.bold.cyan(newModelId)}` + ' '.repeat(Math.max(0, 20 - prevModelId.length - newModelId.length)) + chalk.cyan('│'));
-        console.log(chalk.cyan('├──────────────────────────────────────────────────────────┤'));
-        console.log(chalk.cyan('│') + ` "${chalk.italic(messageText)}"` + chalk.cyan(''));
-        console.log(chalk.cyan('╰──────────────────────────────────────────────────────────╯\n'));
+        const termWidth = Math.max(38, Math.min((process.stdout.columns || 80) - 2, 70));
+        const borderH = '─'.repeat(termWidth - 2);
+        const innerWidth = termWidth - 4;
+
+        const printBoxLine = (content: string) => {
+            const clean = content.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+            const rawLen = clean.length;
+            if (rawLen > innerWidth) {
+                const words = content.split(' ');
+                let curLine = '';
+                let curClean = '';
+                for (const w of words) {
+                    const wClean = w.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+                    if (curClean.length + wClean.length + 1 > innerWidth) {
+                        const pad = Math.max(0, innerWidth - curClean.length);
+                        console.log(chalk.cyan('│ ') + curLine + ' '.repeat(pad) + chalk.cyan(' │'));
+                        curLine = w;
+                        curClean = wClean;
+                    } else {
+                        curLine = curLine ? `${curLine} ${w}` : w;
+                        curClean = curClean ? `${curClean} ${wClean}` : wClean;
+                    }
+                }
+                if (curLine) {
+                    const pad = Math.max(0, innerWidth - curClean.length);
+                    console.log(chalk.cyan('│ ') + curLine + ' '.repeat(pad) + chalk.cyan(' │'));
+                }
+            } else {
+                const padding = Math.max(0, innerWidth - rawLen);
+                console.log(chalk.cyan('│ ') + content + ' '.repeat(padding) + chalk.cyan(' │'));
+            }
+        };
+
+        console.log('\n' + chalk.cyan(`╭${borderH}╮`));
+        printBoxLine(chalk.bold.yellow('[INTER-MODEL HANDOVER MAILBOX]'));
+        printBoxLine(chalk.dim(`Timestamp : ${savedEnvelope.timestamp.slice(0, 19).replace('T', ' ')} UTC`));
+        printBoxLine(`From      : ${chalk.bold.green(prevModelId)} -> ${chalk.bold.cyan(newModelId)}`);
+        console.log(chalk.cyan(`├${borderH}┤`));
+        printBoxLine(`"${chalk.italic(messageText)}"`);
+        console.log(chalk.cyan(`╰${borderH}╯\n`));
 
         return { success: true, envelope: savedEnvelope };
     } catch (e: any) {
