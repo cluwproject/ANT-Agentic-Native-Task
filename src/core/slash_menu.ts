@@ -49,12 +49,13 @@ export const SLASH_COMMANDS: SlashCommand[] = [
 const MAX_VISIBLE = 8;
 
 function renderMenu(filtered: SlashCommand[], selectedIdx: number, query: string) {
-    const width = Math.min(process.stdout.columns || 80, 95);
+    const cols = Math.max(35, (process.stdout.columns || 80) - 2);
+    const width = Math.min(cols, 70);
     const separator = chalk.dim('─'.repeat(width));
 
     const lines: string[] = [];
     lines.push(separator);
-    lines.push(chalk.cyan.bold('> ') + chalk.white.bold(query || '/'));
+    lines.push(chalk.cyan.bold('> ') + chalk.white.bold((query || '/').slice(0, width - 4)));
     lines.push(separator);
 
     const totalRows = Math.min(filtered.length, MAX_VISIBLE);
@@ -66,19 +67,19 @@ function renderMenu(filtered: SlashCommand[], selectedIdx: number, query: string
         const absIdx = startIdx + i;
         const isSelected = absIdx === selectedIdx;
 
-        const prefix = isSelected ? chalk.cyan.bold('> ') : '  ';
-        const cmdFormatted = isSelected ? chalk.cyan.bold(cmd.command.padEnd(30)) : chalk.white(cmd.command.padEnd(30));
+        const prefix = isSelected ? chalk.cyan.bold('❯ ') : '  ';
+        const cmdFormatted = isSelected ? chalk.cyan.bold(cmd.command.padEnd(24)) : chalk.white(cmd.command.padEnd(24));
         
         const rawDesc = cmd.description;
-        const maxDescLen = Math.max(10, width - 36);
+        const maxDescLen = Math.max(8, width - 28);
         const descShort = rawDesc.length > maxDescLen ? rawDesc.slice(0, maxDescLen - 3) + '...' : rawDesc;
         const descFormatted = isSelected ? chalk.white(descShort) : chalk.dim(descShort);
 
-        lines.push(`${prefix}${cmdFormatted}  ${descFormatted}`);
+        lines.push(`${prefix}${cmdFormatted} ${descFormatted}`);
     });
 
     if (remaining > 0) {
-        lines.push(chalk.dim(`   ↓ ${remaining} more`));
+        lines.push(chalk.dim(`   ↓ ${remaining} more (use arrows / type to filter)`));
     }
 
     process.stdout.write(lines.join('\n') + '\n');
@@ -87,7 +88,7 @@ function renderMenu(filtered: SlashCommand[], selectedIdx: number, query: string
 
 function clearMenu(menuLines: number) {
     for (let i = 0; i < menuLines; i++) {
-        process.stdout.write('\x1B[1A\x1B[2K');
+        process.stdout.write('\x1B[1A\x1B[2K\r');
     }
 }
 
@@ -124,15 +125,21 @@ export async function showSlashMenu(initialChar: string = '/'): Promise<string |
 
         const cleanup = (result: string | null) => {
             if (menuLines > 0) clearMenu(menuLines);
-            process.stdin.setRawMode(false);
-            process.stdin.pause();
-            process.stdin.removeAllListeners('data');
+            try {
+                process.stdin.setRawMode(false);
+                process.stdin.pause();
+                process.stdin.removeAllListeners('data');
+            } catch {}
             resolve(result);
         };
 
-        process.stdin.setRawMode(true);
-        process.stdin.resume();
-        process.stdin.setEncoding('utf8');
+        try {
+            process.stdin.setRawMode(true);
+            process.stdin.resume();
+            process.stdin.setEncoding('utf8');
+        } catch {
+            return resolve(null);
+        }
 
         // Initial draw
         const f = filtered();
@@ -157,7 +164,6 @@ export async function showSlashMenu(initialChar: string = '/'): Promise<string |
             if (key === '\r' || key === '\n') {
                 const selected = f[selectedIdx];
                 const result = selected ? selected.command : query;
-                process.stdout.write('\n');
                 cleanup(result);
                 return;
             }
@@ -204,8 +210,13 @@ export async function showSlashMenu(initialChar: string = '/'): Promise<string |
                 return;
             }
 
-            // Printable character
-            if (key >= ' ' || key === '/') {
+            // Ignore other escape sequences (e.g. arrow left/right, F-keys)
+            if (key.startsWith('\u001b')) {
+                return;
+            }
+
+            // Printable single character
+            if (key.length === 1 && (key >= ' ' || key === '/')) {
                 query += key;
                 selectedIdx = 0;
                 redraw();

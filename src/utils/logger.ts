@@ -47,9 +47,11 @@ export const Logger = {
         targetFile = path.join(process.cwd(), 'workspace', 'security.log');
       }
       
+      const targetDir = path.dirname(targetFile);
+      await fs.mkdir(targetDir, { recursive: true });
       await fs.appendFile(targetFile, logEntry);
     } catch (e) {
-      console.error('Failed to write to log file', e);
+      // Silently ignore disk write error during bootstrap
     }
   },
 

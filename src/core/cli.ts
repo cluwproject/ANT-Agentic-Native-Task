@@ -8,15 +8,26 @@ import os from 'os';
 import chalk from 'chalk';
 import { getBrainConfig } from '../shared/data.js';
 
-// Baca konfigurasi dari direktori proyek saat ini, lalu fallback ke ~/.ant/
+// Baca konfigurasi dari direktori proyek saat ini, lalu fallback ke ~/.ant/ atau home ant-cli
 const BASE_DIR = process.cwd();
 const ANT_HOME = path.join(os.homedir(), '.ant');
-dotenv.config({ path: path.join(BASE_DIR, '.env') });
+
+const envCandidates = [
+    path.join(BASE_DIR, '.env'),
+    path.join(ANT_HOME, '.env'),
+    path.join(os.homedir(), 'ant-cli', '.env'),
+    '/data/data/com.termux/files/home/ant-cli/.env'
+];
+for (const envPath of envCandidates) {
+    if (fs.existsSync(envPath)) {
+        dotenv.config({ path: envPath });
+    }
+}
 
 // Read identity and user profile configuration
 function readAntIdentity() {
     try {
-        const owner = process.env.USER_NAME || 'User';
+        const owner = process.env.USER_NAME || 'Ard';
         return {
             creator: 'Renaldy Adri (Ard)',
             origin: 'CLUW Genesis',
@@ -27,7 +38,7 @@ function readAntIdentity() {
         return {
             creator: 'Renaldy Adri (Ard)',
             origin: 'CLUW Genesis',
-            activeUser: 'User',
+            activeUser: 'Ard',
             collaborators: 'Agy, Gemma, Claude, DeepSeek, Ollama'
         };
     }
@@ -39,7 +50,7 @@ function getAntAscii() {
   ANT — Agentic Native Task
   You Ask. ANT Acts.
 
-  ➜  Version     : v0.1.0 (Hackathon Edition)
+  ➜  Version     : v0.3.0 (Hackathon Edition)
   ➜  Origin      : ${identity.origin} (Founded by ${identity.creator})
   ➜  Companion   : ${identity.activeUser}
   ➜  Engine      : ANT Sovereign Runtime
@@ -413,7 +424,7 @@ async function main() {
         };
 
         console.log(chalk.cyan(`╭${borderH}╮`));
-        printLine(`  ${chalk.bold.white('ANT — Agentic Native Task v0.1.0')}`);
+        printLine(`  ${chalk.bold.white('ANT — Agentic Native Task v0.3.0')}`);
         printLine('');
         printLine(`  ${chalk.cyan('Model:')} ${chalk.white(activeModel)} (${chalk.dim(provider)})`);
         printLine(`  ${chalk.cyan('Cognitive Core:')} ${chalk.white('ANT Core (MindBy Powered)')}`);
@@ -465,10 +476,12 @@ async function main() {
 
         // ── Interactive Slash Menu Trigger (/ or /help) ─────────────────
         if (text === '/' || text === '/help') {
+            process.stdout.write('\x1B[1A\x1B[2K\r');
             const { showSlashMenu } = await import('./slash_menu.js');
             const selected = await showSlashMenu('/');
             if (selected && selected.trim()) {
                 text = selected.trim();
+                console.log(chalk.cyan('You ❯ ') + chalk.bold.white(text));
             } else {
                 continue;
             }
@@ -904,41 +917,57 @@ async function main() {
             const parts = text.split(' ');
             let newModel = parts[1];
 
-            const envPath = path.join(process.cwd(), '.env');
+            let envPath = path.join(process.cwd(), '.env');
+            const envSearch = [
+                path.join(process.cwd(), '.env'),
+                path.join(ANT_HOME, '.env'),
+                path.join(os.homedir(), 'ant-cli', '.env'),
+                '/data/data/com.termux/files/home/ant-cli/.env'
+            ];
             let envContent = '';
-            if (fs.existsSync(envPath)) {
-                envContent = await fs.promises.readFile(envPath, 'utf-8');
+            for (const p of envSearch) {
+                if (fs.existsSync(p)) {
+                    envPath = p;
+                    try {
+                        envContent = await fs.promises.readFile(p, 'utf-8');
+                        break;
+                    } catch {}
+                }
             }
 
             if (!newModel) {
-                const modelRegex = /(?:CUSTOM_MODEL|CLI_CUSTOM_MODEL)[A-Z_]*=([^\n\r]+)/g;
+                const modelRegex = /(?:AI_MODEL|CUSTOM_MODEL|CLI_CUSTOM_MODEL|ANT_SWARM_MODEL|ANT_GRAY_[0-9]_MODEL)[A-Z_]*=([^\n\r#]+)/g;
                 let match;
                 const models = new Set<string>();
                 while ((match = modelRegex.exec(envContent)) !== null) {
-                    if (match[1] && match[1].trim()) {
-                        models.add(match[1].trim());
+                    const cleaned = match[1]?.trim();
+                    if (cleaned && !cleaned.includes('<') && !cleaned.includes('your_')) {
+                        models.add(cleaned);
                     }
+                }
+                // Fallback default models if set is empty
+                if (models.size === 0) {
+                    models.add('gemma4:31b-cloud');
+                    models.add('ant:1b');
+                    models.add('gpt-oss:120b-cloud');
+                    models.add('kimi-k2.7-code:cloud');
+                    models.add('qwen2.5:0.5b');
                 }
                 const modelList = Array.from(models);
                 
-                if (modelList.length > 0) {
-                    console.log(chalk.cyan('\n📋 Daftar Model Tersedia (dari .env):'));
-                    modelList.forEach((m, idx) => {
-                        console.log(`  ${chalk.bold(idx + 1)}. ${m}`);
-                    });
-                    
-                    const answer = await askUser(chalk.yellow('\n  Pilih nomor atau ketik nama model baru: '));
-                    const num = parseInt(answer.trim());
-                    if (!isNaN(num) && num > 0 && num <= modelList.length) {
-                        newModel = modelList[num - 1];
-                    } else if (answer.trim()) {
-                        newModel = answer.trim();
-                    } else {
-                        console.log(chalk.red('  ❌ Dibatalkan.'));
-                        continue;
-                    }
+                console.log(chalk.cyan('\n📋 Daftar Model Tersedia (dari .env / System):'));
+                modelList.forEach((m, idx) => {
+                    console.log(`  ${chalk.bold(idx + 1)}. ${m}`);
+                });
+                
+                const answer = await askUser(chalk.yellow('\n  Pilih nomor atau ketik nama model baru: '));
+                const num = parseInt(answer.trim());
+                if (!isNaN(num) && num > 0 && num <= modelList.length) {
+                    newModel = modelList[num - 1];
+                } else if (answer.trim()) {
+                    newModel = answer.trim();
                 } else {
-                    console.log(chalk.yellow('  Penggunaan: /model <nama_model> (contoh: /model gemma4:31b)'));
+                    console.log(chalk.red('  ❌ Dibatalkan.'));
                     continue;
                 }
             }

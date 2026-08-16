@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import os from 'os';
 import { Logger } from '../utils/logger.js';
 
 const BASE_DIR = process.cwd();
@@ -113,22 +114,34 @@ export async function loadData() {
 export async function getBrainConfig() {
   let envData: Record<string, string> = {};
   let isEnvFilled = false;
-  try {
-    let rawEnv = await fs.readFile(path.join(BASE_DIR, '.env'), 'utf-8');
-    rawEnv = rawEnv.replace(/^\uFEFF/, ''); // Strip BOM
-    rawEnv.split('\n').forEach(line => {
-      const match = line.match(/^([^=]+)=(.*)$/);
-      if (match) {
-        const key = match[1].trim();
-        const value = match[2].trim();
-        envData[key] = value;
-        if (value.length > 0 && key !== 'SOVEREIGN_PIN') {
-          isEnvFilled = true;
+  
+  const envCandidates = [
+    path.join(BASE_DIR, '.env'),
+    path.join(os.homedir(), '.ant', '.env'),
+    path.join(os.homedir(), 'ant-cli', '.env'),
+    '/data/data/com.termux/files/home/ant-cli/.env'
+  ];
+
+  for (const envCandidate of envCandidates) {
+    try {
+      let rawEnv = await fs.readFile(envCandidate, 'utf-8');
+      rawEnv = rawEnv.replace(/^\uFEFF/, ''); // Strip BOM
+      rawEnv.split('\n').forEach(line => {
+        const match = line.match(/^([^=]+)=(.*)$/);
+        if (match) {
+          const key = match[1].trim();
+          const value = match[2].trim();
+          if (!envData[key]) {
+            envData[key] = value;
+          }
+          if (value.length > 0 && key !== 'SOVEREIGN_PIN') {
+            isEnvFilled = true;
+          }
         }
-      }
-    });
-  } catch (e) {
-    // Fallback if no .env
+      });
+    } catch (e) {
+      // Continue to next candidate
+    }
   }
 
   const getEnv = (key: string) => envData[key] || process.env[key] || '';
