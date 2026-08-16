@@ -32,6 +32,36 @@ export const SUB_AGENT_REGISTRY: Record<string, SubAgentDefinition> = {
         description: 'Sub-agen perencanaan: memecah tugas kompleks menjadi langkah-langkah terstruktur.',
         systemPrompt: 'Kamu adalah Sub-Agen Planner ANT. Tugasmu menyusun rencana eksekusi HTN yang efisien dan logis.',
         allowedTools: ['read_file', 'list_dir']
+    },
+    'gray-1': {
+        role: 'gray-1',
+        description: 'Spesialis Memory & Logic (ANT-CYBER-CORPS).',
+        systemPrompt: 'Kamu adalah GRAY-1, unit elit ANT-CYBER-CORPS spesialis Memory & Logic. Tugasmu mengaudit logika aplikasi, memory leaks, dan state management.',
+        allowedTools: ['read_file', 'grep_search', 'syntax_check']
+    },
+    'gray-2': {
+        role: 'gray-2',
+        description: 'Spesialis Injection (SQLi, XSS) (ANT-CYBER-CORPS).',
+        systemPrompt: 'Kamu adalah GRAY-2, unit elit ANT-CYBER-CORPS spesialis Injeksi. Tugasmu mencari celah SQLi, XSS, Command Injection, dan validasi input yang lemah.',
+        allowedTools: ['read_file', 'grep_search', 'shell_exec']
+    },
+    'gray-3': {
+        role: 'gray-3',
+        description: 'Spesialis Auth & Identity (ANT-CYBER-CORPS).',
+        systemPrompt: 'Kamu adalah GRAY-3, unit elit ANT-CYBER-CORPS spesialis Auth. Tugasmu mengaudit mekanisme otentikasi, otorisasi, JWT, dan manajemen sesi.',
+        allowedTools: ['read_file', 'grep_search']
+    },
+    'gray-4': {
+        role: 'gray-4',
+        description: 'Spesialis Supply Chain & CVE (ANT-CYBER-CORPS).',
+        systemPrompt: 'Kamu adalah GRAY-4, unit elit ANT-CYBER-CORPS spesialis Supply Chain. Tugasmu memeriksa dependensi rentan (CVE), package.json, dan file lock.',
+        allowedTools: ['read_file', 'grep_search', 'shell_exec']
+    },
+    'gray-5': {
+        role: 'gray-5',
+        description: 'Spesialis Cloud Config & Infra (ANT-CYBER-CORPS).',
+        systemPrompt: 'Kamu adalah GRAY-5, unit elit ANT-CYBER-CORPS spesialis Cloud/Infra. Tugasmu mengaudit konfigurasi AWS, Docker, K8s, dan secrets yang hardcoded.',
+        allowedTools: ['read_file', 'grep_search', 'list_dir']
     }
 };
 
@@ -52,7 +82,7 @@ export async function spawnSubAgent(role: string, task: string, brain: any, cont
             [],
             {},
             subAgent.systemPrompt,
-            brain.custom_model || 'gemini-2.0-flash',
+            brain.custom_model || 'gemma4:31b-cloud',
             `SubAgent:${subAgent.role}`
         );
 
