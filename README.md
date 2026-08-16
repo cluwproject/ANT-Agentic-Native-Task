@@ -1,223 +1,310 @@
 # ANT-CLI — Agentic Native Task
-### Sovereign Agentic Runtime with MindBy Persistent Cognitive Memory Engine
+### Sovereign Agentic Runtime × MindBy Persistent Cognitive Memory × ANT-CYBER-CORPS
 
 > **You Ask. ANT Acts. Memory Persists. Evidence Remains.**  
 > *Built for CockroachDB × AWS Hackathon 2026 — Track: Agentic Memory*
 
 ---
 
-## 🌟 Executive Overview
+## 🌟 Apa Itu ANT?
 
-**ANT-CLI (Agentic Native Task)** is a model-agnostic, sovereign agent runtime engineered to turn natural-language intent into observable, verifiable action. 
+**ANT-CLI** adalah *sovereign agentic runtime* berbasis CLI yang menggabungkan tiga sistem inti secara terintegrasi:
 
-By unifying ANT's autonomous execution engine with **MindBy OS (Persistent Cognitive Memory Engine)**, ANT bridges the critical gap between **execution agency** and **long-term cognitive memory**:
-1. **Autonomous Agency:** ReAct loops, multi-step tool execution, sub-agents, and approval gates.
-2. **Persistent Agentic Memory:** 4-tier cognitive memory partitioning powered by **CockroachDB Serverless (Distributed Vector Indexing)** and **AWS Bedrock**.
-3. **Cryptographic Truth:** Tamper-proof audit trails (*Claim != Truth*) backed by SHA-256 evidence ledgers.
-4. **Cross-Model Interoperability:** Multi-model state handovers (`ANT-MAIL/1.0`) across local SLMs (`ant:1b`) and cloud reasoners.
+1. **ANT Commander** — LLM besar (120B cloud / Ollama) yang menerima misi dari pengguna, melakukan *reasoning*, memanggil tools, dan mengorkestrasi sub-agen.
+2. **MindBy Memory OS** — Mesin memori kognitif 4-tier dengan dual-vault (CockroachDB Cloud + Local JSON), embedding 768-dim via `nomic-embed-text`, dan offline sync queue.
+3. **ANT-CYBER-CORPS** — Pasukan 5 sub-agen kecil (0.5B SLM) yang bekerja **paralel** untuk mengaudit keamanan kode secara cepat dan ringan.
 
-```text
-                 USER / OPERATOR (Ard)
-                           │
-                           ▼
-                      ┌─────────┐
-                      │   ANT   │ ◄── [Slash Menu / CLI / MCP]
-                      └────┬────┘
-                           │
-       ┌───────────────────┼───────────────────┐
-       ▼                   ▼                   ▼
-  HTN Planner       MindBy Memory OS       Tool Engine
-(ReAct Loop)       (4-Tier Partition)     (Terminal/Web/Git)
-       │                   │                   │
-       └───────────────────┼───────────────────┘
-                           ▼
-                    MODEL ADAPTERS
-       ┌───────────────────┼───────────────────┐
-       ▼                   ▼                   ▼
-  Local SLM             Cloud LLM          Vision / Observer
-  (ant:1b)          (AWS Bedrock/Ollama)     (MiniCPM-V)
-                           │
-                           ▼
-                 ┌───────────────────┐
-                 │  ANT MODEL RELAY  │ ◄── [AntModelMailbox]
-                 └─────────┬─────────┘
-                           │
-       ┌───────────────────┴───────────────────┐
-       ▼                                       ▼
-┌───────────────────────────────┐   ┌───────────────────────────────┐
-│       EVIDENCE LEDGER         │   │      COCKROACHDB CLOUD        │
-│   SHA-256 Kriptografis        │   │  Distributed Vector Indexing  │
-│   (Claim != Truth Verifier)   │   │  (768-dim Embeddings / ACID)  │
-└───────────────────────────────┘   └───────────────────────────────┘
+```
+                   USER / OPERATOR (Ard)
+                             │
+                    /command atau prompt bebas
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │  ANT Commander  │ ◄── Slash Menu / CLI / MCP
+                    │  (LLM Besar)    │
+                    └────────┬────────┘
+                             │
+       ┌─────────────────────┼──────────────────────┐
+       ▼                     ▼                      ▼
+  HTN Planner         MindBy Memory OS         Tool Engine
+  (ReAct Loop)        (4-Tier + Dual Vault)    (Terminal/Git/Web)
+       │                     │                      │
+       └─────────────────────┼──────────────────────┘
+                             ▼
+                    ANT-CYBER-CORPS
+           ┌──────────────────────────────────┐
+           │  GRAY-1  GRAY-2  GRAY-3          │
+           │  GRAY-4  GRAY-5  (Paralel 0.5B)  │
+           └──────────────────────────────────┘
+                             │
+          ┌──────────────────┴───────────────────┐
+          ▼                                      ▼
+┌──────────────────────┐             ┌───────────────────────┐
+│   EVIDENCE LEDGER    │             │   COCKROACHDB CLOUD   │
+│  SHA-256 Kriptografis│             │  semantic_memories    │
+│  finding_cards table │             │  finding_cards table  │
+│  (Audit Trail)       │             │  evidence_ledger      │
+└──────────────────────┘             └───────────────────────┘
 ```
 
 ---
 
-## 🧠 MindBy Cognitive Memory Engine (on CockroachDB & AWS)
+## 🧠 MindBy — Sistem Memori Kognitif
 
-ANT integrates MindBy OS to provide production-grade, globally distributed persistent memory:
+### 1. Arsitektur 4-Tier Memory
 
-### 1. 4-Tier Cognitive Memory Partitioning
-* **Working Memory (`context.json`):** Active conversation and task execution state.
-* **Episodic Memory (`episodic.json` & CockroachDB):** Experiential execution records, past error debugging solutions, and system events.
-* **Semantic Memory (`semantic_memories` Table):** 768-dimensional vector embeddings generated by AWS Bedrock (Amazon Titan Embeddings) and indexed in CockroachDB for fast cosine similarity search.
-* **Core & Procedural Memory (`core.json` & `procedures.json`):** Sovereign constitution (CLUW-Genesis), user preferences, and custom operational procedures.
+| Layer | File/Table | Fungsi |
+| :--- | :--- | :--- |
+| **Working** | `context.json` | Memori percakapan aktif & task state saat ini |
+| **Episodic** | `episodic.json` | Log eksekusi, error debugging, kejadian sistem |
+| **Semantic** | `semantic_memories` (CockroachDB + local) | Pengetahuan jangka panjang, 768-dim vector embedding |
+| **Core** | `core.json` | Fakta permanen, preferensi user, konstitusi agen |
 
-### 2. CockroachDB Distributed Vector Indexing
-* **Zero Consistency Gap:** Relational metadata, memory tags, and vector embeddings reside in the exact same ACID-compliant transaction.
-* **Distributed Cosine Search:**
+### 2. Dual-Vault Resilience
+
+```
+ONLINE  ──► CockroachDB Serverless  (Vector Indexing, ACID, Multi-region)
+OFFLINE ──► Local JSON Vault        (workspace/memories/*.json)
+                │
+                └── workspace/memories/pending_sync.json  ← antrian offline
+                      │
+                      └── /sync  ← kirim ke cloud saat kembali online
+```
+
+### 3. Embedding Pipeline (Offline-First)
+
+- **Provider utama:** `nomic-embed-text` via Ollama (274 MB, offline, 768-dim)
+- **Provider cloud (opsional):** AWS Bedrock Titan / OpenAI `text-embedding-3-small`
+- Semua vector disimpan ke CockroachDB dengan `VECTOR(768)` + tag sharding
+- **Cosine Similarity Query:**
   ```sql
   SELECT id, content, (1 - (embedding <=> $1::VECTOR(768))) AS score
   FROM semantic_memories
+  WHERE embedding IS NOT NULL AND tags && ARRAY['gray-2']::STRING[]
   ORDER BY score DESC LIMIT 5;
   ```
-* **Always-On High Availability:** Multi-region persistence ensuring the agent's brain never suffers data loss or maintenance downtime.
-
-### 3. Dual-Vault Resilience Architecture
-* **Cloud Vault (`/vault cloud`):** Synchronizes with CockroachDB Serverless.
-* **Local Vault (`/vault local`):** Instant offline fallback to local vector store (Vectra) when internet connectivity is constrained (ideal for mobile Termux environments).
 
 ---
 
-## 📬 AntModelMailbox & Evidence Ledger
+## 🐜 ANT-CYBER-CORPS — Pasukan Keamanan Swarm
 
-### 1. Inter-Model Handover Protocol (`ANT-MAIL/1.0`)
-When switching between different AI models (e.g. from local `ant:1b` to cloud `Claude 3.5 Sonnet` via AWS Bedrock), ANT produces a structured state handover:
-```json
-{
-  "protocol": "ANT-MAIL/1.0",
-  "type": "HANDOVER",
-  "from": "ant:1b",
-  "to": "bedrock_claude",
-  "taskState": "Analyzing system error logs",
-  "evidenceHash": "536e9a9df8041a144aa01ed1ea7699041baa7e9db7081acb9f5dc4fa838b37fe"
-}
+5 Gray Unit bekerja **paralel** (`Promise.all`) untuk mengaudit ancaman keamanan kode:
+
+| Unit | Nama | Domain Spesialisasi |
+| :--- | :--- | :--- |
+| GRAY-1 | Memory & Logic Guardian | Buffer Overflow, Memory Leak, Race Condition |
+| GRAY-2 | Injection Sifter | SQL Injection, XSS, Command Injection, Path Traversal |
+| GRAY-3 | Auth & Identity Architect | IDOR, Broken Auth, JWT Bypass, Privilege Escalation |
+| GRAY-4 | Supply Chain Sentinel | CVE, Vulnerable Dependencies, Malicious Packages |
+| GRAY-5 | Cloud & Config Auditor | Exposed Secrets, Insecure Config, IAM Misconfiguration |
+
+### Cara Kerja Swarm Audit
+
+```
+/swarm src/
+      │
+      ├── createMission()  →  workspace/missions/<id>.json  (Blackboard)
+      │
+      ├── Promise.all([
+      │     runStaticAudit(GRAY-1, src/),
+      │     runStaticAudit(GRAY-2, src/),
+      │     runStaticAudit(GRAY-3, src/),
+      │     runStaticAudit(GRAY-4, src/),
+      │     runStaticAudit(GRAY-5, src/)
+      │   ])
+      │
+      ├── Finding Cards → workspace/missions/<id>.json (local)
+      │                → CockroachDB finding_cards table (jika online)
+      │
+      └── renderSwarmReport()  →  laporan berwarna di terminal
 ```
 
-### 2. Auditable by Design: `Claim != Truth`
-* Model outputs (even `<think>` blocks) are treated as **unverified claims**.
-* Every execution action (shell, file write, web search) generates a **SHA-256 evidence record**.
-* Claims only enter the ground-truth memory after being validated by the **Claim Verifier** and logged into CockroachDB's `evidence_ledger`.
+### SLM Safety Guard (Anti-Crash & Anti-Halu)
+
+Gray Unit **tidak akan menyentuh** file yang:
+- Ukurannya > `ANT_SLM_MAX_FILE_KB` KB (default: **24 KB**, hard ceiling: 64 KB)
+- Berekstensi `.min.js`, `.bundle.js`, `.map`, `.lock`, `.jsonl`
+
+File yang diblokir → dicatat ke log → diserahkan ke Commander (LLM besar).
 
 ---
 
-## 🤖 The Native Brain: `ant:1b` (Operator SLM)
+## ⚡ Self-Healing (3 Lapisan Eskalasi)
 
-ANT features a fine-tuned native Small Language Model (**`ant:1b`**, based on Gemma 3 1B) trained with LoRA for low-latency terminal orchestration:
-* **5 Pillars of Knowledge:**
-  1. *The Soul:* Sovereign identity, loyalty to creator (Ard), and CLUW-Genesis roots.
-  2. *The Body:* Runtime verification logic and evidence enforcement.
-  3. *The Hand:* Structured `<action>` tool execution (Shell, Web Search, File I/O, Mailbox).
-  4. *The Security:* Anti-spoofing protection and mandatory Approval Gate for destructive actions.
-  5. *The Chat:* Natural brainstorming and technical reasoning without hallucinating tool calls.
+```
+Lapisan 1: JSON Repair via System Prompt
+  └── Jika model output tidak valid JSON → retry dengan instruksi repair
 
----
+Lapisan 2: .bak File Rollback (SelfHealer)
+  └── healing.ts → restore file dari backup .bak otomatis
 
-## 🎮 Interactive Terminal Slash Commands
-
-Type `/` in ANT-CLI to open the interactive autocomplete menu with real-time filtering:
-
-```text
-─────────────────────────────────────────────────────────────────────────────────
-> /
-─────────────────────────────────────────────────────────────────────────────────
-> /store                          Simpan memori semantik ke CockroachDB / Vault
-  /recall                         Cari memori masa lalu via Vector Search
-  /memories                       Lihat daftar memori semantik tersimpan
-  /vault                          Ganti brankas memori (CockroachDB cloud / local)
-  /mailbox                        Buka bilik inter-model relay & handover ledger
-  /health                         Audit status kesehatan CockroachDB & memori
-  /new_chat                       Mulai sesi percakapan baru (fresh context)
-  /resume                         Lanjutkan sesi sebelumnya by ID
-   ↓ 14 more
+Lapisan 3: AntModelMailbox Handover
+  └── Jika SLM error berulang → serahkan kontrol ke LLM besar (Commander)
 ```
 
-### Command Reference Table:
-
-| Command | Category | Description |
-| :--- | :---: | :--- |
-| **`/store <text>`** | Memory | Save important insight into CockroachDB Vector Memory |
-| **`/recall <query>`** | Memory | Semantic vector similarity search across past memories |
-| **`/memories`** | Memory | View all stored semantic memories in CockroachDB |
-| **`/vault [cloud\|local]`** | Memory | Toggle active vault (CockroachDB Cloud vs Local Offline) |
-| **`/mailbox`** | Agentic | Inspect inter-model relay handovers and evidence ledger |
-| **`/health`** | System | Audit CockroachDB connection, memory stats & evidence integrity |
-| **`/new_chat`** | Context | Refresh context circuit for a new clean task |
-| **`/resume [id]`** | Context | Restore previous session with context bridging |
-| **`/model [name]`** | Engine | Hot-swap active AI cognitive model (Ollama/Bedrock/OpenAI) |
-| **`/help`** | Info | Display full documentation and operational options |
-| **`/exit`** | System | Disconnect with opt-in memory consolidation ritual |
-
 ---
 
-## 🚀 Quickstart & Setup
+## 🚀 Quickstart
 
-### 1. Prerequisites
-* Node.js >= 20.0.0
-* CockroachDB Serverless Cluster (Free Tier on `cockroachlabs.cloud`)
-* (Optional) AWS Bedrock Credentials / Ollama for local inference
+### Prerequisites
+- Node.js >= 20.0.0
+- Ollama (untuk inference lokal + embedding)
+  ```bash
+  ollama pull nomic-embed-text   # Wajib — embedding engine (274 MB)
+  ollama pull qwen2.5:0.5b       # Untuk Gray Unit swarm (opsional)
+  ```
+- CockroachDB Serverless (opsional — sistem fallback ke local jika tidak ada)
 
-### 2. Installation
+### Instalasi
 ```bash
 git clone https://github.com/renaldyadri10/ant-cli.git
 cd ant-cli
 npm install
+npm run build
 ```
 
-### 3. Environment Configuration (`.env`)
-Copy `.env.example` to `.env` and fill in your keys:
+### Konfigurasi `.env`
+Copy `.env.example` → `.env` lalu isi:
+
 ```env
 USER_NAME=Ard
+
+# Commander Model (LLM besar)
 AI_PROVIDER=ollama
 CUSTOM_MODEL=gpt-oss:120b-cloud
+BASE_URL=http://localhost:11434/v1
 
-# CockroachDB Serverless (Persistent Memory Layer)
-DATABASE_URL="postgresql://<user>:<pass>@<cluster>.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full"
+# Swarm Gray Unit (0.5B SLM) — satu key untuk semua 5 unit
+ANT_SWARM_MODEL=qwen2.5:0.5b
+
+# SLM Safety Limits
+ANT_SLM_MAX_FILE_KB=24
+ANT_SLM_MAX_FILES_PER_UNIT=8
+
+# CockroachDB (opsional — auto-fallback ke local jika kosong)
+DATABASE_URL=postgresql://<user>:<pass>@<cluster>.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full
 MEMORY_VAULT_MODE=cloud
-
-# AWS Bedrock (Titan Embeddings & Inference)
-AWS_ACCESS_KEY_ID=your_aws_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret
-AWS_REGION=us-east-1
-
-# Web Grounding
-TAVILY_API_KEY=your_tavily_key
 ```
 
-### 4. Launching ANT-CLI
+> **Model Gray Unit** tidak perlu diset per-unit. Cukup `ANT_SWARM_MODEL=qwen2.5:0.5b` 
+> untuk semua 5 unit. Override per-unit tersedia via `ANT_GRAY_1_MODEL` s/d `ANT_GRAY_5_MODEL`.
 
-You can run ANT-CLI using either of the two execution modes:
+### Menjalankan ANT
 
-* **Mode 1: `npm start` (Live Dev & Research Mode — Recommended)**
-  ```bash
-  npm start
-  ```
-  *Directly executes the TypeScript source via `tsx` for active prototyping.*
+```bash
+# Development (langsung dari TypeScript)
+npm start
 
-* **Mode 2: `ant` (Global Standalone CLI Command)**
-  ```bash
-  # Compile binary
-  npm run build
-  
-  # Run directly from anywhere
-  ant
-  ```
+# Atau setelah build — dari mana saja
+ant
+```
+
+---
+
+## 📟 Referensi Slash Command
+
+### Memory & Vault
+| Command | Fungsi |
+| :--- | :--- |
+| `/store <teks>` | Simpan memori semantik ke Dual-Vault (embedding nyata 768-dim) |
+| `/recall <query>` | Cari memori via Vector Cosine Similarity (cloud + local) |
+| `/memories` | Lihat semua memori tersimpan di CockroachDB |
+| `/vault [cloud\|local]` | Ganti vault aktif (CockroachDB cloud / local offline) |
+| `/sync` | Flush antrian offline `pending_sync.json` → kirim ke CockroachDB |
+
+### Keamanan & Audit
+| Command | Fungsi |
+| :--- | :--- |
+| `/swarm [path]` | Launch 5 Gray Unit paralel untuk audit keamanan kode |
+| `/health` | Audit koneksi CockroachDB, statistik memori & evidence |
+
+### Reasoning & Planning
+| Command | Fungsi |
+| :--- | :--- |
+| `/plan <misi>` | Buat rencana terstruktur dengan HTN Planner |
+| `/branch` | Buat, daftar, atau checkout conversation branch |
+| `/checkpoint` | Simpan Git commit checkpoint dari workspace saat ini |
+| `/skills` | Lihat daftar custom skills yang tersedia |
+
+### Session & Model
+| Command | Fungsi |
+| :--- | :--- |
+| `/model <nama>` | Hot-swap model AI aktif (Ollama / Bedrock / OpenAI) |
+| `/session list` | Lihat semua session tersimpan |
+| `/resume [id]` | Lanjutkan session sebelumnya dengan context bridging |
+| `/mailbox` | Inspeksi inter-model relay & handover ledger |
+
+### Sistem
+| Command | Fungsi |
+| :--- | :--- |
+| `/undo` | Restore file dari backup `.bak` terakhir |
+| `/git status\|diff\|log` | Operasi Git dari dalam CLI |
+| `/help` | Tampilkan semua command & opsi operasional |
+| `/exit` | Keluar dengan ritual konsolidasi memori |
+
+---
+
+## 🗂️ Struktur Proyek
+
+```
+ant-cli/
+├── src/
+│   ├── core/
+│   │   ├── cli.ts                    # Entry point CLI + semua slash commands
+│   │   ├── mindby_cockroach.ts       # CockroachDB Dual-Vault engine
+│   │   ├── memory.ts                 # 4-Tier local memory + getEmbedding()
+│   │   ├── slash_menu.ts             # Autocomplete slash menu
+│   │   ├── ai/
+│   │   │   ├── index.ts              # AI adapter (Ollama/Bedrock/OpenAI)
+│   │   │   └── tiers/slm.ts          # SLM distillation handler
+│   │   ├── agent_loop/
+│   │   │   ├── agentLoop.ts          # ReAct loop utama + metrics
+│   │   │   ├── evidenceLedger.ts     # SHA-256 evidence tracking
+│   │   │   └── healing.ts            # Self-healing 3-layer
+│   │   └── agentic/
+│   │       ├── swarm_orchestrator.ts # ANT-CYBER-CORPS swarm engine ← BARU
+│   │       ├── planner.ts            # HTN Planner
+│   │       ├── mailbox/              # Inter-model relay + circuit breaker
+│   │       ├── branching.ts          # Conversation branching
+│   │       └── sub_agents.ts         # Sub-agent execution
+│   ├── shared/
+│   │   └── data.ts                   # getBrainConfig() — model config
+│   └── utils/
+│       └── logger.ts                 # Structured logging
+├── workspace/
+│   ├── memories/
+│   │   ├── semantic.json             # Local semantic vault
+│   │   ├── episodic.json             # Episodic log
+│   │   ├── core.json                 # Core facts
+│   │   └── pending_sync.json         # Offline sync queue ← BARU
+│   └── missions/
+│       └── mission-<id>.json         # Swarm blackboard ← BARU
+├── .env.example                      # Template konfigurasi lengkap
+└── README.md
+```
 
 ---
 
 ## 🛠️ Technology Stack
 
-* **Persistent Memory:** CockroachDB Serverless (`VECTOR(768)` Distributed Indexing, ACID Transaction Ledger)
-* **Cloud Cognitive Engine:** AWS Bedrock (Amazon Titan Text Embeddings V2, Claude 3.5 Sonnet)
-* **Edge & Local SLM:** `ant:1b` (Gemma 3 1B fine-tuned via Unsloth / LoRA on Kaggle GPU)
-* **Runtime & Framework:** Node.js, TypeScript, Model Context Protocol (MCP), `pg`, Chalk
+| Layer | Teknologi |
+| :--- | :--- |
+| **Persistent Memory** | CockroachDB Serverless (`VECTOR(768)`, ACID, Multi-region) |
+| **Embedding Engine** | `nomic-embed-text` via Ollama (768-dim, offline-first) |
+| **Commander LLM** | Ollama cloud models / AWS Bedrock / OpenAI compatible |
+| **Swarm SLM** | `qwen2.5:0.5b` via Ollama (Gray Unit 0.5B) |
+| **Runtime** | Node.js 20+, TypeScript, ESM |
+| **Protocol** | Model Context Protocol (MCP), ANT-MAIL/1.0 |
+| **Evidence** | SHA-256 kriptografis, CockroachDB `evidence_ledger` |
 
 ---
 
 ## 📜 Intellectual Property & Sovereign Declaration
 
-* **Creator / Operator:** Renaldy Adri (Ard)
-* **Parent Architecture:** CLUW-Genesis (Declared 27 July 2026)
-* **License:** [MIT License](LICENSE)
+- **Creator / Operator:** Renaldy Adri (Ard)
+- **Parent Architecture:** CLUW-Genesis (Declared 27 July 2026)
+- **Version:** v0.3.0 — Swarm Intelligence & Memory Hardening
+- **License:** [MIT License](LICENSE)
 
 *"Model AI bersifat sementara. Arsitektur kognitif dan memori bersifat berkelanjutan."*

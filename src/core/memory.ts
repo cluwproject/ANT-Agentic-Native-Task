@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { getEmbedding } from './ai.js';
+import { getEmbedding as _aiGetEmbedding } from './ai.js';
 import { getBrainConfig } from '../shared/data.js';
 import { Logger } from '../utils/logger.js';
 
@@ -105,6 +105,20 @@ export async function getPartitionedMemoryStats(): Promise<PartitionedMemoryStat
   };
 }
 
+/**
+ * Convenience wrapper — menghasilkan embedding 768-dim dari teks via nomic-embed-text (Ollama)
+ * Fallback: return [] jika Ollama offline atau gagal
+ */
+export async function getEmbedding(text: string): Promise<number[]> {
+  try {
+    const config = await getBrainConfig();
+    const result = await _aiGetEmbedding(config, text);
+    return Array.isArray(result) ? result : [];
+  } catch {
+    return [];
+  }
+}
+
 export async function storeMemory(layer: 'working' | 'episodic' | 'semantic' | 'core', key: string, value: any, tags: string[] = []) {
   try {
     await initMemory();
@@ -122,7 +136,7 @@ export async function storeMemory(layer: 'working' | 'episodic' | 'semantic' | '
     const config = await getBrainConfig();
     const textToEmbed = typeof value === 'string' ? value : JSON.stringify(value);
     const embedding = (layer === 'episodic' || layer === 'semantic' || layer === 'core') 
-      ? await getEmbedding(config, textToEmbed) 
+      ? await _aiGetEmbedding(config, textToEmbed) 
       : undefined;
 
     memory[key] = {
@@ -156,7 +170,7 @@ export async function semanticSearch(query: string, layer: 'episodic' | 'semanti
     const config = await getBrainConfig();
     let queryVector: number[] | null = null;
     try {
-      queryVector = await getEmbedding(config, query);
+      queryVector = await _aiGetEmbedding(config, query);
     } catch {
       queryVector = null;
     }

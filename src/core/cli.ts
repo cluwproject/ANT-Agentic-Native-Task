@@ -654,17 +654,29 @@ async function main() {
             }
             console.log(chalk.dim('  Persisting memory to Dual-Vault...'));
 
-            // 1. Simpan ke Local 4-Tier Memory Vault (Offline & Termux Native)
+            // 1. Embed teks terlebih dahulu (agar tersimpan bersama vektor)
+            const { storeMemory, getEmbedding } = await import('./memory.js');
             const memKey = `mem_${Date.now()}`;
-            const { storeMemory } = await import('./memory.js');
+            const embedding = await getEmbedding(memoryContent).catch(() => []);
             await storeMemory('semantic', memKey, memoryContent, ['cli_user', 'operator']);
 
-            // 2. Simpan ke Cloud CockroachDB jika aktif
-            const cloudSuccess = await storeCockroachMemory(memoryContent, undefined, ['cli_user']);
+            // 2. Coba simpan ke Cloud CockroachDB dengan embedding nyata
+            const cloudSuccess = await storeCockroachMemory(memoryContent, embedding.length > 0 ? embedding : undefined, ['cli_user']);
             if (cloudSuccess) {
-                console.log(chalk.green(`  ✅ Memory synced to Cloud CockroachDB & Local Vault!`));
+                console.log(chalk.green(`  ✅ Memory synced to Cloud CockroachDB & Local Vault (vector: ${embedding.length > 0 ? '768-dim' : 'text only'})`));
             } else {
-                console.log(chalk.green(`  ✅ Memory saved to Local 4-Tier Vault (Offline Native).`));
+                // 3. Offline: antrikan ke pending_sync.json untuk sinkronisasi nanti
+                const syncQueuePath = path.join(process.cwd(), 'workspace', 'memories', 'pending_sync.json');
+                try {
+                    await fs.promises.mkdir(path.dirname(syncQueuePath), { recursive: true });
+                    let queue: any[] = [];
+                    try { queue = JSON.parse(await fs.promises.readFile(syncQueuePath, 'utf-8')); } catch {}
+                    queue.push({ content: memoryContent, embedding, tags: ['cli_user'], timestamp: new Date().toISOString() });
+                    await fs.promises.writeFile(syncQueuePath, JSON.stringify(queue, null, 2));
+                    console.log(chalk.green(`  ✅ Memory saved to Local Vault + queued for cloud sync (${queue.length} pending).`));
+                } catch {
+                    console.log(chalk.green(`  ✅ Memory saved to Local Vault (Offline Native).`));
+                }
             }
             continue;
         }
@@ -682,10 +694,12 @@ async function main() {
             const { semanticSearch } = await import('./memory.js');
             const localHits = await semanticSearch(query, 'semantic', 5);
 
-            // 2. Cari di CockroachDB Cloud jika aktif
+            // 2. Cari di CockroachDB Cloud jika aktif (dengan embedding nyata)
             let cloudHits: any[] = [];
             try {
-                cloudHits = await recallCockroachMemory([], 5);
+                const { getEmbedding } = await import('./memory.js');
+                const queryEmbedding = await getEmbedding(query).catch(() => []);
+                cloudHits = await recallCockroachMemory(queryEmbedding, 5);
             } catch {}
 
             const allHits: Array<{ content: string; score: number; source: string; date?: string }> = [];
@@ -740,7 +754,54 @@ async function main() {
             continue;
         }
 
-        // ── MINDBY MEMORY: /vault ──────────────────────────────────────
+        // ── ANT-CYBER-CORPS: /swarm ────────────────────────────────────
+        if (text.startsWith('/swarm')) {
+            const args = text.replace(/^\/swarm\s*/, '').trim();
+            const targetPath = args || process.cwd();
+            console.log(chalk.cyan.bold('\n🐜 ANT-CYBER-CORPS — Initiating Swarm Audit...'));
+            try {
+                const { launchSwarmAudit, renderSwarmReport } = await import('./agentic/swarm_orchestrator.js');
+                const result = await launchSwarmAudit(
+                    `Security audit of ${targetPath}`,
+                    [targetPath]
+                );
+                renderSwarmReport(result);
+            } catch (e: any) {
+                console.log(chalk.red(`  Swarm Error: ${e.message}`));
+            }
+            continue;
+        }
+
+        // ── OFFLINE SYNC: /sync ────────────────────────────────────────
+        if (text === '/sync') {
+            const syncQueuePath = path.join(process.cwd(), 'workspace', 'memories', 'pending_sync.json');
+            try {
+                let queue: any[] = [];
+                try { queue = JSON.parse(await fs.promises.readFile(syncQueuePath, 'utf-8')); } catch {}
+                if (queue.length === 0) {
+                    console.log(chalk.cyan('  ✓ No pending memories to sync. Cloud vault is up to date.'));
+                    continue;
+                }
+                console.log(chalk.cyan(`\n☁️  Syncing ${queue.length} offline memories to CockroachDB...`));
+                let synced = 0;
+                const failed: any[] = [];
+                for (const item of queue) {
+                    const ok = await storeCockroachMemory(item.content, item.embedding?.length > 0 ? item.embedding : undefined, item.tags || []);
+                    if (ok) synced++;
+                    else failed.push(item);
+                }
+                await fs.promises.writeFile(syncQueuePath, JSON.stringify(failed, null, 2));
+                console.log(chalk.green(`  ✅ Synced: ${synced}/${queue.length} memories. Remaining in queue: ${failed.length}.`));
+                if (failed.length > 0) {
+                    console.log(chalk.yellow('  ⚠️  Some memories failed to sync — will retry on next /sync.'));
+                }
+            } catch (e: any) {
+                console.log(chalk.red(`  Sync Error: ${e.message}`));
+            }
+            continue;
+        }
+
+
         if (text.startsWith('/vault')) {
             const parts = text.split(' ');
             const targetVault = parts[1]?.toLowerCase();

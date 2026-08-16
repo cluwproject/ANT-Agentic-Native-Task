@@ -111,6 +111,27 @@ export async function initCockroachDB(): Promise<{ success: boolean; message: st
             );
         `);
 
+        // Buat tabel Finding Cards untuk laporan swarm audit
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS finding_cards (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                mission_id VARCHAR(64) NOT NULL,
+                unit_id VARCHAR(32) NOT NULL,
+                target_file TEXT NOT NULL,
+                threat_type VARCHAR(64) NOT NULL,
+                risk_level VARCHAR(16) NOT NULL,
+                action_decision VARCHAR(16) NOT NULL,
+                suggested_patch TEXT,
+                evidence_sha256 VARCHAR(64),
+                created_at TIMESTAMPTZ DEFAULT now()
+            );
+        `);
+
+        // Buat index untuk query cepat per mission
+        try {
+            await client.query(`CREATE INDEX IF NOT EXISTS idx_finding_cards_mission ON finding_cards (mission_id);`);
+        } catch {}
+
         client.release();
         activeVaultMode = 'cloud';
         return { success: true, message: 'Terhubung ke CockroachDB Serverless', version };
@@ -121,7 +142,7 @@ export async function initCockroachDB(): Promise<{ success: boolean; message: st
 }
 
 /**
- * Simpan Memori Semantik ke CockroachDB
+ * Simpan Memori Semantik ke CockroachDB (dengan tag sharding support)
  */
 export async function storeCockroachMemory(content: string, embedding?: number[], tags: string[] = []): Promise<boolean> {
     if (activeVaultMode === 'local' || !process.env.DATABASE_URL) {
@@ -130,21 +151,22 @@ export async function storeCockroachMemory(content: string, embedding?: number[]
 
     try {
         const client = await getPool().connect();
+        const tagArray = tags.length > 0 ? `{${tags.map(t => `"${t}"`).join(',')}}` : '{}';
         try {
             if (embedding && embedding.length > 0) {
                 const vectorStr = `[${embedding.join(',')}]`;
                 await client.query(
-                    `INSERT INTO semantic_memories (content, embedding) VALUES ($1, $2::VECTOR(768));`,
-                    [content, vectorStr]
+                    `INSERT INTO semantic_memories (content, embedding, tags) VALUES ($1, $2::VECTOR(768), $3::STRING[]);`,
+                    [content, vectorStr, tagArray]
                 );
             } else {
                 await client.query(
-                    `INSERT INTO semantic_memories (content) VALUES ($1);`,
-                    [content]
+                    `INSERT INTO semantic_memories (content, tags) VALUES ($1, $2::STRING[]);`,
+                    [content, tagArray]
                 );
             }
         } catch (err: any) {
-            // Fallback insert sederhana
+            // Fallback insert sederhana tanpa tags/vector
             await client.query(`INSERT INTO semantic_memories (content) VALUES ($1);`, [content]);
         }
         client.release();
@@ -156,35 +178,58 @@ export async function storeCockroachMemory(content: string, embedding?: number[]
 }
 
 /**
- * Cari Memori Semantik di CockroachDB via Vector Similarity (Cosine Distance)
+ * Cari Memori Semantik di CockroachDB via Vector Similarity + Tag Sharding
+ * @param embedding - Vector 768-dim dari nomic-embed-text (atau [] untuk lexical fallback)
+ * @param limit     - Jumlah hasil yang dikembalikan
+ * @param tags      - Filter tag untuk domain sharding (e.g. ['gray-2'] untuk unit-2)
  */
-export async function recallCockroachMemory(embedding: number[], limit = 5): Promise<Array<{ id: string; content: string; score: number; createdAt: string }>> {
+export async function recallCockroachMemory(
+    embedding: number[],
+    limit = 5,
+    tags: string[] = []
+): Promise<Array<{ id: string; content: string; score: number; createdAt: string }>> {
     if (activeVaultMode === 'local' || !process.env.DATABASE_URL) {
         return [];
     }
 
     try {
         const client = await getPool().connect();
-        const vectorStr = `[${embedding.join(',')}]`;
-        
-        // Gunakan Cosine Distance: 1 - (embedding <=> query)
+        const tagFilter = tags.length > 0
+            ? `AND tags && ARRAY[${tags.map((_, i) => `$${i + 2}`).join(',')}]::STRING[]`
+            : '';
+        const tagParams = tags;
+
         let res;
         try {
-            res = await client.query(`
-                SELECT id, content, (1 - (embedding <=> $1::VECTOR(768))) AS score, created_at
-                FROM semantic_memories
-                WHERE embedding IS NOT NULL
-                ORDER BY score DESC
-                LIMIT $2;
-            `, [vectorStr, limit]);
+            if (embedding.length > 0) {
+                const vectorStr = `[${embedding.join(',')}]`;
+                res = await client.query(
+                    `SELECT id, content, (1 - (embedding <=> $1::VECTOR(768))) AS score, created_at
+                     FROM semantic_memories
+                     WHERE embedding IS NOT NULL ${tagFilter}
+                     ORDER BY score DESC
+                     LIMIT ${limit};`,
+                    [vectorStr, ...tagParams]
+                );
+            } else {
+                // Lexical fallback — tidak ada embedding
+                res = await client.query(
+                    `SELECT id, content, 0.80 AS score, created_at
+                     FROM semantic_memories
+                     WHERE 1=1 ${tagFilter}
+                     ORDER BY created_at DESC
+                     LIMIT ${limit};`,
+                    [...tagParams]
+                );
+            }
         } catch {
-            // Fallback query tanpa vector operator
-            res = await client.query(`
-                SELECT id, content, 0.95 AS score, created_at
-                FROM semantic_memories
-                ORDER BY created_at DESC
-                LIMIT $1;
-            `, [limit]);
+            // Final fallback — tidak ada tag filter
+            res = await client.query(
+                `SELECT id, content, 0.70 AS score, created_at
+                 FROM semantic_memories
+                 ORDER BY created_at DESC LIMIT $1;`,
+                [limit]
+            );
         }
 
         client.release();
@@ -197,6 +242,38 @@ export async function recallCockroachMemory(embedding: number[], limit = 5): Pro
     } catch (e: any) {
         console.error(chalk.red(`[CockroachDB Recall Error] ${e.message}`));
         return [];
+    }
+}
+
+/**
+ * Simpan Finding Card dari Swarm Audit ke CockroachDB
+ * NOTE: Jika cloud tidak tersedia, data hanya tersimpan di local blackboard JSON.
+ */
+export async function storeFindingCard(finding: {
+    mission_id: string;
+    unit_id: string;
+    target_file: string;
+    threat_type: string;
+    risk_level: string;
+    action_decision: string;
+    suggested_patch?: string;
+}): Promise<boolean> {
+    if (!process.env.DATABASE_URL || activeVaultMode === 'local') {
+        // [CATATAN] Cloud tidak tersedia. Finding hanya tersimpan di local blackboard.
+        return false;
+    }
+    try {
+        const client = await getPool().connect();
+        await client.query(
+            `INSERT INTO finding_cards (mission_id, unit_id, target_file, threat_type, risk_level, action_decision, suggested_patch)
+             VALUES ($1, $2, $3, $4, $5, $6, $7);`,
+            [finding.mission_id, finding.unit_id, finding.target_file, finding.threat_type,
+             finding.risk_level, finding.action_decision, finding.suggested_patch || null]
+        );
+        client.release();
+        return true;
+    } catch {
+        return false;
     }
 }
 
