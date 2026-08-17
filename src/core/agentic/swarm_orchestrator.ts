@@ -257,8 +257,7 @@ async function runStaticAudit(
 
                 for (const [threatType, pattern] of Object.entries(OSINT_PATTERNS)) {
                     // Only check relevant threats for this unit's domain
-                    const isRelevant = unit.threatTypes.includes(threatType) ||
-                        unit.id === 'gray-5'; // gray-5 audits config broadly
+                    const isRelevant = unit.threatTypes.includes(threatType);
                     if (!isRelevant) continue;
 
                     const matchCheck = new RegExp(pattern.source, pattern.flags);
@@ -328,32 +327,54 @@ export async function launchSwarmAudit(
     console.log(chalk.dim(`   Targets    : ${targetPaths.join(', ')}`));
     console.log(chalk.dim(`   Units      : 5 Gray Units (Parallel)\n`));
 
-    // Jalankan semua unit secara paralel (Promise.all)
-    const unitResults = await Promise.all(
-        units.map(async (unit) => {
-            await updateMissionUnit(mission_id, unit.id, 'running');
-            console.log(chalk.yellow(`  ▸ [${unit.id.toUpperCase()}] ${unit.name} — Starting scan...`));
-            try {
-                const findings = await runStaticAudit(unit, targetPaths, mission_id);
-                await updateMissionUnit(mission_id, unit.id, 'done', findings);
-                const status = findings.some(f => f.risk_level !== 'CLEAN')
-                    ? chalk.red(`${findings.filter(f => f.risk_level !== 'CLEAN').length} issue(s) found`)
-                    : chalk.green('Clean');
-                console.log(chalk.dim(`  ✓ [${unit.id.toUpperCase()}] Done — ${status}`));
-                return findings;
-            } catch (e: any) {
-                await updateMissionUnit(mission_id, unit.id, 'failed');
-                Logger.log('ERROR', `Unit ${unit.id} failed: ${e.message}`, {}, 'SWARM');
-                return [] as FindingCard[];
-            }
-        })
-    );
+    // Print all unit start messages first (cosmetic)
+    units.forEach(unit => {
+        console.log(chalk.yellow(`  ▸ [${unit.id.toUpperCase()}] ${unit.name} — Starting scan...`));
+    });
 
-    const allFindings = unitResults.flat();
+    // Run all units in parallel — ONLY run the audit, do NOT write blackboard here
+    const unitResults: { unit: GrayUnit; findings: FindingCard[]; status: 'done' | 'failed' }[] = 
+        await Promise.all(
+            units.map(async (unit) => {
+                try {
+                    const findings = await runStaticAudit(unit, targetPaths, mission_id);
+                    const status = findings.some(f => f.risk_level !== 'CLEAN')
+                        ? chalk.red(`${findings.filter(f => f.risk_level !== 'CLEAN').length} issue(s) found`)
+                        : chalk.green('Clean');
+                    console.log(chalk.dim(`  ✓ [${unit.id.toUpperCase()}] Done — ${status}`));
+                    return { unit, findings, status: 'done' as const };
+                } catch (e: any) {
+                    Logger.log('ERROR', `Unit ${unit.id} failed: ${e.message}`, {}, 'SWARM');
+                    return { unit, findings: [] as FindingCard[], status: 'failed' as const };
+                }
+            })
+        );
+
+    // Flatten all findings (no duplicates — each unit only contributes its own findings)
+    const allFindings = unitResults.flatMap(r => r.findings);
     const duration_ms = Date.now() - startTime;
 
-    // Simpan Finding Cards ke local blackboard
-    await updateMissionUnit(mission_id, 'commander', 'done', allFindings).catch(() => {});
+    // Write the FINAL blackboard state ONCE — avoids race condition and duplicate entries
+    const finalBlackboard: MissionBlackboard = {
+        mission_id,
+        goal,
+        target_paths: targetPaths,
+        assigned_units: Object.fromEntries(
+            unitResults.map(r => [r.unit.id, r.status])
+        ) as Record<string, 'pending' | 'running' | 'done' | 'failed'>,
+        findings: allFindings,
+        created_at: board.created_at,
+        completed_at: new Date().toISOString()
+    };
+
+    try {
+        await fs.writeFile(
+            path.join(BLACKBOARD_DIR, `${mission_id}.json`),
+            JSON.stringify(finalBlackboard, null, 2)
+        );
+    } catch (e: any) {
+        Logger.log('ERROR', `Failed to write final mission blackboard: ${e.message}`, { mission_id }, 'SWARM');
+    }
 
     return {
         mission_id,
