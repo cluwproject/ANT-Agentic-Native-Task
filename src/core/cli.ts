@@ -236,6 +236,23 @@ async function main() {
         }
         process.exit(0);
     }
+    if (args[0] === 'swarm') {
+        const goal = args[1];
+        const target = args[2];
+        if (!goal || !target) {
+            console.error(chalk.red('Error: Format salah. Contoh: ant swarm "Investigasi kebocoran" "target.js"'));
+            process.exit(1);
+        }
+        try {
+            const { launchSwarmAudit, renderSwarmReport } = await import('./agentic/swarm_orchestrator.js');
+            console.log(chalk.cyan(`\nMemulai Operasi Swarm 3-Zona untuk target: ${target}`));
+            const result = await launchSwarmAudit(goal, [target]);
+            renderSwarmReport(result);
+        } catch (err: any) {
+            console.error(chalk.red(`\n[SWARM ERROR] ${err.message}`));
+        }
+        process.exit(0);
+    }
     
     if (args[0] === 'agent') {
         const subCommand = args[1];
