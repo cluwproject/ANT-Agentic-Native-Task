@@ -51,14 +51,14 @@ function readAntIdentity() {
     try {
         const owner = process.env.USER_NAME || 'Unknown Operator';
         return {
-            creator: 'Renaldy Adri (Ard)',
+            creator: 'Ard',
             origin: 'CLUW Genesis',
             activeUser: owner,
             collaborators: 'Agy, Gemma, Claude, DeepSeek, Ollama'
         };
     } catch {
         return {
-            creator: 'Renaldy Adri (Ard)',
+            creator: 'Ard',
             origin: 'CLUW Genesis',
             activeUser: 'Unknown Operator',
             collaborators: 'Agy, Gemma, Claude, DeepSeek, Ollama'
@@ -72,8 +72,8 @@ function getAntAscii() {
   ANT -- Agentic Native Task
   You Ask. ANT Acts.
 
-  >  Version     : v0.3.0 (Hackathon Edition)
-  >  Origin      : ${identity.origin} (Founded by ${identity.creator})
+  >  Version     : v0.3.0
+  >  Origin      : ${identity.origin} (Built by ${identity.creator})
   >  Companion   : ${identity.activeUser}
   >  Engine      : ANT Sovereign Runtime
 `);
