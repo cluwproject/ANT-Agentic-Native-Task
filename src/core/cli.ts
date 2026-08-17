@@ -530,7 +530,16 @@ async function main() {
             const selected = await showSlashMenu('/');
             if (selected && selected.trim()) {
                 text = selected.trim();
-                console.log(chalk.cyan('You ❯ ') + chalk.bold.white(text));
+                const needsArgs = ['/store', '/recall', '/branch create', '/branch checkout', '/session load', '/agent run', '/task schedule'];
+                if (needsArgs.includes(text)) {
+                    // Prompt for arguments
+                    process.stdout.write('\x1B[1A\x1B[2K\r'); // clear the interactive menu artifact
+                    const args = await askUser(chalk.cyan(`You ❯ `) + chalk.bold.white(`${text} `));
+                    text = `${text} ${args}`.trim();
+                } else {
+                    process.stdout.write('\x1B[1A\x1B[2K\r');
+                    console.log(chalk.cyan('You ❯ ') + chalk.bold.white(text));
+                }
             } else {
                 continue;
             }
