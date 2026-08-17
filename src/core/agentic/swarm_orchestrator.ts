@@ -53,31 +53,31 @@ export function getGrayUnits(): GrayUnit[] {
         },
         {
             id: 'gray-2',
-            name: 'ANT-GRAY-2 (Injection Sifter)',
-            domain: 'SQL Injection, XSS, Command Injection',
+            name: 'ANT-GRAY-2 (OSINT Profiling - Surface Web)',
+            domain: 'Username correlation, Sosmed Scraping, Public Footprints',
             model: process.env.ANT_GRAY_2_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:0.5b',
-            threatTypes: ['SQL_INJECTION', 'XSS', 'COMMAND_INJECTION', 'PATH_TRAVERSAL']
+            threatTypes: ['BLIND_USERNAME', 'FAKE_IDENTITY', 'SOSMED_LINKAGE']
         },
         {
             id: 'gray-3',
-            name: 'ANT-GRAY-3 (Auth & Identity Architect)',
-            domain: 'IDOR, Broken Access Control, JWT Bypass',
+            name: 'ANT-GRAY-3 (Email Intel - Deep Web/Databases)',
+            domain: 'MX Records, Gravatar, Holehe Deep Profiling, Breach Data',
             model: process.env.ANT_GRAY_3_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:0.5b',
-            threatTypes: ['IDOR', 'BROKEN_AUTH', 'JWT_BYPASS', 'PRIVILEGE_ESCALATION']
+            threatTypes: ['BREACHED_EMAIL', 'HIDDEN_GRAVATAR', 'REGISTERED_ACCOUNTS']
         },
         {
             id: 'gray-4',
-            name: 'ANT-GRAY-4 (Supply Chain Sentinel)',
-            domain: 'Vulnerable Dependencies, CVEs, NPM Audit',
+            name: 'ANT-GRAY-4 (Infra & Topology - Surface/Deep)',
+            domain: 'DNS Enumeration, Whois, Server Topology, Port Scanning',
             model: process.env.ANT_GRAY_4_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:0.5b',
-            threatTypes: ['VULNERABLE_DEP', 'CVE_MATCH', 'OUTDATED_PACKAGE', 'MALICIOUS_PACKAGE']
+            threatTypes: ['OPEN_PORTS', 'EXPOSED_DNS', 'SERVER_LEAKS']
         },
         {
             id: 'gray-5',
-            name: 'ANT-GRAY-5 (Cloud & Config Auditor)',
-            domain: 'Exposed .env, Public S3, IAM misconfiguration',
+            name: 'ANT-GRAY-5 (Dark Web Recon - .onion)',
+            domain: 'Tor Hidden Services, Dark Forums, Anonymous Leaks',
             model: process.env.ANT_GRAY_5_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:0.8b',
-            threatTypes: ['EXPOSED_SECRETS', 'INSECURE_CONFIG', 'PUBLIC_BUCKET', 'IAM_MISCONFIG']
+            threatTypes: ['TOR_LEAK', 'ONION_MARKET_MENTION', 'DEEP_CHAT_LOGS']
         }
     ];
 }
@@ -186,26 +186,39 @@ async function runStaticAudit(
     const importedPath = await import('path');
     const importedFs = await import('fs/promises');
 
-    const INJECTION_PATTERNS: Record<string, RegExp> = {
-        COMMAND_INJECTION: /child_process.*exec\s*\(.*\$\{|shell_exec.*\+|exec\(`[^)]*\${/g,
-        SQL_INJECTION: /query\s*\(\s*`[^)]*\${|query\s*\(.*\+.*\)/g,
-        EXPOSED_SECRETS: /process\.env\.(API_KEY|SECRET|PASSWORD|TOKEN)\s*(?!.*\|\|)/g,
-        INSECURE_CONFIG: /rejectUnauthorized\s*:\s*false/g,
+    const OSINT_PATTERNS: Record<string, RegExp> = {
+        // GRAY-2: OSINT Profiling (Looking for hardcoded emails or usernames)
+        BLIND_USERNAME: /const\s+targetUser\s*=\s*|username\s*:\s*['"][^'"]+['"]/gi,
+        SOSMED_LINKAGE: /(tiktok\.com|twitter\.com|instagram\.com|github\.com)\/[a-zA-Z0-9_]+/gi,
+        
+        // GRAY-3: Email Intel (Looking for leaked emails or gravatar links)
+        BREACHED_EMAIL: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+        HIDDEN_GRAVATAR: /gravatar\.com\/avatar\/[a-f0-9]{32}/gi,
+        
+        // GRAY-4: Infra
+        OPEN_PORTS: /port\s*:\s*[0-9]{2,5}|listen\([0-9]{2,5}\)/gi,
+        EXPOSED_DNS: /(dns\.resolveMx|resolveTxt)/g,
+        
+        // GRAY-5: Dark Web
+        TOR_LEAK: /[a-z2-7]{16,56}\.onion/gi,
+        ONION_MARKET_MENTION: /darknet|silkroad|alphabay|hidden service/gi,
+        
+        // GRAY-1: Legacy Memory/Logic (Still checking code issues)
         BUFFER_OVERFLOW: /Buffer\.allocUnsafe|new Buffer\(/g,
-        HARDCODED_CREDENTIAL: /(password|secret|api_key)\s*[:=]\s*["'][^"']{6,}["']/gi,
-        JWT_BYPASS: /verify\s*\(\s*token.*none|algorithm.*none/gi,
-        PATH_TRAVERSAL: /\.\.\/|path\.join.*req\.(params|query|body)/g
+        MEMORY_LEAK: /process\.env\.(API_KEY|SECRET|PASSWORD|TOKEN)/g
     };
 
     const RISK_MAP: Record<string, 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'> = {
-        COMMAND_INJECTION: 'CRITICAL',
-        SQL_INJECTION: 'HIGH',
-        EXPOSED_SECRETS: 'HIGH',
-        INSECURE_CONFIG: 'MEDIUM',
+        BLIND_USERNAME: 'MEDIUM',
+        SOSMED_LINKAGE: 'HIGH',
+        BREACHED_EMAIL: 'CRITICAL',
+        HIDDEN_GRAVATAR: 'MEDIUM',
+        OPEN_PORTS: 'HIGH',
+        EXPOSED_DNS: 'LOW',
+        TOR_LEAK: 'CRITICAL',
+        ONION_MARKET_MENTION: 'CRITICAL',
         BUFFER_OVERFLOW: 'HIGH',
-        HARDCODED_CREDENTIAL: 'CRITICAL',
-        JWT_BYPASS: 'CRITICAL',
-        PATH_TRAVERSAL: 'HIGH'
+        MEMORY_LEAK: 'CRITICAL'
     };
 
     let filesInspected = 0;
@@ -242,7 +255,7 @@ async function runStaticAudit(
                 const content = await importedFs.default.readFile(filePath, 'utf-8');
                 filesInspected++;
 
-                for (const [threatType, pattern] of Object.entries(INJECTION_PATTERNS)) {
+                for (const [threatType, pattern] of Object.entries(OSINT_PATTERNS)) {
                     // Only check relevant threats for this unit's domain
                     const isRelevant = unit.threatTypes.includes(threatType) ||
                         unit.id === 'gray-5'; // gray-5 audits config broadly
@@ -285,16 +298,18 @@ async function runStaticAudit(
 
 function getSuggestedPatch(threatType: string): string {
     const patches: Record<string, string> = {
-        COMMAND_INJECTION: 'Gunakan execFile() dengan args array — hindari template literal pada shell command.',
-        SQL_INJECTION: 'Gunakan parameterized queries ($1, $2) atau ORM untuk setiap input user.',
-        EXPOSED_SECRETS: 'Pastikan nilai .env tidak pernah di-log atau dikirim ke model sebagai teks biasa.',
-        INSECURE_CONFIG: 'Set rejectUnauthorized: true — gunakan certificate valid untuk koneksi produksi.',
-        BUFFER_OVERFLOW: 'Ganti Buffer.allocUnsafe dengan Buffer.alloc untuk inisialisasi buffer yang aman.',
-        HARDCODED_CREDENTIAL: 'Pindahkan credential ke .env dan akses via process.env — JANGAN hardcode.',
-        JWT_BYPASS: 'Tentukan algoritma secara eksplisit (RS256/HS256) — tolak token dengan algorithm: none.',
-        PATH_TRAVERSAL: 'Validasi path dengan path.resolve() dan pastikan berada dalam direktori yang diizinkan.'
+        BLIND_USERNAME: 'Lakukan Identity Correlation via cross_platform_scanner.js. Jangan asumsikan identitas.',
+        SOSMED_LINKAGE: 'Ekstrak bio dan avatar untuk reverse image search.',
+        BREACHED_EMAIL: 'Jalankan email_analyzer.js untuk membedah MX, Gravatar, dan eksistensi Deep Web.',
+        HIDDEN_GRAVATAR: 'Lakukan MD5 Hash pada email dan fetch id.gravatar.com/hash.json.',
+        OPEN_PORTS: 'Pastikan port ini tidak terekspos ke Surface Web (Gunakan firewall/VPC).',
+        EXPOSED_DNS: 'Periksa perlindungan Cloudflare/Proxy untuk menutupi IP asli.',
+        TOR_LEAK: 'SANGAT KRITIS. Alamat .onion bocor ke Surface Web. Pantau akses via proxy SOCKS5 lokal.',
+        ONION_MARKET_MENTION: 'Gunakan GRAY-5 (Deep Web Recon) untuk menyelidiki aktivitas forum ini.',
+        BUFFER_OVERFLOW: 'Periksa alokasi memori yang tidak aman.',
+        MEMORY_LEAK: 'Hapus hardcoded secret.'
     };
-    return patches[threatType] || 'Tinjau kode secara manual dan terapkan prinsip least privilege.';
+    return patches[threatType] || 'Delegasikan ke GRAY unit spesifik untuk penyelidikan mendalam.';
 }
 
 // ── Main Swarm Launch (Paralel 5 Unit) ─────────────────────────────
