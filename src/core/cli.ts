@@ -7,6 +7,7 @@ import fs from 'fs';
 import os from 'os';
 import chalk from 'chalk';
 import { getBrainConfig } from '../shared/data.js';
+import * as readline from 'readline/promises';
 
 // Baca konfigurasi dari direktori proyek saat ini, lalu fallback ke ~/.ant/ atau home ant-cli
 const BASE_DIR = process.cwd();
@@ -18,16 +19,37 @@ const envCandidates = [
     path.join(os.homedir(), 'ant-cli', '.env'),
     '/data/data/com.termux/files/home/ant-cli/.env'
 ];
+
+let activeEnvPath = path.join(BASE_DIR, '.env');
 for (const envPath of envCandidates) {
     if (fs.existsSync(envPath)) {
         dotenv.config({ path: envPath });
+        activeEnvPath = envPath;
+    }
+}
+
+async function ensureIdentity() {
+    if (!process.env.USER_NAME) {
+        console.log(chalk.cyan('\n[ANT INITIALIZATION]'));
+        console.log(chalk.yellow('Identitas belum diatur. Siapa yang sedang mengakses sistem ini?'));
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        const name = await rl.question(chalk.green('Masukkan nama Anda: '));
+        rl.close();
+        if (name.trim()) {
+            process.env.USER_NAME = name.trim();
+            fs.appendFileSync(activeEnvPath, `\nUSER_NAME="${name.trim()}"\n`);
+            console.log(chalk.green(`\n[OK] Identitas disimpan sebagai: ${name.trim()}\n`));
+        } else {
+            console.error(chalk.red('Identitas wajib diisi untuk mengoperasikan ANT.'));
+            process.exit(1);
+        }
     }
 }
 
 // Read identity and user profile configuration
 function readAntIdentity() {
     try {
-        const owner = process.env.USER_NAME || 'Ard';
+        const owner = process.env.USER_NAME || 'Unknown Operator';
         return {
             creator: 'Renaldy Adri (Ard)',
             origin: 'CLUW Genesis',
@@ -38,7 +60,7 @@ function readAntIdentity() {
         return {
             creator: 'Renaldy Adri (Ard)',
             origin: 'CLUW Genesis',
-            activeUser: 'Ard',
+            activeUser: 'Unknown Operator',
             collaborators: 'Agy, Gemma, Claude, DeepSeek, Ollama'
         };
     }
@@ -76,10 +98,11 @@ async function main() {
     const args = process.argv.slice(2);
     const currentSessionId = `cli-session-${Date.now()}`;
     
-    // Auth Check
+    // Auth Check & Identity
     try {
         const { enforceAuthGate } = await import('../security/auth.js');
         await enforceAuthGate();
+        await ensureIdentity();
     } catch (e: any) {
         console.error(chalk.red(`[FATAL] Auth System Error: ${e.message}`));
         process.exit(1);
