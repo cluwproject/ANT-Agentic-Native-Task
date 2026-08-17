@@ -122,58 +122,82 @@ Layer 3: Mailbox Handover
 
 ---
 
-## 5. Quickstart
+## 5. Quickstart & Cross-Platform Setup
 
-### Prerequisites
-- Node.js >= 20.0.0
-- Ollama (untuk inference lokal + embedding)
+ANT dirancang untuk berjalan di berbagai lingkungan (Edge to Desktop) dengan instalasi instan.
+
+### Prerequisites (Prasyarat Umum)
+- **Node.js** >= 20.0.0
+- **Git** terpasang di sistem operasi.
+- **Ollama** (Untuk memori lokal & *embedding* 768-dim):
   ```bash
-  ollama pull nomic-embed-text   # Wajib — embedding engine (274 MB)
-  ollama pull qwen2.5:0.5b       # Untuk Gray Unit swarm (opsional)
+  ollama pull nomic-embed-text
   ```
-- CockroachDB Serverless (opsional — sistem fallback ke local jika tidak ada)
 
-### Instalasi
+### Panduan Instalasi per Platform
+
+**A. Windows (CMD / PowerShell)**
+Buka `Command Prompt` (CMD) atau `PowerShell` sebagai Administrator (opsional tapi disarankan), lalu jalankan:
+```cmd
+git clone https://github.com/renaldyadri10/ant-cli.git
+cd ant-cli
+npm install
+npm run build
+npm start
+```
+*Catatan untuk PowerShell: Jika mendapat error eksekusi script, jalankan `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` terlebih dahulu.*
+
+**B. macOS / Linux (Terminal)**
+Buka aplikasi `Terminal`, lalu jalankan:
 ```bash
 git clone https://github.com/renaldyadri10/ant-cli.git
 cd ant-cli
 npm install
 npm run build
+npm start
 ```
 
-### Konfigurasi `.env`
-Copy `.env.example` → `.env` lalu isi:
+**C. Android (Termux)**
+Buka aplikasi `Termux` (pastikan *storage permission* sudah aktif), lalu jalankan:
+```bash
+pkg install git nodejs -y
+git clone https://github.com/renaldyadri10/ant-cli.git
+cd ant-cli
+npm install
+npm run build
+npm start
+```
+
+### Konfigurasi Pertama (Identity Setup)
+Saat pertama kali menjalankan `npm start`, ANT akan meminta **Identitas Pengguna**:
+```text
+[ANT INITIALIZATION]
+Identitas belum diatur. Siapa yang sedang mengakses sistem ini?
+Masukkan nama Anda: 
+```
+Masukkan nama Anda. Identitas ini akan digunakan ANT untuk menyapa dan melacak log operasi, namun **Origin Sistem** akan tetap terkunci pada pendirinya (*CLUW Genesis / Ard*).
+
+### Konfigurasi `.env` (Lanjutan)
+Copy `.env.example` → `.env` untuk mengganti otak AI atau menghubungkan CockroachDB:
 
 ```env
 USER_NAME=Ard
 
-# Commander Model (LLM besar)
+# Commander Model (LLM besar - Swappable)
 AI_PROVIDER=ollama
 CUSTOM_MODEL=gpt-oss:120b-cloud
 BASE_URL=http://localhost:11434/v1
 
-# Swarm Gray Unit (0.5B SLM) — satu key untuk semua 5 unit
-ANT_SWARM_MODEL=qwen2.5:0.5b
-
-# SLM Safety Limits
-ANT_SLM_MAX_FILE_KB=24
-ANT_SLM_MAX_FILES_PER_UNIT=8
-
-# CockroachDB (opsional — auto-fallback ke local jika kosong)
+# CockroachDB (opsional — auto-fallback ke local JSON jika kosong)
 DATABASE_URL=postgresql://<user>:<pass>@<cluster>.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full
-MEMORY_VAULT_MODE=cloud
 ```
 
-> **Model Gray Unit** tidak perlu diset per-unit. Cukup `ANT_SWARM_MODEL=qwen2.5:0.5b` 
-> untuk semua 5 unit. Override per-unit tersedia via `ANT_GRAY_1_MODEL` s/d `ANT_GRAY_5_MODEL`.
-
-### Menjalankan ANT
-
+### Menjalankan ANT (Kapan Saja)
 ```bash
-# Development (langsung dari TypeScript)
+# Menjalankan dari source code
 npm start
 
-# Atau setelah build — dari mana saja
+# Atau menjalankan secara global (jika sudah di-link)
 ant
 ```
 
