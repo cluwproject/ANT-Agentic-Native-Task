@@ -16,7 +16,7 @@ import path from 'path';
 
 export function getTerminalWidth(): number {
     const cols = process.stdout.columns || 80;
-    return Math.max(36, Math.min(cols - 2, 95));
+    return Math.max(40, cols);
 }
 
 export function getDivider(): string {
