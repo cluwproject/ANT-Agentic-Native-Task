@@ -139,8 +139,8 @@ ANT dirancang untuk berjalan di berbagai lingkungan (Edge to Desktop) dengan ins
 **A. Windows (CMD / PowerShell)**
 Buka `Command Prompt` (CMD) atau `PowerShell` sebagai Administrator (opsional tapi disarankan), lalu jalankan:
 ```cmd
-git clone https://github.com/renaldyadri10/ant-cli.git
-cd ant-cli
+git clone https://github.com/cluwproject/ANT-Agentic-Native-Task.git
+cd ANT-Agentic-Native-Task
 npm install
 npm run build
 npm start
@@ -150,8 +150,8 @@ npm start
 **B. macOS / Linux (Terminal)**
 Buka aplikasi `Terminal`, lalu jalankan:
 ```bash
-git clone https://github.com/renaldyadri10/ant-cli.git
-cd ant-cli
+git clone https://github.com/cluwproject/ANT-Agentic-Native-Task.git
+cd ANT-Agentic-Native-Task
 npm install
 npm run build
 npm start
@@ -161,8 +161,8 @@ npm start
 Buka aplikasi `Termux` (pastikan *storage permission* sudah aktif), lalu jalankan:
 ```bash
 pkg install git nodejs -y
-git clone https://github.com/renaldyadri10/ant-cli.git
-cd ant-cli
+git clone https://github.com/cluwproject/ANT-Agentic-Native-Task.git
+cd ANT-Agentic-Native-Task
 npm install
 npm run build
 npm start
@@ -178,18 +178,30 @@ Masukkan nama Anda:
 Masukkan nama Anda. Identitas ini akan digunakan ANT untuk menyapa dan melacak log operasi, namun **Origin Sistem** akan tetap terkunci pada pendirinya (*CLUW Genesis / Ard*).
 
 ### Konfigurasi `.env` (Lanjutan)
-Copy `.env.example` → `.env` untuk mengganti otak AI atau menghubungkan CockroachDB:
+Copy `.env.example` → `.env` untuk mengatur konfigurasi Anda. ANT mendukung berbagai jenis otak AI (Lokal maupun API Cloud):
 
 ```env
-USER_NAME=Ard
+# ─────────────────────────────────────────────────────────
+# PILIHAN 1: LOCAL MODEL (Tanpa API Key, 100% Offline)
+# ─────────────────────────────────────────────────────────
+# AI_PROVIDER=ollama
+# CUSTOM_MODEL=llama3:8b
+# BASE_URL=http://localhost:11434/v1
 
-# Commander Model (LLM besar - Swappable)
-AI_PROVIDER=ollama
-CUSTOM_MODEL=gpt-oss:120b-cloud
-BASE_URL=http://localhost:11434/v1
+# ─────────────────────────────────────────────────────────
+# PILIHAN 2: CLOUD API MODEL (Lebih cerdas, butuh API Key)
+# ─────────────────────────────────────────────────────────
+AI_PROVIDER=anthropic      # Opsi: anthropic, openai, google, aws_bedrock
+CUSTOM_MODEL=claude-3-5-sonnet-20240620
+ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxx
+# OPENAI_API_KEY=sk-xxxxxxxxxxxxx
+# GEMINI_API_KEY=AIzaSyxxxxxxxxxxx
 
-# CockroachDB (opsional — auto-fallback ke local JSON jika kosong)
-DATABASE_URL=postgresql://<user>:<pass>@<cluster>.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full
+# ─────────────────────────────────────────────────────────
+# DATABASE MEMORY
+# ─────────────────────────────────────────────────────────
+# CockroachDB (Opsional — jika dikosongkan, ANT akan menggunakan JSON lokal)
+DATABASE_URL=postgresql://<username>:<password>@<cluster>.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full
 ```
 
 ### Menjalankan ANT (Kapan Saja)
