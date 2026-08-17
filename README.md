@@ -1,8 +1,7 @@
 # ANT-CLI (Agentic Native Task)
-### Sovereign Agentic Runtime × MindBy Persistent Cognitive Memory
+### Sovereign Agentic Runtime
 
-> **You Ask. ANT Acts. Memory Persists. Evidence Remains.**  
-> *Built for CockroachDB × AWS Hackathon 2026 — Track: Agentic Memory*
+> **You Ask. ANT Acts. Memory Persists. Evidence Remains.**
 
 ---
 
@@ -185,17 +184,17 @@ Copy `.env.example` → `.env` untuk mengatur konfigurasi Anda. ANT mendukung be
 # PILIHAN 1: LOCAL MODEL (Tanpa API Key, 100% Offline)
 # ─────────────────────────────────────────────────────────
 # AI_PROVIDER=ollama
-# CUSTOM_MODEL=llama3:8b
+# CUSTOM_MODEL=xxxx
 # BASE_URL=http://localhost:11434/v1
 
 # ─────────────────────────────────────────────────────────
 # PILIHAN 2: CLOUD API MODEL (Lebih cerdas, butuh API Key)
 # ─────────────────────────────────────────────────────────
-AI_PROVIDER=anthropic      # Opsi: anthropic, openai, google, aws_bedrock
-CUSTOM_MODEL=claude-3-5-sonnet-20240620
-ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxx
+AI_PROVIDER=xxxxx      # Opsi: anthropic, openai, google, aws_bedrock, etc
+CUSTOM_MODEL=xxxxx
+ANTHROPIC_API_KEY=skxxxxxxxxxxxxx
 # OPENAI_API_KEY=sk-xxxxxxxxxxxxx
-# GEMINI_API_KEY=AIzaSyxxxxxxxxxxx
+# GEMINI_API_KEY=AIzaSyxxxxxxxxxx
 
 # ─────────────────────────────────────────────────────────
 # DATABASE MEMORY
@@ -306,7 +305,7 @@ ant-cli/
 | **Persistent Memory** | CockroachDB Serverless (`VECTOR(768)`, ACID, Multi-region) |
 | **Embedding Engine** | `nomic-embed-text` via Ollama (768-dim, offline-first) |
 | **Commander LLM** | Ollama cloud models / AWS Bedrock / OpenAI compatible |
-| **Swarm SLM** | `qwen2.5:0.5b` via Ollama (Gray Unit 0.5B) |
+| **Swarm SLM** | `qwen2.5:0.5b` via Ollama (Gray Unit 0.5B) | You can Edit/Change
 | **Runtime** | Node.js 20+, TypeScript, ESM |
 | **Protocol** | Model Context Protocol (MCP), ANT-MAIL/1.0 |
 | **Evidence** | SHA-256 kriptografis, CockroachDB `evidence_ledger` |
@@ -315,8 +314,8 @@ ant-cli/
 
 ## 📜 Intellectual Property & Sovereign Declaration
 
-- **Creator / Operator:** Renaldy Adri (Ard)
-- **Parent Architecture:** CLUW-Genesis (Declared 27 July 2026)
+- **Creator / Operator:**Ard
+- **Parent Architecture:** CLUW-Genesis
 - **Version:** v0.3.0 — Swarm Intelligence & Memory Hardening
 - **License:** [MIT License](LICENSE)
 
