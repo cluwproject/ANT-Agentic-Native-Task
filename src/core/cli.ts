@@ -7,7 +7,7 @@ import fs from 'fs';
 import os from 'os';
 import chalk from 'chalk';
 import { getBrainConfig } from '../shared/data.js';
-import * as readline from 'readline/promises';
+import readline from 'readline';
 
 // Baca konfigurasi dari direktori proyek saat ini, lalu fallback ke ~/.ant/ atau home ant-cli
 const BASE_DIR = process.cwd();
@@ -28,21 +28,30 @@ for (const envPath of envCandidates) {
     }
 }
 
-async function ensureIdentity() {
+async function ensureIdentity(): Promise<void> {
     if (!process.env.USER_NAME) {
         console.log(chalk.cyan('\n[ANT INITIALIZATION]'));
-        console.log(chalk.yellow('Identitas belum diatur. Siapa yang sedang mengakses sistem ini?'));
-        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        const name = await rl.question(chalk.green('Masukkan nama Anda: '));
-        rl.close();
-        if (name.trim()) {
-            process.env.USER_NAME = name.trim();
-            fs.appendFileSync(activeEnvPath, `\nUSER_NAME="${name.trim()}"\n`);
-            console.log(chalk.green(`\n[OK] Identitas disimpan sebagai: ${name.trim()}\n`));
-        } else {
-            console.error(chalk.red('Identitas wajib diisi untuk mengoperasikan ANT.'));
-            process.exit(1);
-        }
+        console.log(chalk.yellow('Identity not set. Who is operating this system?'));
+        
+        return new Promise((resolve) => {
+            const rl = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout
+            });
+            
+            rl.question(chalk.green('Enter your name: '), (name) => {
+                rl.close();
+                if (name && name.trim()) {
+                    process.env.USER_NAME = name.trim();
+                    fs.appendFileSync(activeEnvPath, `\nUSER_NAME="${name.trim()}"\n`);
+                    console.log(chalk.green(`\n[OK] Identity saved as: ${name.trim()}\n`));
+                    resolve();
+                } else {
+                    console.error(chalk.red('Identity is required to operate ANT.'));
+                    process.exit(1);
+                }
+            });
+        });
     }
 }
 
