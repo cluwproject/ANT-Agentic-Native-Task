@@ -27,37 +27,11 @@ export async function askUser(promptText: string = 'You ❯ '): Promise<string> 
             }
         });
 
-        const onKeypress = async (str: string, key: readline.Key) => {
-            if (isHandled) return;
-
-            const lineVal = ((rl as any).line || '').trim();
-            const isSlashKey = str === '/' || (key && (key.name === 'slash' || key.sequence === '/'));
-
-            // Trigger interactive slash menu when '/' is pressed at start of prompt
-            if (isSlashKey && (lineVal === '' || lineVal === '/')) {
-                isHandled = true;
-                if (process.stdin.isTTY) {
-                    process.stdin.removeListener('keypress', onKeypress);
-                }
-                rl.close();
-
-                // Open interactive slash menu
-                const selected = await showSlashMenu('/');
-                resolve(selected ? selected.trim() : '');
-            }
-        };
-
         readline.emitKeypressEvents(process.stdin);
-        if (process.stdin.isTTY) {
-            process.stdin.on('keypress', onKeypress);
-        }
 
         rl.question(promptText, async (answer) => {
             if (isHandled) return;
             isHandled = true;
-            if (process.stdin.isTTY) {
-                process.stdin.removeListener('keypress', onKeypress);
-            }
             rl.close();
 
             const trimmed = (answer || '').trim();
