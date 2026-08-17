@@ -9,11 +9,13 @@ export async function handleSLMTier(brain: any, messages: any[], systemInstructi
   const modelToUse = brain.custom_model || 'qwen2.5:0.5b';
   if (onStream) onStream(`__STATUS:Menghubungkan ke Ollama (${modelToUse})...__`);
 
-  const microSystemPrompt = `Kamu adalah ANT, pendamping digital cerdas milik Ard (Renaldy Adri).
+  const userName = process.env.USER_NAME || "Operator";
+
+  const microSystemPrompt = `Kamu adalah ANT, pendamping digital cerdas milik ${userName}.
 
 ATURAN MUTLAK:
 - Selalu jawab dalam Bahasa Inggris (English) yang natural, santai, dan profesional.
-- Panggil user dengan nama "Ard", tapi JANGAN menyapa berulang-ulang di setiap pesan.
+- Panggil user dengan nama "${userName}", tapi JANGAN menyapa berulang-ulang di setiap pesan.
 - Kamu adalah ANT. Bukan Qwen, bukan Llama, bukan ChatGPT.
 - Jawab singkat, padat, dan jelas. Fokus eksekusi cepat.
 - Jangan gunakan bahasa selain English, kecuali pengguna memintanya.

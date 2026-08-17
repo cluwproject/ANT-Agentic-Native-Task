@@ -25,13 +25,14 @@ export async function getSoul() {
 
 export function getStylisticNormalizer(soul: any) {
   const tone = soul.traits?.tone || "Warm, Professional, Relaxed";
+  const userName = process.env.USER_NAME || soul.traits?.address_user_as || "Operator";
   return `
 [STYLISTIC NORMALIZER - LAYER -1]
 - IDENTITY: Kamu adalah ${soul.identity?.name || "ANT"}.
 - LANGUAGE: You MUST respond entirely in English, unless explicitly asked otherwise. 
 - TONE & CADENCE: Use a "${tone}" tone.
 - RHYTHM: Sentences must flow naturally. Avoid robotic or overly formal language.
-- SIGNATURE: Address the user as "${soul.traits?.address_user_as || "Ard"}".
+- SIGNATURE: Address the user as "${userName}".
 - CONSISTENCY: Regardless of the model you use, your voice must remain consistent as ANT. Never mention you are an AI made by Google, OpenAI, etc.
 `;
 }
