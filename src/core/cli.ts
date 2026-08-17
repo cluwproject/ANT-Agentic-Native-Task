@@ -714,16 +714,36 @@ async function main() {
                 console.log(chalk.dim('  Example: /store Target final submission for CockroachDB Hackathon is August 18, 2026.'));
                 continue;
             }
-            console.log(chalk.dim('  Persisting memory to Dual-Vault...'));
+            console.log(chalk.dim('  Translating & Persisting memory to Dual-Vault...'));
+
+            let finalMemoryContent = memoryContent;
+            try {
+                const { chat } = await import('./ai/index.js');
+                const brain = await getBrainConfig();
+                const translated = await chat(
+                    brain, 
+                    [{ role: 'user', content: `Translate the following text to English. ONLY output the translation, no quotes, no explanation: ${memoryContent}` }], 
+                    [], 
+                    {}, 
+                    "You are a strict translation system."
+                );
+                
+                if (translated && translated.content && translated.content.trim()) {
+                    finalMemoryContent = translated.content.trim();
+                    console.log(chalk.cyan(`  [TRANSLATED] ${finalMemoryContent}`));
+                }
+            } catch (e) {
+                // Silent fallback
+            }
 
             // 1. Embed teks terlebih dahulu (agar tersimpan bersama vektor)
             const { storeMemory, getEmbedding } = await import('./memory.js');
             const memKey = `mem_${Date.now()}`;
-            const embedding = await getEmbedding(memoryContent).catch(() => []);
-            await storeMemory('semantic', memKey, memoryContent, ['cli_user', 'operator']);
+            const embedding = await getEmbedding(finalMemoryContent).catch(() => []);
+            await storeMemory('semantic', memKey, finalMemoryContent, ['cli_user', 'operator']);
 
             // 2. Coba simpan ke Cloud CockroachDB dengan embedding nyata
-            const cloudSuccess = await storeCockroachMemory(memoryContent, embedding.length > 0 ? embedding : undefined, ['cli_user']);
+            const cloudSuccess = await storeCockroachMemory(finalMemoryContent, embedding.length > 0 ? embedding : undefined, ['cli_user']);
             if (cloudSuccess) {
                 console.log(chalk.green(`  [OK] Memory synced to Cloud CockroachDB & Local Vault (vector: ${embedding.length > 0 ? '768-dim' : 'text only'})`));
             } else {
