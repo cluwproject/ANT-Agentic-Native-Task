@@ -1,0 +1,96 @@
+{
+  "mission_id": "mission-1786936802520",
+  "goal": "Investigasi Kebocoran Data (Dummy Target)",
+  "target_paths": [
+    "./workspace/dummy_target/target1.js"
+  ],
+  "assigned_units": {
+    "gray-1": "done",
+    "gray-2": "done",
+    "gray-3": "done",
+    "gray-4": "done",
+    "gray-5": "done"
+  },
+  "findings": [
+    {
+      "unit": "gray-1",
+      "mission_id": "mission-1786936802520",
+      "target_file": "workspace/dummy_target/target1.js",
+      "threat_type": "NONE",
+      "risk_level": "CLEAN",
+      "action_decision": "[ABAIKAN]",
+      "timestamp": "2026-08-17T03:20:02.634Z"
+    },
+    {
+      "unit": "gray-2",
+      "mission_id": "mission-1786936802520",
+      "target_file": "workspace/dummy_target/target1.js",
+      "threat_type": "BLIND_USERNAME",
+      "risk_level": "MEDIUM",
+      "action_decision": "[PANTAU]",
+      "suggested_patch": "Lakukan Identity Correlation via cross_platform_scanner.js. Jangan asumsikan identitas.",
+      "timestamp": "2026-08-17T03:20:02.644Z"
+    },
+    {
+      "unit": "gray-2",
+      "mission_id": "mission-1786936802520",
+      "target_file": "workspace/dummy_target/target1.js",
+      "threat_type": "SOSMED_LINKAGE",
+      "risk_level": "HIGH",
+      "action_decision": "[PERBAIKI]",
+      "suggested_patch": "Ekstrak bio dan avatar untuk reverse image search.",
+      "timestamp": "2026-08-17T03:20:02.645Z"
+    },
+    {
+      "unit": "gray-3",
+      "mission_id": "mission-1786936802520",
+      "target_file": "workspace/dummy_target/target1.js",
+      "threat_type": "BREACHED_EMAIL",
+      "risk_level": "CRITICAL",
+      "action_decision": "[PERBAIKI]",
+      "suggested_patch": "Jalankan email_analyzer.js untuk membedah MX, Gravatar, dan eksistensi Deep Web.",
+      "timestamp": "2026-08-17T03:20:02.649Z"
+    },
+    {
+      "unit": "gray-3",
+      "mission_id": "mission-1786936802520",
+      "target_file": "workspace/dummy_target/target1.js",
+      "threat_type": "HIDDEN_GRAVATAR",
+      "risk_level": "MEDIUM",
+      "action_decision": "[PANTAU]",
+      "suggested_patch": "Lakukan MD5 Hash pada email dan fetch id.gravatar.com/hash.json.",
+      "timestamp": "2026-08-17T03:20:02.650Z"
+    },
+    {
+      "unit": "gray-4",
+      "mission_id": "mission-1786936802520",
+      "target_file": "workspace/dummy_target/target1.js",
+      "threat_type": "NONE",
+      "risk_level": "CLEAN",
+      "action_decision": "[ABAIKAN]",
+      "timestamp": "2026-08-17T03:20:02.655Z"
+    },
+    {
+      "unit": "gray-5",
+      "mission_id": "mission-1786936802520",
+      "target_file": "workspace/dummy_target/target1.js",
+      "threat_type": "TOR_LEAK",
+      "risk_level": "CRITICAL",
+      "action_decision": "[PERBAIKI]",
+      "suggested_patch": "SANGAT KRITIS. Alamat .onion bocor ke Surface Web. Pantau akses via proxy SOCKS5 lokal.",
+      "timestamp": "2026-08-17T03:20:02.667Z"
+    },
+    {
+      "unit": "gray-5",
+      "mission_id": "mission-1786936802520",
+      "target_file": "workspace/dummy_target/target1.js",
+      "threat_type": "ONION_MARKET_MENTION",
+      "risk_level": "CRITICAL",
+      "action_decision": "[PERBAIKI]",
+      "suggested_patch": "Gunakan GRAY-5 (Deep Web Recon) untuk menyelidiki aktivitas forum ini.",
+      "timestamp": "2026-08-17T03:20:02.670Z"
+    }
+  ],
+  "created_at": "2026-08-17T03:20:02.520Z",
+  "completed_at": "2026-08-17T03:20:02.679Z"
+}

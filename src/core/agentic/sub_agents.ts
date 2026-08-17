@@ -41,27 +41,27 @@ export const SUB_AGENT_REGISTRY: Record<string, SubAgentDefinition> = {
     },
     'gray-2': {
         role: 'gray-2',
-        description: 'Spesialis Injection (SQLi, XSS) (ANT-CYBER-CORPS).',
-        systemPrompt: 'Kamu adalah GRAY-2, unit elit ANT-CYBER-CORPS spesialis Injeksi. Tugasmu mencari celah SQLi, XSS, Command Injection, dan validasi input yang lemah.',
-        allowedTools: ['read_file', 'grep_search', 'shell_exec']
+        description: 'Spesialis OSINT Username & Profiling (ANT-CYBER-CORPS).',
+        systemPrompt: 'Kamu adalah GRAY-2, unit elit ANT-CYBER-CORPS spesialis OSINT Sosial. Tugasmu melacak jejak digital target, mencocokkan identitas lintas platform menggunakan alat seperti cross_platform_scanner.js.',
+        allowedTools: ['read_file', 'shell_exec', 'web_search']
     },
     'gray-3': {
         role: 'gray-3',
-        description: 'Spesialis Auth & Identity (ANT-CYBER-CORPS).',
-        systemPrompt: 'Kamu adalah GRAY-3, unit elit ANT-CYBER-CORPS spesialis Auth. Tugasmu mengaudit mekanisme otentikasi, otorisasi, JWT, dan manajemen sesi.',
-        allowedTools: ['read_file', 'grep_search']
+        description: 'Spesialis OSINT Email Intelligence (ANT-CYBER-CORPS).',
+        systemPrompt: 'Kamu adalah GRAY-3, unit elit ANT-CYBER-CORPS spesialis Intelijen Email. Tugasmu mengekstrak data MX records, Gravatar, dan kebocoran akun via Holehe menggunakan email_analyzer.js.',
+        allowedTools: ['read_file', 'shell_exec', 'web_search']
     },
     'gray-4': {
         role: 'gray-4',
-        description: 'Spesialis Supply Chain & CVE (ANT-CYBER-CORPS).',
-        systemPrompt: 'Kamu adalah GRAY-4, unit elit ANT-CYBER-CORPS spesialis Supply Chain. Tugasmu memeriksa dependensi rentan (CVE), package.json, dan file lock.',
+        description: 'Spesialis Infrastruktur & DNS (ANT-CYBER-CORPS).',
+        systemPrompt: 'Kamu adalah GRAY-4, unit elit ANT-CYBER-CORPS spesialis Infrastruktur. Tugasmu melakukan enumerasi DNS, Whois, pemindaian port, dan membedah topologi server target.',
         allowedTools: ['read_file', 'grep_search', 'shell_exec']
     },
     'gray-5': {
         role: 'gray-5',
-        description: 'Spesialis Cloud Config & Infra (ANT-CYBER-CORPS).',
-        systemPrompt: 'Kamu adalah GRAY-5, unit elit ANT-CYBER-CORPS spesialis Cloud/Infra. Tugasmu mengaudit konfigurasi AWS, Docker, K8s, dan secrets yang hardcoded.',
-        allowedTools: ['read_file', 'grep_search', 'list_dir']
+        description: 'Spesialis Deep/Dark Web Reconnaissance (ANT-CYBER-CORPS).',
+        systemPrompt: 'Kamu adalah GRAY-5, unit elit ANT-CYBER-CORPS spesialis Deep Web. Tugasmu mencari kebocoran data tersembunyi, memantau jaringan Tor (.onion), dan mengekstrak sinyal dari forum bawah tanah.',
+        allowedTools: ['read_file', 'shell_exec', 'web_search']
     }
 };
 
