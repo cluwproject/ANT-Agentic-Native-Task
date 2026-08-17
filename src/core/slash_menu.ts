@@ -127,7 +127,6 @@ export async function showSlashMenu(initialChar: string = '/'): Promise<string |
             if (menuLines > 0) clearMenu(menuLines);
             try {
                 process.stdin.setRawMode(false);
-                process.stdin.pause();
                 process.stdin.removeAllListeners('data');
             } catch {}
             resolve(result);
