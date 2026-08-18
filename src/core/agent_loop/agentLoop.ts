@@ -139,6 +139,8 @@ export async function runCliAgentLoop(
     let attempts = 0;
     let cancelled = false;
     let verificationRetries = 0;
+    let consecutiveErrors = 0;
+    const CIRCUIT_BREAKER_THRESHOLD = 3;
 
     const onSigint = () => {
         if (cancelled) return;
@@ -187,10 +189,26 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                 metadata = result.metadata;
             } catch (err: any) {
                 spinner.stop();
+                consecutiveErrors++;
                 ui.printConnectionError(err.message);
-                safeLog('error', 'Gagal memanggil tieredChat', { error: err.message });
-                break;
+                safeLog('error', 'Gagal memanggil tieredChat', { error: err.message, consecutiveErrors });
+
+                if (consecutiveErrors >= CIRCUIT_BREAKER_THRESHOLD) {
+                    console.log(chalk.red.bold(
+                        `\n[CIRCUIT BREAKER TRIPPED] API gagal ${consecutiveErrors}x berturut-turut. ` +
+                        `Loop dihentikan otomatis untuk melindungi kredit API kamu.\n` +
+                        `Periksa koneksi internet atau kunci API di .env dan coba lagi.`
+                    ));
+                    safeLog('error', 'Circuit breaker aktif — loop dihentikan', { consecutiveErrors });
+                    break;
+                }
+                // Short wait before retrying
+                await new Promise(r => setTimeout(r, 1000 * consecutiveErrors));
+                attempts++;
+                continue;
             }
+            // Reset error streak on successful call
+            consecutiveErrors = 0;
 
             spinner.stop();
 
