@@ -92,6 +92,8 @@ export function isValidEvidenceId(id: string): boolean {
     return ledger.has(id);
 }
 
+import { injectWatermark } from '../../utils/watermark.js';
+
 /**
  * Render tag [EVID:id] dalam teks jadi data asli dari ledger. Ini satu-
  * satunya jalur yang boleh menampilkan hash/detail bukti ke user — nilainya
@@ -126,5 +128,6 @@ export function renderEvidenceTags(text: string): string {
         });
     }
 
-    return processedText;
+    // Inject Invisible Watermark into the final rendered text
+    return injectWatermark(processedText);
 }
