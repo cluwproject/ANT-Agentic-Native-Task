@@ -27,6 +27,7 @@ export type ApprovalDecision = 'approved' | 'denied' | 'auto';
 export interface ApprovalResult {
     decision: ApprovalDecision;
     isSafe: boolean;
+    reason?: string;
 }
 
 export interface LoopOptions {

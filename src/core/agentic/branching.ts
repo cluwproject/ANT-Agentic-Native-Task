@@ -45,3 +45,19 @@ export async function loadBranch(branchName: string): Promise<ConversationBranch
         return null;
     }
 }
+
+export async function handleBranchCommand(text: string, sessionId: string, history: any[] = []): Promise<void> {
+    const parts = text.split(' ').filter(Boolean);
+    const action = parts[1];
+    const name = parts[2];
+
+    if (action === 'list') {
+        const branches = await listBranches();
+        console.log(`Available branches: ${branches.join(', ') || 'None'}`);
+    } else if (action === 'create' && name) {
+        await createBranch(name, sessionId, history);
+        console.log(`Branch '${name}' created.`);
+    } else {
+        console.log('Usage: /branch list | /branch create <name>');
+    }
+}

@@ -17,6 +17,22 @@ export interface ExecutionPolicy {
 
 const activePolicies: ExecutionPolicy[] = [];
 
+export class RateLimiter {
+    private callLog = new Map<string, number[]>();
+    
+    checkLimit(tool: string, limit = 10, windowMs = 60000): boolean {
+        const now = Date.now();
+        let timestamps = this.callLog.get(tool) || [];
+        timestamps = timestamps.filter(t => now - t < windowMs);
+        if (timestamps.length >= limit) return false;
+        timestamps.push(now);
+        this.callLog.set(tool, timestamps);
+        return true;
+    }
+}
+
+export const globalRateLimiter = new RateLimiter();
+
 export function addSessionPolicy(tool: string, riskLevel: 'LOW' | 'MEDIUM' | 'HIGH') {
     activePolicies.push({
         scope: 'session',
@@ -102,6 +118,15 @@ export async function requestApproval(
 ): Promise<ApprovalResult> {
     const risk = getToolRisk(toolCall.tool);
     
+    // Rate Limiting Check
+    if (!globalRateLimiter.checkLimit(toolCall.tool, 15, 60000)) {
+        return { 
+            decision: 'denied', 
+            isSafe: false,
+            reason: `[RATE LIMIT EXCEEDED] Tool '${toolCall.tool}' dipanggil terlalu cepat (>15x per menit). Ini berpotensi menghabiskan API kredit atau terjebak dalam loop. Misi dibatalkan sementara. Panggil tool 'ask_human' atau turunkan kecepatan.` 
+        };
+    }
+
     if (isToolAutoApproved(toolCall.tool, risk)) {
         ui.printToolCallHeader(toolCall.tool);
         ui.printToolArgs(toolCall.args);

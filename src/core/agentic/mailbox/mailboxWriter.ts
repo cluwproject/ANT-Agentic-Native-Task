@@ -14,7 +14,7 @@ const GENESIS_HASH = 'sha256:000000000000000000000000000000000000000000000000000
  * Mengurutkan kunci objek secara rekursif untuk menghasilkan JSON kanonikal deterministik.
  * Memastikan hash bernilai identik meskipun properti diurutkan berbeda.
  */
-export function canonicalize(obj) {
+export function canonicalize(obj: any): string {
   if (obj === null || typeof obj !== 'object') {
     return JSON.stringify(obj);
   }
@@ -27,6 +27,9 @@ export function canonicalize(obj) {
 }
 
 export class MailboxWriter {
+  ledgerPath: string;
+  lockPath: string;
+
   /**
    * @param {string} [workspaceRoot] Direktori kerja proyek (default: process.cwd())
    */
@@ -62,12 +65,12 @@ export class MailboxWriter {
     try {
       const parsed = JSON.parse(lastLine);
       return parsed.entryHash || GENESIS_HASH;
-    } catch (err) {
+    } catch (err: any) {
       throw new Error(`[MailboxWriter] Ledger terdeteksi rusak pada baris terakhir: ${err.message}`);
     }
   }
 
-  computeHash(prevHash, payload) {
+  computeHash(prevHash: string, payload: any): string {
     const canonicalPayload = canonicalize(payload);
     const hashInput = prevHash + canonicalPayload;
     const hash = crypto.createHash('sha256').update(hashInput, 'utf-8').digest('hex');
@@ -80,11 +83,11 @@ export class MailboxWriter {
    * @param {object} envelopeData
    * @returns {object} Envelope lengkap yang berhasil ditulis
    */
-  append(envelopeData) {
+  append(envelopeData: any) {
     return withLock(this.lockPath, () => {
       const prevHash = this.getLastEntryHash();
 
-      const fullEnvelope = { ...envelopeData, prevHash };
+      const fullEnvelope: any = { ...envelopeData, prevHash };
       const entryHash = this.computeHash(prevHash, fullEnvelope);
       fullEnvelope.entryHash = entryHash;
 
@@ -130,7 +133,7 @@ export class MailboxWriter {
         }
 
         expectedPrevHash = entryHash;
-      } catch (err) {
+      } catch (err: any) {
         return {
           valid: false,
           totalEntries: lines.length,

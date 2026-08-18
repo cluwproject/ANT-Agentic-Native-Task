@@ -558,6 +558,13 @@ async function main() {
             process.stdout.write(chalk.cyan('You ❯ ') + summary + '\n');
         }
 
+        // ── Branching: /branch ──────────────────────────────────────────────
+        if (text.startsWith('/branch')) {
+            const { handleBranchCommand } = await import('./agentic/branching.js');
+            await handleBranchCommand(text, currentSessionId);
+            continue;
+        }
+
         // ── Undo: restore file dari backup .bak ─────────────────────────
         if (text.startsWith('/undo')) {
             const target = text.replace('/undo', '').trim();
