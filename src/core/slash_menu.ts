@@ -247,7 +247,7 @@ export async function showSessionSelector(sessions: SessionItem[]): Promise<stri
         const visibleSessions = sessions.slice(0, MAX_SESSIONS);
 
         const renderSessionMenu = () => {
-            const width = process.stdout.columns || 80;
+            const width = Math.max(50, (process.stdout.columns || 80) - 2); // -2 to prevent terminal auto-wrap
             const borderH = '─'.repeat(width - 2);
             const lines: string[] = [];
             lines.push(chalk.dim(`┌${borderH}┐`));
@@ -256,14 +256,23 @@ export async function showSessionSelector(sessions: SessionItem[]): Promise<stri
                 const isSelected = i === selectedIdx;
                 const prefix = isSelected ? chalk.cyan('  ❯ ') : '    ';
                 
-                const idStr = isSelected ? chalk.cyan.bold(s.id.padEnd(25)) : chalk.white(s.id.padEnd(25));
+                // Trim string if it's too long
+                const maxIdLen = 25;
+                const idText = s.id.length > maxIdLen ? s.id.substring(0, maxIdLen-3) + '...' : s.id.padEnd(maxIdLen);
+                const idStr = isSelected ? chalk.cyan.bold(idText) : chalk.white(idText);
                 const detailStr = chalk.dim(`(Terakhir: ${s.time})`);
 
                 const content = `${prefix}${idStr} ${detailStr}`;
+                // Strip ANSI to get real length
                 const cleanLen = content.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '').length;
-                const pad = ' '.repeat(Math.max(0, width - 2 - cleanLen));
-
-                lines.push(chalk.dim('│') + content + pad + chalk.dim('│'));
+                
+                if (cleanLen > width - 4) {
+                    // if still too long, just truncate the whole string (ignoring ansi complexity, just rough fallback)
+                    lines.push(chalk.dim('│') + content + chalk.dim('│'));
+                } else {
+                    const pad = ' '.repeat(Math.max(0, width - 2 - cleanLen));
+                    lines.push(chalk.dim('│') + content + pad + chalk.dim('│'));
+                }
             });
             
             if (sessions.length > MAX_SESSIONS) {
