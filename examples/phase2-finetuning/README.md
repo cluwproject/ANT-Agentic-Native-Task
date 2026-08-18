@@ -46,10 +46,15 @@ pip install -r requirements.txt
 
 # Convert HANYA adapter-nya (butuh reference ke Base Model HF untuk config)
 # Pastikan qwen2.5-coder-1.5b-hf sudah didownload atau cache tersedia
-python convert-lora-to-ggml.py ../ant-gray-unit/gray-1-adapter \
+python convert_lora_to_gguf.py \
   --base Qwen/Qwen2.5-Coder-1.5B-Instruct \
-  --outfile gray1-adapter.gguf
+  --outfile gray1-adapter.gguf \
+  ../ant-gray-unit/gray-1-adapter
 ```
+
+> [!TIP]
+> **Penting Sebelum Melatih Semua Unit:**
+> Lakukan seluruh proses (training -> konversi -> register Ollama -> test inference) untuk **SATU** adapter (misal GRAY-1) terlebih dahulu. Ini memastikan tidak ada isu penamaan tensor antara PEFT dan backend llama.cpp (Ollama) sebelum kamu menghabiskan waktu melatih sisa 4 unit lainnya.
 
 ### Step 5: Setup Modelfile di Ollama (Hot-Swap)
 Di komputer lokal/Termux, download dulu base modelnya:
