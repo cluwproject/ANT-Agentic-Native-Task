@@ -41,43 +41,42 @@ export interface SwarmMissionResult {
     duration_ms: number;
 }
 
-// ── Unit Registry (Model env-aware) ────────────────────────────────
 export function getGrayUnits(): GrayUnit[] {
     return [
         {
             id: 'gray-1',
             name: 'ANT-GRAY-1 (Memory & Logic Guardian)',
-            domain: 'Buffer Overflow, Memory Leaks, Race Conditions',
-            model: process.env.ANT_GRAY_1_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:0.5b',
-            threatTypes: ['BUFFER_OVERFLOW', 'MEMORY_LEAK', 'RACE_CONDITION', 'NULL_DEREF']
+            domain: 'Buffer Overflow, Memory Leaks, Race Conditions, ReDoS',
+            model: process.env.ANT_GRAY_1_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:1.5b',
+            threatTypes: ['BUFFER_OVERFLOW', 'MEMORY_LEAK', 'RACE_CONDITION', 'REDOS']
         },
         {
             id: 'gray-2',
-            name: 'ANT-GRAY-2 (OSINT Profiling - Surface Web)',
-            domain: 'Username correlation, Sosmed Scraping, Public Footprints',
-            model: process.env.ANT_GRAY_2_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:0.5b',
-            threatTypes: ['BLIND_USERNAME', 'FAKE_IDENTITY', 'SOSMED_LINKAGE']
+            name: 'ANT-GRAY-2 (Injection Sifter)',
+            domain: 'SQLi, XSS, Command Injection, Path Traversal',
+            model: process.env.ANT_GRAY_2_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:1.5b',
+            threatTypes: ['SQL_INJECTION', 'XSS', 'COMMAND_INJECTION', 'PATH_TRAVERSAL']
         },
         {
             id: 'gray-3',
-            name: 'ANT-GRAY-3 (Email Intel - Deep Web/Databases)',
-            domain: 'MX Records, Gravatar, Holehe Deep Profiling, Breach Data',
-            model: process.env.ANT_GRAY_3_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:0.5b',
-            threatTypes: ['BREACHED_EMAIL', 'HIDDEN_GRAVATAR', 'REGISTERED_ACCOUNTS']
+            name: 'ANT-GRAY-3 (Auth & Identity Architect)',
+            domain: 'IDOR, JWT Flaws, Broken Auth, Privilege Escalation',
+            model: process.env.ANT_GRAY_3_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:1.5b',
+            threatTypes: ['IDOR', 'JWT_FLAW', 'BROKEN_AUTH']
         },
         {
             id: 'gray-4',
-            name: 'ANT-GRAY-4 (Infra & Topology - Surface/Deep)',
-            domain: 'DNS Enumeration, Whois, Server Topology, Port Scanning',
-            model: process.env.ANT_GRAY_4_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:0.5b',
-            threatTypes: ['OPEN_PORTS', 'EXPOSED_DNS', 'SERVER_LEAKS']
+            name: 'ANT-GRAY-4 (Supply Chain Sentinel)',
+            domain: 'CVE Dependencies, Typosquatting, Malicious Scripts',
+            model: process.env.ANT_GRAY_4_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:1.5b',
+            threatTypes: ['VULN_DEPENDENCY', 'SUSPICIOUS_SCRIPT']
         },
         {
             id: 'gray-5',
-            name: 'ANT-GRAY-5 (Dark Web Recon - .onion)',
-            domain: 'Tor Hidden Services, Dark Forums, Anonymous Leaks',
-            model: process.env.ANT_GRAY_5_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:0.8b',
-            threatTypes: ['TOR_LEAK', 'ONION_MARKET_MENTION', 'DEEP_CHAT_LOGS']
+            name: 'ANT-GRAY-5 (Cloud & Config Auditor)',
+            domain: 'Exposed Secrets, IAM Misconfig, Cloud Leaks',
+            model: process.env.ANT_GRAY_5_MODEL || process.env.ANT_SWARM_MODEL || 'qwen2.5:1.5b',
+            threatTypes: ['HARDCODED_SECRET', 'IAM_MISCONFIG', 'CLOUD_MISCONFIG']
         }
     ];
 }
@@ -327,16 +326,17 @@ export async function launchSwarmAudit(
     console.log(chalk.dim(`   Targets    : ${targetPaths.join(', ')}`));
     console.log(chalk.dim(`   Units      : 5 Gray Units (Parallel)\n`));
 
-    // Print all unit start messages first (cosmetic)
-    units.forEach(unit => {
-        console.log(chalk.yellow(`  ▸ [${unit.id.toUpperCase()}] ${unit.name} — Starting scan...`));
-    });
+    // Run units SEQUENTIALLY to preserve VRAM/RAM on local devices.
+    // Concurrent execution of 5 models requires > 8GB RAM, which crashes Termux.
+    const unitResults: { unit: GrayUnit; findings: FindingCard[]; status: 'done' | 'failed' }[] = [];
+    const runMode = process.env.ANT_SWARM_MODE || 'sequential'; // Default to sequential
 
-    // Run all units in parallel — ONLY run the audit, do NOT write blackboard here
-    const unitResults: { unit: GrayUnit; findings: FindingCard[]; status: 'done' | 'failed' }[] = 
-        await Promise.all(
+    if (runMode === 'concurrent') {
+        console.log(chalk.yellow(`  [WARNING] Running in CONCURRENT mode. This may cause OOM on devices with < 16GB RAM.`));
+        const concurrentResults = await Promise.all(
             units.map(async (unit) => {
                 try {
+                    console.log(chalk.yellow(`  ▸ [${unit.id.toUpperCase()}] ${unit.name} — Starting scan...`));
                     const findings = await runStaticAudit(unit, targetPaths, mission_id);
                     const status = findings.some(f => f.risk_level !== 'CLEAN')
                         ? chalk.red(`${findings.filter(f => f.risk_level !== 'CLEAN').length} issue(s) found`)
@@ -349,6 +349,25 @@ export async function launchSwarmAudit(
                 }
             })
         );
+        unitResults.push(...concurrentResults);
+    } else {
+        // Sequential Mode (Safe for Termux/Ollama Hot-Swap)
+        for (const unit of units) {
+            try {
+                console.log(chalk.yellow(`  ▸ [${unit.id.toUpperCase()}] ${unit.name} — Starting scan (Sequential)...`));
+                // Note: The underlying AI call in runStaticAudit should pass keep_alive: 0
+                const findings = await runStaticAudit(unit, targetPaths, mission_id);
+                const status = findings.some(f => f.risk_level !== 'CLEAN')
+                    ? chalk.red(`${findings.filter(f => f.risk_level !== 'CLEAN').length} issue(s) found`)
+                    : chalk.green('Clean');
+                console.log(chalk.dim(`  ✓ [${unit.id.toUpperCase()}] Done — ${status}`));
+                unitResults.push({ unit, findings, status: 'done' as const });
+            } catch (e: any) {
+                Logger.log('ERROR', `Unit ${unit.id} failed: ${e.message}`, {}, 'SWARM');
+                unitResults.push({ unit, findings: [] as FindingCard[], status: 'failed' as const });
+            }
+        }
+    }
 
     // Flatten all findings (no duplicates — each unit only contributes its own findings)
     const allFindings = unitResults.flatMap(r => r.findings);

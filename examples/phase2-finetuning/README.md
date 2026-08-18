@@ -44,8 +44,11 @@ git clone https://github.com/ggerganov/llama.cpp
 cd llama.cpp
 pip install -r requirements.txt
 
-# Convert HANYA adapter-nya
-python convert-lora-to-ggml.py ../ant-gray-unit/gray-1-adapter --outfile gray1-adapter.gguf
+# Convert HANYA adapter-nya (butuh reference ke Base Model HF untuk config)
+# Pastikan qwen2.5-coder-1.5b-hf sudah didownload atau cache tersedia
+python convert-lora-to-ggml.py ../ant-gray-unit/gray-1-adapter \
+  --base Qwen/Qwen2.5-Coder-1.5B-Instruct \
+  --outfile gray1-adapter.gguf
 ```
 
 ### Step 5: Setup Modelfile di Ollama (Hot-Swap)
