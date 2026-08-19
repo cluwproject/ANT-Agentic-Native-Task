@@ -59,6 +59,8 @@ export const TOOL_PROMPT = `
 `;
 
 
+import { renderBondPrompt } from '../agent_loop/cognitiveBond.js';
+
 export async function buildFullSystemInstruction(systemInstruction: string, localBrain: any, isGeminiNode: boolean): Promise<string> {
   const soul = await getSoul();
   const providerLow = (localBrain.provider || '').toLowerCase();
@@ -76,8 +78,10 @@ export async function buildFullSystemInstruction(systemInstruction: string, loca
   if (isSmallLocalModel) return timeAwareness + systemInstruction;
   
   const normalizer = getStylisticNormalizer(soul);
+  const cognitiveBondBlock = await renderBondPrompt();
   const hasTavily = !!(localBrain.tavily_api_key && localBrain.tavily_api_key.trim().length > 5);
   const capabilityBlock = localBrain._capabilityMap || '';
-  return timeAwareness + systemInstruction + normalizer + SOVEREIGN_SEAL_BLOCK + CLONED_MODEL_CHARACTER + capabilityBlock + TOOL_PROMPT +
+  
+  return timeAwareness + systemInstruction + normalizer + cognitiveBondBlock + SOVEREIGN_SEAL_BLOCK + CLONED_MODEL_CHARACTER + capabilityBlock + TOOL_PROMPT +
     `\nNote: ${hasTavily ? 'Tavily Search AKTIF (Gunakan tool: "web_search").' : (isGeminiNode ? 'Google Search tersedia secara native.' : 'Gunakan web_search untuk informasi terbaru.')}`;
 }
