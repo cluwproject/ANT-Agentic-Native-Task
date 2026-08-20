@@ -272,10 +272,17 @@ async function main() {
         const subCommand = args[1];
         
         if (subCommand === 'report') {
-            const missionId = args[2];
+            let missionId = args[2];
             if (!missionId) {
-                console.error(chalk.red('Error: Format salah. Contoh: ant swarm report mission-12345'));
-                process.exit(1);
+                const { getLatestMissionId } = await import('./agentic/latest_mission.js');
+                const latest = await getLatestMissionId();
+                if (latest) {
+                    missionId = latest;
+                    console.log(chalk.cyan(`\n[AUTO] Memilih misi terakhir: ${missionId}`));
+                } else {
+                    console.error(chalk.red('Error: Tidak ada misi yang ditemukan.'));
+                    process.exit(1);
+                }
             }
             try {
                 const { getBrainConfig } = await import('../shared/data.js');
@@ -332,7 +339,7 @@ async function main() {
                 const { launchOsintMission } = await import('./agentic/purple_unit.js');
                 const result = await launchOsintMission(targetType, targetValue, brain);
                 
-                console.log(chalk.dim(`\n💡 Tip: Jalankan 'ant swarm report ${result.mission_id}' untuk merangkum temuan OSINT (WHITE Unit).`));
+            console.log(chalk.dim(`\n💡 Tip: Jalankan 'ant swarm report' untuk merangkum temuan OSINT (WHITE Unit).`));
             } catch (err: any) {
                 console.error(chalk.red(`\n[OSINT ERROR] ${err.message}`));
             }
@@ -361,7 +368,7 @@ async function main() {
             const result = await launchSwarmAudit(goal, [target], brain);
             renderSwarmReport(result);
             
-            console.log(chalk.dim(`\n💡 Tip: Jalankan 'ant swarm report ${result.mission_id}' untuk men-generate Laporan Audit Resmi.`));
+            console.log(chalk.dim(`\n💡 Tip: Jalankan 'ant swarm report' untuk men-generate Laporan Audit Resmi.`));
         } catch (err: any) {
             console.error(chalk.red(`\n[SWARM ERROR] ${err.message}`));
         }
@@ -957,7 +964,7 @@ async function main() {
                     brain
                 );
                 renderSwarmReport(result);
-                console.log(chalk.dim(`\n💡 Tip: Ketik '/report ${result.mission_id}' untuk menyusun Laporan Audit (WHITE Unit).`));
+                console.log(chalk.dim(`\n💡 Tip: Ketik '/report' untuk menyusun Laporan Audit (WHITE Unit).`));
             } catch (e: any) {
                 console.log(chalk.red(`  Swarm Error: ${e.message}`));
             }
@@ -966,10 +973,17 @@ async function main() {
 
         // ── WHITE UNIT: /report ────────────────────────────────────────
         if (text.startsWith('/report')) {
-            const missionId = text.replace(/^\/report\s*/, '').trim();
+            let missionId = text.replace(/^\/report\s*/, '').trim();
             if (!missionId) {
-                console.log(chalk.yellow('  Format salah. Gunakan: /report <mission_id>'));
-                continue;
+                const { getLatestMissionId } = await import('./agentic/latest_mission.js');
+                const latest = await getLatestMissionId();
+                if (latest) {
+                    missionId = latest;
+                    console.log(chalk.cyan(`  [AUTO] Memilih misi terakhir: ${missionId}`));
+                } else {
+                    console.log(chalk.yellow('  Tidak ada misi yang ditemukan. Gunakan: /report <mission_id>'));
+                    continue;
+                }
             }
             try {
                 const { getBrainConfig } = await import('../shared/data.js');
@@ -1027,7 +1041,7 @@ async function main() {
                 const { launchOsintMission } = await import('./agentic/purple_unit.js');
                 const result = await launchOsintMission(targetType, targetValue, brain);
                 
-                console.log(chalk.dim(`\n💡 Tip: Ketik '/report ${result.mission_id}' untuk merangkum temuan OSINT (WHITE Unit).`));
+                console.log(chalk.dim(`\n💡 Tip: Ketik '/report' untuk merangkum temuan OSINT (WHITE Unit).`));
             } catch (e: any) {
                 console.log(chalk.red(`  OSINT Error: ${e.message}`));
             }
