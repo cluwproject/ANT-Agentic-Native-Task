@@ -269,6 +269,27 @@ async function main() {
         process.exit(0);
     }
     if (args[0] === 'swarm') {
+        const subCommand = args[1];
+        
+        if (subCommand === 'report') {
+            const missionId = args[2];
+            if (!missionId) {
+                console.error(chalk.red('Error: Format salah. Contoh: ant swarm report mission-12345'));
+                process.exit(1);
+            }
+            try {
+                const { getBrainConfig } = await import('../shared/data.js');
+                const brain = await getBrainConfig();
+                if (!process.env.ANT_SWARM_MODEL && brain.custom_model) process.env.ANT_SWARM_MODEL = brain.custom_model;
+                
+                const { launchWhiteUnitReport } = await import('./agentic/white_unit.js');
+                await launchWhiteUnitReport(missionId, brain);
+            } catch (err: any) {
+                console.error(chalk.red(`\n[WHITE UNIT ERROR] ${err.message}`));
+            }
+            process.exit(0);
+        }
+
         const goal = args[1];
         const target = args[2];
         if (!goal || !target) {
@@ -290,6 +311,8 @@ async function main() {
             console.log(chalk.cyan(`Memulai Operasi Swarm 3-Zona untuk target: ${target}`));
             const result = await launchSwarmAudit(goal, [target], brain);
             renderSwarmReport(result);
+            
+            console.log(chalk.dim(`\n💡 Tip: Jalankan 'ant swarm report ${result.mission_id}' untuk men-generate Laporan Audit Resmi.`));
         } catch (err: any) {
             console.error(chalk.red(`\n[SWARM ERROR] ${err.message}`));
         }
@@ -885,8 +908,29 @@ async function main() {
                     brain
                 );
                 renderSwarmReport(result);
+                console.log(chalk.dim(`\n💡 Tip: Ketik '/report ${result.mission_id}' untuk menyusun Laporan Audit (WHITE Unit).`));
             } catch (e: any) {
                 console.log(chalk.red(`  Swarm Error: ${e.message}`));
+            }
+            continue;
+        }
+
+        // ── WHITE UNIT: /report ────────────────────────────────────────
+        if (text.startsWith('/report')) {
+            const missionId = text.replace(/^\/report\s*/, '').trim();
+            if (!missionId) {
+                console.log(chalk.yellow('  Format salah. Gunakan: /report <mission_id>'));
+                continue;
+            }
+            try {
+                const { getBrainConfig } = await import('../shared/data.js');
+                const brain = await getBrainConfig();
+                if (!process.env.ANT_SWARM_MODEL && brain.custom_model) process.env.ANT_SWARM_MODEL = brain.custom_model;
+                
+                const { launchWhiteUnitReport } = await import('./agentic/white_unit.js');
+                await launchWhiteUnitReport(missionId, brain);
+            } catch (e: any) {
+                console.log(chalk.red(`  Report Error: ${e.message}`));
             }
             continue;
         }
