@@ -11,6 +11,7 @@
 
 import chalk from 'chalk';
 import path from 'path';
+import ora from 'ora';
 import { Logger } from '../../utils/logger.js';
 import { chat } from '../ai/index.js';
 import { GRAY_UNIT_PROMPTS } from './gray_prompts.js';
@@ -234,11 +235,13 @@ export async function updateMissionUnit(
 }
 
 // ── Model Audit Runner (memanggil LLM/SLM) ───────────────────────────────────
+// ── Model Audit Runner (memanggil LLM/SLM) ───────────────────────────────────
 async function runModelAudit(
     unit: GrayUnit,
     targetPaths: string[],
     mission_id: string,
-    brain: any
+    brain: any,
+    spinner?: any
 ): Promise<FindingCard[]> {
     const findings: FindingCard[] = [];
     const importedPath = await import('path');
@@ -277,6 +280,10 @@ async function runModelAudit(
                 
                 const content = await importedFs.default.readFile(filePath, 'utf-8');
                 filesInspected++;
+                
+                if (spinner) {
+                    spinner.text = `[${unit.id.toUpperCase()}] ${unit.name} — Mengaudit file ${filesInspected}/${SLM_MAX_FILES_PER_UNIT} (${importedPath.default.basename(filePath)})...`;
+                }
                 
                 try {
                     const systemPrompt = GRAY_UNIT_PROMPTS[unit.id] || "Tugasmu mencari celah keamanan.";
@@ -500,8 +507,11 @@ export async function launchSwarmAudit(
     } else {
         // Sequential Mode (Safe for Termux/Ollama Hot-Swap)
         for (const unit of units) {
+            const spinner = ora({
+                text: chalk.yellow(`  ▸ [${unit.id.toUpperCase()}] ${unit.name} — Memulai pemindaian...`),
+                spinner: 'dots'
+            }).start();
             try {
-                console.log(chalk.yellow(`  ▸ [${unit.id.toUpperCase()}] ${unit.name} — Starting scan (Sequential)...`));
                 // Note: The underlying AI call should pass keep_alive: 0
                 
                 let findings: FindingCard[];
@@ -509,9 +519,10 @@ export async function launchSwarmAudit(
                 
                 if (useModel) {
                     try {
-                        findings = await runModelAudit(unit, targetPaths, mission_id, brain);
+                        findings = await runModelAudit(unit, targetPaths, mission_id, brain, spinner);
                     } catch (e: any) {
                         Logger.log('WARN', `[${unit.id}] runModelAudit failed, falling back to runStaticAudit.`, {}, 'SWARM');
+                        spinner.text = chalk.yellow(`  ▸ [${unit.id.toUpperCase()}] Model gagal, beralih ke Regex Audit...`);
                         findings = await runStaticAudit(unit, targetPaths, mission_id);
                     }
                 } else {
@@ -519,12 +530,14 @@ export async function launchSwarmAudit(
                 }
                 
                 const status = findings.some(f => f.risk_level !== 'CLEAN')
-                    ? chalk.red(`${findings.filter(f => f.risk_level !== 'CLEAN').length} issue(s) found`)
-                    : chalk.green('Clean');
-                console.log(chalk.dim(`  ✓ [${unit.id.toUpperCase()}] Done — ${status}`));
+                    ? chalk.red(`${findings.filter(f => f.risk_level !== 'CLEAN').length} masalah ditemukan`)
+                    : chalk.green('Bersih (Clean)');
+                
+                spinner.succeed(chalk.dim(`  ✓ [${unit.id.toUpperCase()}] Selesai — ${status}`));
                 unitResults.push({ unit, findings, status: 'done' as const });
             } catch (e: any) {
                 Logger.log('ERROR', `Unit ${unit.id} failed: ${e.message}`, {}, 'SWARM');
+                spinner.fail(chalk.red(`  ✗ [${unit.id.toUpperCase()}] Gagal: ${e.message}`));
                 unitResults.push({ unit, findings: [] as FindingCard[], status: 'failed' as const });
             }
         }
