@@ -1,5 +1,5 @@
 # ANT-CLI (Agentic Native Task)
-### Sovereign Cybersecurity Swarm AI & OSINT Agent
+### Sovereign Agentic CLI Assistant
 
 > **You Ask. ANT Acts. Memory Persists. Evidence Remains.**
 
@@ -7,12 +7,14 @@
 
 ## 1. Executive Summary
 
-**ANT-CLI (Agentic Native Task)** is a sovereign, terminal-native **Cybersecurity Swarm AI Agent** and **OSINT (Open-Source Intelligence)** toolkit designed for mobile-first operators and security professionals. Optimized to run seamlessly on constrained environments like **Termux (Android)** and edge devices, it integrates a central orchestrator, a cryptographic memory ledger, and a swarm of specialized tactical agents (SAST, DAST, Recon) into a single, memory-efficient command-line interface.
+**ANT-CLI (Agentic Native Task)** is a sovereign, terminal-native **Agentic Assistant** designed to be your cognitive partner directly inside the command line. Built for mobile-first operators and developers, it is heavily optimized to run seamlessly on constrained environments like **Termux (Android)** and edge devices. ANT operates as a lightweight, memory-efficient intelligence layer that understands your local workspace, retains persistent semantic memory, and executes complex reasoning tasks.
+
+Beneath its simple interface, ANT hides a powerful, modular architecture capable of deploying specialized sub-agents for advanced tactical tasks—all while keeping your primary terminal environment clean and responsive.
 
 ANT is built on the philosophy of **Model Independence and Absolute Sovereignty**:
 - **Swappable AI Brain:** Users can easily switch the underlying LLM engine (AWS Bedrock, Anthropic Claude, Google Gemini, OpenAI, DeepSeek, or Local Ollama) without breaking the core system architecture.
 - **Persistent Memory:** Powered by CockroachDB Serverless, ensuring all contextual memory and operational logs survive system reboots.
-- **Edge-Ready & Termux Optimized:** Specifically designed for low-RAM devices utilizing Sequential Swarm Execution and Local SLMs (Small Language Models) to prevent OOM crashes on mobile terminals.
+- **Edge-Ready & Termux Optimized:** Specifically designed for low-RAM devices utilizing Local SLMs (Small Language Models) to prevent OOM crashes on mobile terminals.
 
 ```text
                    USER / OPERATOR
