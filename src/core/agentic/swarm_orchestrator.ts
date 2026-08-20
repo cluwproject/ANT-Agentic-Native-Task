@@ -29,7 +29,7 @@ export function parseFindingCardText(text: string, unit: GrayUnit, mission_id: s
                 findings.push(currentCard as FindingCard);
             }
             currentCard = {
-                unit: unit.name,
+                unit: unit.id,
                 mission_id,
                 target_file,
                 threat_type: line.replace('TEMUAN:', '').trim(),
