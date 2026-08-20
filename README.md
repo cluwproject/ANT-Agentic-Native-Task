@@ -1,5 +1,5 @@
 # ANT-CLI (Agentic Native Task)
-### Sovereign Agentic Runtime
+### Sovereign Cybersecurity Swarm AI & OSINT Agent
 
 > **You Ask. ANT Acts. Memory Persists. Evidence Remains.**
 
@@ -7,12 +7,12 @@
 
 ## 1. Executive Summary
 
-**ANT-CLI** is a sovereign, terminal-native agentic runtime designed for security professionals and data-driven operators. It integrates a central orchestrator, a cryptographic memory ledger, and a swarm of specialized tactical agents into a single, cohesive command-line interface.
+**ANT-CLI (Agentic Native Task)** is a sovereign, terminal-native **Cybersecurity Swarm AI Agent** and **OSINT (Open-Source Intelligence)** toolkit designed for mobile-first operators and security professionals. Optimized to run seamlessly on constrained environments like **Termux (Android)** and edge devices, it integrates a central orchestrator, a cryptographic memory ledger, and a swarm of specialized tactical agents (SAST, DAST, Recon) into a single, memory-efficient command-line interface.
 
 ANT is built on the philosophy of **Model Independence and Absolute Sovereignty**:
-- **Swappable AI Brain:** Users can easily switch the underlying LLM engine (AWS Bedrock, Anthropic Claude, Google Gemini, DeepSeek, or Local Ollama) without breaking the core system architecture. The intelligence engine is just a pluggable module.
-- **Persistent Memory:** Powered by CockroachDB Serverless, ensuring all contextual memory and operational logs survive system reboots and scaling events.
-- **Edge-Ready:** Operates securely within constrained environments like standard terminal emulators or edge devices.
+- **Swappable AI Brain:** Users can easily switch the underlying LLM engine (AWS Bedrock, Anthropic Claude, Google Gemini, OpenAI, DeepSeek, or Local Ollama) without breaking the core system architecture.
+- **Persistent Memory:** Powered by CockroachDB Serverless, ensuring all contextual memory and operational logs survive system reboots.
+- **Edge-Ready & Termux Optimized:** Specifically designed for low-RAM devices utilizing Sequential Swarm Execution and Local SLMs (Small Language Models) to prevent OOM crashes on mobile terminals.
 
 ```text
                    USER / OPERATOR
