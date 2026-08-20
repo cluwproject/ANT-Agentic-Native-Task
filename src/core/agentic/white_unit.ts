@@ -8,7 +8,7 @@ import { MissionBlackboard } from './swarm_orchestrator.js';
 const BLACKBOARD_DIR = path.join(process.cwd(), 'workspace', 'missions');
 const REPORTS_DIR = path.join(process.cwd(), 'workspace', 'reports');
 
-export async function launchWhiteUnitReport(mission_id: string, brain: any): Promise<string | null> {
+export async function launchWhiteUnitReport(mission_id: string, brain: any): Promise<{ path: string, content: string } | null> {
     try {
         console.log(chalk.cyan(`\n[WHITE UNIT] Memulai penyusunan laporan untuk misi: ${mission_id}`));
         
@@ -61,8 +61,8 @@ ${JSON.stringify(board.findings, null, 2)}
         
         await fs.writeFile(reportPath, responseText.content);
         
-        console.log(chalk.green(`  ✓ Laporan berhasil dibuat: ${reportPath}`));
-        return reportPath;
+        console.log(chalk.green(`  ✓ Laporan berhasil dibuat: file://${reportPath}`));
+        return { path: reportPath, content: responseText.content };
 
     } catch (e: any) {
         Logger.log('ERROR', `White Unit failed: ${e.message}`, {}, 'SWARM');

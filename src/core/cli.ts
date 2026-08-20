@@ -290,7 +290,14 @@ async function main() {
                 if (!process.env.ANT_SWARM_MODEL && brain.custom_model) process.env.ANT_SWARM_MODEL = brain.custom_model;
                 
                 const { launchWhiteUnitReport } = await import('./agentic/white_unit.js');
-                await launchWhiteUnitReport(missionId, brain);
+                const reportData = await launchWhiteUnitReport(missionId, brain);
+                
+                if (reportData) {
+                    console.log(chalk.cyan(`\n🔗 Artifact Link: file://${reportData.path}`));
+                    console.log(chalk.dim('\n' + '═'.repeat(80)));
+                    console.log(chalk.white(reportData.content));
+                    console.log(chalk.dim('═'.repeat(80) + '\n'));
+                }
             } catch (err: any) {
                 console.error(chalk.red(`\n[WHITE UNIT ERROR] ${err.message}`));
             }
@@ -993,7 +1000,14 @@ async function main() {
                 if (!process.env.ANT_SWARM_MODEL && brain.custom_model) process.env.ANT_SWARM_MODEL = brain.custom_model;
                 
                 const { launchWhiteUnitReport } = await import('./agentic/white_unit.js');
-                await launchWhiteUnitReport(missionId, brain);
+                const reportData = await launchWhiteUnitReport(missionId, brain);
+                
+                if (reportData) {
+                    console.log(chalk.cyan(`\n🔗 Artifact Link: file://${reportData.path}`));
+                    console.log(chalk.dim('\n' + '═'.repeat(80)));
+                    console.log(chalk.white(reportData.content));
+                    console.log(chalk.dim('═'.repeat(80) + '\n'));
+                }
             } catch (e: any) {
                 console.log(chalk.red(`  Report Error: ${e.message}`));
             }
