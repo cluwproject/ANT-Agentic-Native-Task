@@ -308,16 +308,18 @@ async function main() {
             console.log(chalk.dim('2. 🌍 Network & Infra (Domains, IP, Cloud assets)'));
             console.log(chalk.dim('3. 👁️ Digital Forensics (Images, PDFs, Metadata)'));
             console.log(chalk.dim('4. 💰 Blockchain & Crypto (Wallets, TXs)'));
+            console.log(chalk.dim('5. 🕸️ Threat Intel (Deep Web Mentions, Malware Hashes)'));
             
             const question = (query: string): Promise<string> => new Promise(res => rlOsint.question(query, res));
             
-            const choice = await question(chalk.magenta('> Pilihan Anda (1-4): '));
+            const choice = await question(chalk.magenta('> Pilihan Anda (1-5): '));
             
             let targetType = 'Unknown';
             if (choice === '1') targetType = 'Identity (Email/Username)';
             else if (choice === '2') targetType = 'Network (Domain/IP)';
             else if (choice === '3') targetType = 'Forensics (Image/Metadata)';
             else if (choice === '4') targetType = 'Blockchain (Wallet/Crypto)';
+            else if (choice === '5') targetType = 'Threat Intel (Deep Web / Malware)';
             else {
                 console.log(chalk.red('Pilihan tidak valid.'));
                 rlOsint.close();
@@ -1010,16 +1012,18 @@ async function main() {
             console.log(chalk.dim('2. 🌍 Network & Infra (Domains, IP, Cloud assets)'));
             console.log(chalk.dim('3. 👁️ Digital Forensics (Images, PDFs, Metadata)'));
             console.log(chalk.dim('4. 💰 Blockchain & Crypto (Wallets, TXs)'));
+            console.log(chalk.dim('5. 🕸️ Threat Intel (Deep Web Mentions, Malware Hashes)'));
             
             const question = (query: string): Promise<string> => new Promise(res => rlOsint.question(query, res));
             
-            const choice = await question(chalk.magenta('> Pilihan Anda (1-4): '));
+            const choice = await question(chalk.magenta('> Pilihan Anda (1-5): '));
             
             let targetType = 'Unknown';
             if (choice === '1') targetType = 'Identity (Email/Username)';
             else if (choice === '2') targetType = 'Network (Domain/IP)';
             else if (choice === '3') targetType = 'Forensics (Image/Metadata)';
             else if (choice === '4') targetType = 'Blockchain (Wallet/Crypto)';
+            else if (choice === '5') targetType = 'Threat Intel (Deep Web / Malware)';
             else {
                 console.log(chalk.red('Pilihan tidak valid.'));
                 rlOsint.close();
