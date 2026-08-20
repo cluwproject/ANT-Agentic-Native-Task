@@ -12,6 +12,64 @@
 import chalk from 'chalk';
 import path from 'path';
 import { Logger } from '../../utils/logger.js';
+import { chat } from '../ai/index.js';
+import { GRAY_UNIT_PROMPTS } from './gray_prompts.js';
+
+export function parseFindingCardText(text: string, unit: GrayUnit, mission_id: string, target_file: string): FindingCard[] {
+    const findings: FindingCard[] = [];
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    
+    let currentCard: Partial<FindingCard> & { currentKey?: string } = {};
+    
+    for (const line of lines) {
+        if (line.startsWith('TEMUAN:')) {
+            if (currentCard.threat_type) {
+                // Save previous card before starting new one
+                findings.push(currentCard as FindingCard);
+            }
+            currentCard = {
+                unit: unit.name,
+                mission_id,
+                target_file,
+                threat_type: line.replace('TEMUAN:', '').trim(),
+                risk_level: 'MEDIUM', // default
+            };
+            currentCard.currentKey = 'TEMUAN';
+        } else if (line.startsWith('SEVERITY:')) {
+            const sev = line.replace('SEVERITY:', '').trim().toUpperCase();
+            if (['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(sev)) {
+                currentCard.risk_level = sev as any;
+            }
+            currentCard.currentKey = 'SEVERITY';
+        } else if (line.startsWith('FIX:') || line.startsWith('ACTION:')) {
+            currentCard.suggested_patch = line.replace(/^(FIX|ACTION):/, '').trim();
+            currentCard.action_decision = '[PERBAIKI]';
+            currentCard.currentKey = 'FIX';
+        } else if (line.startsWith('LOCATION:') || line.startsWith('PAYLOAD:') || line.startsWith('ATTACK:') || line.startsWith('PACKAGE:')) {
+            // Kita bisa map detail ini ke ujung threat_type atau simpan di field tambahan kalau ada
+            // Untuk v1, kita append ke threat_type agar terlihat di UI CLI
+            currentCard.threat_type += ' | ' + line;
+            currentCard.currentKey = 'DETAIL';
+        } else if (line.startsWith('EVIDENCE:')) {
+            currentCard.currentKey = 'EVIDENCE';
+        } else if (currentCard.currentKey) {
+            // Append multi-line values
+            if (currentCard.currentKey === 'FIX' && currentCard.suggested_patch) {
+                currentCard.suggested_patch += '\n' + line;
+            } else if (currentCard.currentKey === 'TEMUAN' && currentCard.threat_type) {
+                currentCard.threat_type += '\n' + line;
+            }
+        }
+    }
+    
+    // Save the last card
+    if (currentCard.threat_type) {
+        if (!currentCard.action_decision) currentCard.action_decision = '[PERBAIKI]';
+        findings.push(currentCard as FindingCard);
+    }
+    
+    return findings;
+}
 
 export interface GrayUnit {
     id: 'gray-1' | 'gray-2' | 'gray-3' | 'gray-4' | 'gray-5';
@@ -175,6 +233,81 @@ export async function updateMissionUnit(
     }
 }
 
+// ── Model Audit Runner (memanggil LLM/SLM) ───────────────────────────────────
+async function runModelAudit(
+    unit: GrayUnit,
+    targetPaths: string[],
+    mission_id: string,
+    brain: any
+): Promise<FindingCard[]> {
+    const findings: FindingCard[] = [];
+    const importedPath = await import('path');
+    const importedFs = await import('fs/promises');
+    
+    let filesInspected = 0;
+    
+    for (const targetPath of targetPaths) {
+        if (filesInspected >= SLM_MAX_FILES_PER_UNIT) break;
+        try {
+            const stat = await importedFs.default.stat(targetPath).catch(() => null);
+            if (!stat) continue;
+            
+            let filesToScan: string[] = [];
+            if (stat.isDirectory()) {
+                const files = await importedFs.default.readdir(targetPath);
+                filesToScan = files
+                    .filter(f => f.endsWith('.ts') || f.endsWith('.js') || f.endsWith('.json') || f.endsWith('.yml'))
+                    .map(f => importedPath.default.join(targetPath, f))
+                    .slice(0, SLM_MAX_FILES_PER_UNIT);
+            } else {
+                filesToScan = [targetPath];
+            }
+            
+            for (const filePath of filesToScan) {
+                if (filesInspected >= SLM_MAX_FILES_PER_UNIT) break;
+                const fileStat = await importedFs.default.stat(filePath).catch(() => null);
+                if (!fileStat) continue;
+                
+                // SLM File Size Guard
+                const guard = guardFileForSLM(filePath, fileStat.size);
+                if (!guard.allowed) {
+                    Logger.log('WARN', `[${unit.id}] Skipping large file: ${filePath}. ${guard.reason}`, {}, 'SWARM');
+                    continue;
+                }
+                
+                const content = await importedFs.default.readFile(filePath, 'utf-8');
+                filesInspected++;
+                
+                try {
+                    const systemPrompt = GRAY_UNIT_PROMPTS[unit.id] || "Tugasmu mencari celah keamanan.";
+                    const messages = [{ role: 'user', content: `Periksa file ini:\n\n${content}` }];
+                    
+                    const responseText = await chat(
+                        brain,
+                        messages,
+                        [],
+                        {},
+                        systemPrompt,
+                        unit.model,
+                        `Swarm:${unit.id}`
+                    );
+                    
+                    const parsedFindings = parseFindingCardText(responseText.content, unit, mission_id, filePath);
+                    findings.push(...parsedFindings);
+                    
+                } catch (e: any) {
+                    Logger.log('WARN', `[${unit.id}] Model inference failed for ${filePath}, falling back to static regex. Error: ${e.message}`, {}, 'SWARM');
+                    throw e; // Lemparkan error agar trigger fallback unit-level di orchestrator
+                }
+            }
+        } catch (e: any) {
+            // Ignore file read errors
+        }
+    }
+    
+    return findings;
+}
+
 // ── Static Audit Runner (tanpa API model — analisis berbasis regex rules) ──
 async function runStaticAudit(
     unit: GrayUnit,
@@ -313,7 +446,8 @@ function getSuggestedPatch(threatType: string): string {
 // ── Main Swarm Launch (Paralel 5 Unit) ─────────────────────────────
 export async function launchSwarmAudit(
     goal: string,
-    targetPaths: string[]
+    targetPaths: string[],
+    brain?: any
 ): Promise<SwarmMissionResult> {
     const startTime = Date.now();
     const units = getGrayUnits();
@@ -337,7 +471,20 @@ export async function launchSwarmAudit(
             units.map(async (unit) => {
                 try {
                     console.log(chalk.yellow(`  ▸ [${unit.id.toUpperCase()}] ${unit.name} — Starting scan...`));
-                    const findings = await runStaticAudit(unit, targetPaths, mission_id);
+                    
+                    let findings: FindingCard[];
+                    const useModel = process.env.ANT_SWARM_USE_MODEL !== 'false' && brain && (brain.api_key || brain.provider === 'Ollama') && unit.model;
+                    
+                    if (useModel) {
+                        try {
+                            findings = await runModelAudit(unit, targetPaths, mission_id, brain);
+                        } catch (e: any) {
+                            findings = await runStaticAudit(unit, targetPaths, mission_id);
+                        }
+                    } else {
+                        findings = await runStaticAudit(unit, targetPaths, mission_id);
+                    }
+                    
                     const status = findings.some(f => f.risk_level !== 'CLEAN')
                         ? chalk.red(`${findings.filter(f => f.risk_level !== 'CLEAN').length} issue(s) found`)
                         : chalk.green('Clean');
@@ -355,8 +502,22 @@ export async function launchSwarmAudit(
         for (const unit of units) {
             try {
                 console.log(chalk.yellow(`  ▸ [${unit.id.toUpperCase()}] ${unit.name} — Starting scan (Sequential)...`));
-                // Note: The underlying AI call in runStaticAudit should pass keep_alive: 0
-                const findings = await runStaticAudit(unit, targetPaths, mission_id);
+                // Note: The underlying AI call should pass keep_alive: 0
+                
+                let findings: FindingCard[];
+                const useModel = process.env.ANT_SWARM_USE_MODEL !== 'false' && brain && (brain.api_key || brain.provider === 'Ollama') && unit.model;
+                
+                if (useModel) {
+                    try {
+                        findings = await runModelAudit(unit, targetPaths, mission_id, brain);
+                    } catch (e: any) {
+                        Logger.log('WARN', `[${unit.id}] runModelAudit failed, falling back to runStaticAudit.`, {}, 'SWARM');
+                        findings = await runStaticAudit(unit, targetPaths, mission_id);
+                    }
+                } else {
+                    findings = await runStaticAudit(unit, targetPaths, mission_id);
+                }
+                
                 const status = findings.some(f => f.risk_level !== 'CLEAN')
                     ? chalk.red(`${findings.filter(f => f.risk_level !== 'CLEAN').length} issue(s) found`)
                     : chalk.green('Clean');

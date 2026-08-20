@@ -276,9 +276,19 @@ async function main() {
             process.exit(1);
         }
         try {
+            const { getBrainConfig } = await import('../shared/data.js');
+            const brain = await getBrainConfig();
+            
+            if (!process.env.ANT_SWARM_MODEL && brain.custom_model) {
+                process.env.ANT_SWARM_MODEL = brain.custom_model;
+                console.log(chalk.green(`\n[AUTO-DETECT] Swarm Model disetel ke: ${brain.custom_model} (${brain.provider})`));
+            } else if (!process.env.ANT_SWARM_MODEL) {
+                console.log(chalk.green(`\n[AUTO-DETECT] Swarm Model fallback: qwen2.5:1.5b (${brain.provider})`));
+            }
+
             const { launchSwarmAudit, renderSwarmReport } = await import('./agentic/swarm_orchestrator.js');
-            console.log(chalk.cyan(`\nMemulai Operasi Swarm 3-Zona untuk target: ${target}`));
-            const result = await launchSwarmAudit(goal, [target]);
+            console.log(chalk.cyan(`Memulai Operasi Swarm 3-Zona untuk target: ${target}`));
+            const result = await launchSwarmAudit(goal, [target], brain);
             renderSwarmReport(result);
         } catch (err: any) {
             console.error(chalk.red(`\n[SWARM ERROR] ${err.message}`));
@@ -858,10 +868,21 @@ async function main() {
             const targetPath = args || process.cwd();
             console.log(chalk.cyan.bold('\n[ANT-CYBER-CORPS] Initiating Swarm Audit...'));
             try {
+                const { getBrainConfig } = await import('../shared/data.js');
+                const brain = await getBrainConfig();
+                
+                if (!process.env.ANT_SWARM_MODEL && brain.custom_model) {
+                    process.env.ANT_SWARM_MODEL = brain.custom_model;
+                    console.log(chalk.green(`  [AUTO-DETECT] Swarm Model disetel ke: ${brain.custom_model} (${brain.provider})`));
+                } else if (!process.env.ANT_SWARM_MODEL) {
+                    console.log(chalk.green(`  [AUTO-DETECT] Swarm Model fallback: qwen2.5:1.5b (${brain.provider})`));
+                }
+                
                 const { launchSwarmAudit, renderSwarmReport } = await import('./agentic/swarm_orchestrator.js');
                 const result = await launchSwarmAudit(
                     `Security audit of ${targetPath}`,
-                    [targetPath]
+                    [targetPath],
+                    brain
                 );
                 renderSwarmReport(result);
             } catch (e: any) {
