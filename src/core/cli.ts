@@ -290,6 +290,55 @@ async function main() {
             process.exit(0);
         }
 
+        if (subCommand === 'osint') {
+            const rlOsint = (await import('readline')).createInterface({
+                input: process.stdin,
+                output: process.stdout
+            });
+            
+            console.log(chalk.magenta('\n[OSINT SWARM] Pilih Dimensi Target:'));
+            console.log(chalk.dim('1. 👤 Identity & Personnel (Email, Usernames, Phones)'));
+            console.log(chalk.dim('2. 🌍 Network & Infra (Domains, IP, Cloud assets)'));
+            console.log(chalk.dim('3. 👁️ Digital Forensics (Images, PDFs, Metadata)'));
+            console.log(chalk.dim('4. 💰 Blockchain & Crypto (Wallets, TXs)'));
+            
+            const question = (query: string): Promise<string> => new Promise(res => rlOsint.question(query, res));
+            
+            const choice = await question(chalk.magenta('> Pilihan Anda (1-4): '));
+            
+            let targetType = 'Unknown';
+            if (choice === '1') targetType = 'Identity (Email/Username)';
+            else if (choice === '2') targetType = 'Network (Domain/IP)';
+            else if (choice === '3') targetType = 'Forensics (Image/Metadata)';
+            else if (choice === '4') targetType = 'Blockchain (Wallet/Crypto)';
+            else {
+                console.log(chalk.red('Pilihan tidak valid.'));
+                rlOsint.close();
+                process.exit(1);
+            }
+
+            const targetValue = await question(chalk.magenta(`> Masukkan Target untuk ${targetType}: `));
+            rlOsint.close();
+
+            if (!targetValue) {
+                console.log(chalk.yellow('Target tidak boleh kosong.'));
+                process.exit(1);
+            }
+
+            try {
+                const { getBrainConfig } = await import('../shared/data.js');
+                const brain = await getBrainConfig();
+                
+                const { launchOsintMission } = await import('./agentic/purple_unit.js');
+                const result = await launchOsintMission(targetType, targetValue, brain);
+                
+                console.log(chalk.dim(`\n💡 Tip: Jalankan 'ant swarm report ${result.mission_id}' untuk merangkum temuan OSINT (WHITE Unit).`));
+            } catch (err: any) {
+                console.error(chalk.red(`\n[OSINT ERROR] ${err.message}`));
+            }
+            process.exit(0);
+        }
+
         const goal = args[1];
         const target = args[2];
         if (!goal || !target) {
@@ -931,6 +980,56 @@ async function main() {
                 await launchWhiteUnitReport(missionId, brain);
             } catch (e: any) {
                 console.log(chalk.red(`  Report Error: ${e.message}`));
+            }
+            continue;
+        }
+
+        // ── OSINT: /osint ────────────────────────────────────────
+        if (text.startsWith('/osint')) {
+            const rlOsint = (await import('readline')).createInterface({
+                input: process.stdin,
+                output: process.stdout
+            });
+            
+            console.log(chalk.magenta('\n[OSINT SWARM] Pilih Dimensi Target:'));
+            console.log(chalk.dim('1. 👤 Identity & Personnel (Email, Usernames, Phones)'));
+            console.log(chalk.dim('2. 🌍 Network & Infra (Domains, IP, Cloud assets)'));
+            console.log(chalk.dim('3. 👁️ Digital Forensics (Images, PDFs, Metadata)'));
+            console.log(chalk.dim('4. 💰 Blockchain & Crypto (Wallets, TXs)'));
+            
+            const question = (query: string): Promise<string> => new Promise(res => rlOsint.question(query, res));
+            
+            const choice = await question(chalk.magenta('> Pilihan Anda (1-4): '));
+            
+            let targetType = 'Unknown';
+            if (choice === '1') targetType = 'Identity (Email/Username)';
+            else if (choice === '2') targetType = 'Network (Domain/IP)';
+            else if (choice === '3') targetType = 'Forensics (Image/Metadata)';
+            else if (choice === '4') targetType = 'Blockchain (Wallet/Crypto)';
+            else {
+                console.log(chalk.red('Pilihan tidak valid.'));
+                rlOsint.close();
+                continue;
+            }
+
+            const targetValue = await question(chalk.magenta(`> Masukkan Target untuk ${targetType}: `));
+            rlOsint.close();
+
+            if (!targetValue) {
+                console.log(chalk.yellow('Target tidak boleh kosong.'));
+                continue;
+            }
+
+            try {
+                const { getBrainConfig } = await import('../shared/data.js');
+                const brain = await getBrainConfig();
+                
+                const { launchOsintMission } = await import('./agentic/purple_unit.js');
+                const result = await launchOsintMission(targetType, targetValue, brain);
+                
+                console.log(chalk.dim(`\n💡 Tip: Ketik '/report ${result.mission_id}' untuk merangkum temuan OSINT (WHITE Unit).`));
+            } catch (e: any) {
+                console.log(chalk.red(`  OSINT Error: ${e.message}`));
             }
             continue;
         }
