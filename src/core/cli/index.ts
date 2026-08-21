@@ -36,14 +36,22 @@ export async function main() {
     const args = process.argv.slice(2);
     const sessionId = `cli-session-${Date.now()}`;
 
-    // 1. Check & Route Top-Level CLI Subcommands / Flags
+    // 1. Boot system if running a subcommand that requires database/events/auth
+    const needsBoot = args[0] && ['swarm', 'agent', 'mailbox', 'task'].includes(args[0]);
+    if (needsBoot) {
+        await bootSystem(sessionId, activeEnvPath);
+    }
+
+    // 2. Check & Route Top-Level CLI Subcommands / Flags
     const wasHandledByArgv = await routeArgv(args, sessionId);
     if (wasHandledByArgv) {
         process.exit(0);
     }
 
-    // 2. Boot System Services (Auth, DB, Healing, Scheduler)
-    await bootSystem(sessionId, activeEnvPath);
+    // 3. Boot System Services for interactive session if not already booted
+    if (!needsBoot) {
+        await bootSystem(sessionId, activeEnvPath);
+    }
 
     // Mute console logger for double prints
     const originalLog = Logger.log;
@@ -61,7 +69,7 @@ export async function main() {
         }
     };
 
-    // 3. Render Banner & Dashboard
+    // 4. Render Banner & Dashboard
     console.log(getAntAscii());
     console.log(chalk.dim('Loading system configuration & cognitive neural memories...'));
 
@@ -108,7 +116,7 @@ export async function main() {
     console.log(chalk.dim('(Type "exit" or "quit" to disconnect)'));
     console.log(chalk.dim('(Type "/" or "/help" to view interactive commands)\n'));
 
-    // 4. Project Context Injection
+    // 5. Project Context Injection
     let projectContext = '';
     try {
         const pkgPath = path.join(BASE_DIR, 'package.json');
@@ -136,7 +144,7 @@ export async function main() {
         ctx.history.push({ role: 'assistant', content: 'Konteks proyek diterima. Siap membantu.' });
     }
 
-    // 5. Interactive REPL Loop
+    // 6. Interactive REPL Loop
     while (true) {
         const input = await askUser(chalk.cyan('You ❯ '));
         let text = input.trim();

@@ -21,6 +21,7 @@
     "start:dev": "node scripts/ant-supervisor.mjs npx tsx watch src/core/cli.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
+    "ci": "npm run typecheck && npm run build",
     "clean": "rm -rf dist",
     "check:build": "tsc -p tsconfig.build.json --noEmit --pretty",
     "check:drift": "npm run build && git diff --stat dist",

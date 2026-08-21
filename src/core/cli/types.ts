@@ -1,6 +1,8 @@
+import type { ChatMessage } from '../agent_loop/types.js';
+
 export interface CliContext {
     sessionId: string;
-    history: any[];
+    history: ChatMessage[];
     baseDir: string;
     activeEnvPath: string;
 }

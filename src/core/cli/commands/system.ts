@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import { execSync } from 'child_process';
 import type { CliContext } from '../types.js';
 import { readAntIdentity } from '../identity.js';
 
@@ -76,21 +75,22 @@ export async function handleSystemCommands(text: string, ctx: CliContext): Promi
     if (text.startsWith('/git')) {
         const gitSub = text.replace(/^\/git\s*/, '').trim().toLowerCase();
         try {
+            const { handleFileOps } = await import('../../actions/file_ops.js');
             if (gitSub === 'status' || gitSub === '') {
-                const out = execSync('git status --short', { encoding: 'utf-8', cwd: process.cwd() });
+                const res: any = await handleFileOps('git_status', {}, path.join(process.cwd(), 'workspace'), process.cwd());
                 console.log(chalk.cyan('\n[GIT STATUS]'));
-                console.log(out ? chalk.white(out) : chalk.green('Working tree clean.'));
+                console.log(res?.output ? chalk.white(res.output) : chalk.green('Working tree clean.'));
             } else if (gitSub === 'diff') {
-                const out = execSync('git diff', { encoding: 'utf-8', cwd: process.cwd() });
+                const res: any = await handleFileOps('git_diff', {}, path.join(process.cwd(), 'workspace'), process.cwd());
                 console.log(chalk.cyan('\n[GIT DIFF]'));
-                console.log(out ? chalk.white(out) : chalk.dim('No uncommitted diff changes.'));
+                console.log(res?.output && res.output !== '(no changes)' ? chalk.white(res.output) : chalk.dim('No uncommitted diff changes.'));
             } else if (gitSub === 'log') {
-                const out = execSync('git log -n 5 --oneline', { encoding: 'utf-8', cwd: process.cwd() });
+                const res: any = await handleFileOps('git_log', { limit: 5 }, path.join(process.cwd(), 'workspace'), process.cwd());
                 console.log(chalk.cyan('\n[GIT LOG (Recent 5)]'));
-                console.log(chalk.white(out));
+                console.log(chalk.white(res?.output || 'No commit history.'));
             } else {
-                const out = execSync(`git ${gitSub}`, { encoding: 'utf-8', cwd: process.cwd() });
-                console.log(chalk.white(out));
+                console.log(chalk.yellow(`\n[GIT INFO] Hanya 'status', 'diff', dan 'log' yang diizinkan lewat slash command.`));
+                console.log(chalk.dim(`Gunakan "!git ${gitSub}" untuk mengeksekusi perintah git kustom lainnya.\n`));
             }
         } catch (err: any) {
             console.log(chalk.red(`  [GIT ERROR] ${err.message}`));
