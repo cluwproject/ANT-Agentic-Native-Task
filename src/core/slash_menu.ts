@@ -42,6 +42,9 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     { command: '/git status',        description: 'View Git repository working status' },
     { command: '/git diff',          description: 'View current code diff changes' },
     { command: '/git log',           description: 'View Git commit history logs' },
+    { command: '/report',            description: 'Compile and render White Unit swarm audit report' },
+    { command: '/osint',             description: 'Launch Purple Unit multi-dimensional OSINT mission' },
+    { command: '/connect',           description: 'Audit network connectivity to CockroachDB & EventBus' },
     { command: '/help',              description: 'Display all commands and operational options' },
     { command: '/exit',              description: 'Disconnect from ANT agent runtime' },
 ];

@@ -13,7 +13,8 @@ export const HANDLED_PREFIXES = [
     '/new_chat', '/clear', '/plan', '/branch', '/store', '/recall',
     '/memories', '/vault', '/mailbox', '/health', '/swarm', '/sync',
     '/resume', '/model', '/session', '/checkpoint', '/undo', '/skills',
-    '/agent', '/task', '/git', '/help', '/exit', '/quit', '/report', '/osint'
+    '/agent', '/task', '/git', '/help', '/exit', '/quit', '/report',
+    '/osint', '/connect'
 ] as const;
 
 const commandHandlers: CommandHandler[] = [

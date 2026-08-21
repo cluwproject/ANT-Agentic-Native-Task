@@ -1,6 +1,6 @@
 export default {
-  preset: 'ts-jest',
   testEnvironment: 'node',
+  moduleDirectories: ['node_modules', '<rootDir>/node_modules'],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       useESM: true,

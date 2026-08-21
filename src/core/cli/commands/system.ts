@@ -14,6 +14,43 @@ export async function handleSystemCommands(text: string, ctx: CliContext): Promi
         process.exit(0);
     }
 
+    // ── /connect ──────────────────────────────────────────────────────
+    if (text.startsWith('/connect')) {
+        console.log(chalk.cyan('\n[ANT CONNECTIVITY & NETWORK LINKS]'));
+        
+        // 1. CockroachDB
+        try {
+            const { checkCockroachHealth, getVaultMode } = await import('../../mindby_cockroach.js');
+            const chk = await checkCockroachHealth();
+            const statusColor = chk.status === 'CONNECTED' ? chalk.green : chk.status === 'LOCAL' ? chalk.cyan : chalk.red;
+            console.log(`  • CockroachDB Vault  : ${statusColor(chk.status)} (${chk.details}) [Mode: ${getVaultMode().toUpperCase()}]`);
+        } catch (e: any) {
+            console.log(`  • CockroachDB Vault  : ${chalk.red('FAILED')} (${e.message})`);
+        }
+
+        // 2. Ollama / AI Provider
+        try {
+            const { getBrainConfig } = await import('../../../shared/data.js');
+            const brain = await getBrainConfig();
+            const ollamaHost = process.env.OLLAMA_HOST || 'http://127.0.0.1:11434';
+            console.log(`  • AI Model Runtime   : ${chalk.green('ACTIVE')} (${brain.custom_model || 'default'} via ${brain.provider || 'Ollama'} @ ${ollamaHost})`);
+        } catch (e: any) {
+            console.log(`  • AI Model Runtime   : ${chalk.yellow('WARNING')} (${e.message})`);
+        }
+
+        // 3. Sovereign Event Bus
+        try {
+            const { ANT_Bus } = await import('../../events.js');
+            const listenerCount = ANT_Bus.eventNames().length;
+            console.log(`  • Sovereign EventBus : ${chalk.green('ONLINE')} (${listenerCount} neural channels active)`);
+        } catch (e: any) {
+            console.log(`  • Sovereign EventBus : ${chalk.yellow('OFFLINE')}`);
+        }
+        
+        console.log();
+        return true;
+    }
+
     // ── /undo ─────────────────────────────────────────────────────────
     if (text.startsWith('/undo')) {
         const target = text.replace('/undo', '').trim();
