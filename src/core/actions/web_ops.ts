@@ -96,22 +96,34 @@ export async function handleWebOps(action: string, details: any, workspaceDir: s
                 ant_search_note: 'Results ranked by source authority. Trust Tier 1 (Official Docs) first. Cross-reference Tier 2/3 findings with Tier 1 before executing any code.',
             };
         } catch (e: any) {
-            Logger.log('WARN', `Tavily Search Failed (${e.message}). Engaging Autonomous Playwright Bridge...`, {}, 'SYSTEM');
+            Logger.log('WARN', `Tavily Search Failed (${e.message}). Engaging Autonomous Fallback Bridge...`, {}, 'SYSTEM');
             
-            const { fallbackWebSearch } = await import('../agent_loop/browserTool.js');
-            const fallbackResult = await fallbackWebSearch(searchQuery);
-            
-            if (fallbackResult.fallback_error) {
-                if (fallbackResult.fallback_error === 'BOT_WALL_DETECTED') {
-                     return { status: 'error', message: 'BOT_WALL_DETECTED: Pencarian ditahan oleh proteksi anti-bot. Gunakan tool "request_human_rescue" untuk meminta bantuan Ard.' };
+            try {
+                const { fallbackWebSearch } = await import('../agent_loop/browserTool.js');
+                const fallbackResult = await fallbackWebSearch(searchQuery);
+                
+                if (fallbackResult && !fallbackResult.fallback_error && fallbackResult.results && fallbackResult.results.length > 0) {
+                    return {
+                        status: 'success',
+                        results: fallbackResult.results,
+                        note: 'Results gathered via Autonomous Playwright Bridge (Tavily offline). Verify sources manually.',
+                    };
                 }
-                return { status: 'error', message: 'Tavily offline & Fallback Bridge failed: ' + fallbackResult.fallback_error };
+            } catch {}
+
+            // ── LAYER 3: NATIVE ZERO-DEPENDENCY HTTP SEARCH (HN + WIKIPEDIA) ──
+            const nativeResults = await nativeHttpSearchFallback(details.query || searchQuery);
+            if (nativeResults.length > 0) {
+                return {
+                    status: 'success',
+                    results: nativeResults,
+                    note: 'Results gathered via Native HTTP Bridge (Hacker News & Wikipedia) as Tavily & Playwright were unavailable.',
+                };
             }
-            
+
             return {
-                status: 'success',
-                results: fallbackResult.results,
-                note: 'Results gathered via Autonomous Playwright Bridge (Tavily offline). Verify sources manually.',
+                status: 'error',
+                message: 'Semua mesin pencari (Tavily, Browser Bridge, Native HTTP) tidak dapat dihubungi saat ini.'
             };
         }
     }
@@ -204,4 +216,52 @@ export async function handleWebOps(action: string, details: any, workspaceDir: s
     }
 
     return null;
+}
+
+async function nativeHttpSearchFallback(query: string): Promise<any[]> {
+    const results: any[] = [];
+    const cleanQuery = query.replace(/site:[^\s]+/g, '').replace(/OR/g, '').trim();
+
+    // 1. Hacker News Algolia Search (Tech, AI, Models, Agentic CLI, Tools, Repos)
+    try {
+        const hnRes = await axios.get(`https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(cleanQuery)}&hitsPerPage=6`, {
+            timeout: 6000,
+            headers: { 'User-Agent': 'ANT-Native-Agent/1.0' }
+        });
+        if (hnRes.data && Array.isArray(hnRes.data.hits)) {
+            for (const h of hnRes.data.hits) {
+                if (!h.title) continue;
+                results.push({
+                    title: h.title,
+                    url: h.url || `https://news.ycombinator.com/item?id=${h.objectID}`,
+                    content: `[HN Points: ${h.points || 0} | Date: ${(h.created_at || '').slice(0, 10)}] ${h.story_text || h.title}`,
+                    source: 'Hacker News (Algolia)'
+                });
+            }
+        }
+    } catch (e: any) {
+        Logger.log('WARN', `HN Search Fallback failed: ${e.message}`, {}, 'WEB_OPS');
+    }
+
+    // 2. Wikipedia Search (Concepts, Knowledge, Specs, Overview)
+    try {
+        const wikiRes = await axios.get(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQuery)}&utf8=&format=json`, {
+            timeout: 6000,
+            headers: { 'User-Agent': 'ANT-Native-Agent/1.0 (https://github.com/cluwproject/ANT-Agentic-Native-Task)' }
+        });
+        const wikiItems = wikiRes.data?.query?.search || [];
+        for (const item of wikiItems.slice(0, 4)) {
+            const cleanSnippet = (item.snippet || '').replace(/<[^>]+>/g, '');
+            results.push({
+                title: item.title,
+                url: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title.replace(/ /g, '_'))}`,
+                content: cleanSnippet,
+                source: 'Wikipedia'
+            });
+        }
+    } catch (e: any) {
+        Logger.log('WARN', `Wikipedia Search Fallback failed: ${e.message}`, {}, 'WEB_OPS');
+    }
+
+    return results;
 }

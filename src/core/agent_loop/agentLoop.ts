@@ -404,7 +404,7 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                 // --- GATE 2: SEMANTIC GRADER (Test Quality Audit) ---
                 if (toolCall.tool === 'run_tests' || toolCall.tool === 'shell_exec') {
                     const cmd = toolCall.args?.command || '';
-                    const isTestCommand = toolCall.tool === 'run_tests' || /npm test|jest|vitest|mocha|cypress/i.test(cmd);
+                    const isTestCommand = toolCall.tool === 'run_tests' || /\b(?:npm\s+(?:run\s+)?test|pnpm\s+(?:run\s+)?test|yarn\s+test|jest|vitest|mocha|cypress)\b/i.test(cmd);
                     
                     if (isTestCommand && (result.exitCode === 0 || (result.code === 0 && !result.error))) {
                         safeLog('info', 'Memasuki Semantic Grading...', { sessionId });
@@ -414,31 +414,49 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                             memorySnapshots: evidenceLocker.getAllSnapshotsAsRecord(sessionId)
                         });
                         
-                        const testContent = await getTestFileContent({
-                            testPath: toolCall.args?.testPath || toolCall.args?.file || toolCall.args?.command,
-                            workingDir: process.cwd()
+                        // Periksa apakah ada perubahan kode inti di diff
+                        const hasCoreDiff = (diffResult.changedFiles || []).some(f => {
+                            const n = f.replace(/\\/g, '/').toLowerCase();
+                            return (n.startsWith('src/') || n.startsWith('lib/') || n.startsWith('core/')) && !n.includes('.test.') && !n.includes('.spec.');
                         });
 
-                        const grade = await gradeTestQuality({
-                            codeDiff: diffResult.diff,
-                            testFileContent: testContent,
-                            testOutput: typeof result === 'string' ? result : JSON.stringify(result),
-                            changedFiles: diffResult.changedFiles
-                        }, callJudgeModel);
+                        if (!hasCoreDiff && (!diffResult.diff || diffResult.diff.trim().length === 0)) {
+                            safeLog('info', 'Melewati Semantic Grading karena tidak ada code diff inti yang memerlukan penilaian.');
+                        } else {
+                            const testContent = await getTestFileContent({
+                                testPath: toolCall.args?.testPath || toolCall.args?.file || toolCall.args?.command,
+                                workingDir: process.cwd()
+                            });
 
-                        if (!grade.accepted) {
-                            safeLog('warn', 'Semantic Grader menolak tes', { reason: grade.reason });
-                            ui.printConnectionError(`[Sovereign Judge] Menolak tes Anda: ${grade.reason}`);
-                            
-                            // Override result to FAIL so it doesn't get a successful EVID
-                            result = {
-                                ...result,
-                                status: 'error',
-                                exitCode: 1,
-                                code: 1,
-                                stdout: `[SEMANTIC GRADE FAILED]\nTes lulus exit code 0, tapi ditolak oleh Sovereign Judge (Skor: ${grade.score}).\nAlasan Juri: ${grade.reason}\n\nIssues:\n${grade.issues.join('\n')}\n\nSilakan perbaiki tes Anda agar benar-benar menguji logika yang baru diubah!`,
-                                stderr: 'Semantic Validation Failed'
-                            };
+                            const grade = await gradeTestQuality({
+                                codeDiff: diffResult.diff,
+                                testFileContent: testContent,
+                                testOutput: typeof result === 'string' ? result : JSON.stringify(result),
+                                changedFiles: diffResult.changedFiles
+                            }, callJudgeModel);
+
+                            if (!grade.accepted) {
+                                // JIKA penolakan karena kegagalan sistem internal juri (mis. parse error/offline), jangan batalkan hasil tes native
+                                const isSystemFailure = (grade.reason || '').includes('kegagalan sistem saat parsing JSON') || (grade.reason || '').includes('Judge Model gagal');
+                                
+                                if (isSystemFailure) {
+                                    safeLog('warn', 'Sovereign Judge offline/unparseable - Lolos dengan peringatan audit log', { reason: grade.reason });
+                                    ui.printConnectionError(`[Sovereign Judge Warning] Model juri tidak merespons JSON. Hasil tes native dipertahankan.`);
+                                } else {
+                                    safeLog('warn', 'Semantic Grader menolak tes', { reason: grade.reason });
+                                    ui.printConnectionError(`[Sovereign Judge] Menolak tes Anda: ${grade.reason}`);
+                                    
+                                    // Override result to FAIL so it doesn't get a successful EVID
+                                    result = {
+                                        ...result,
+                                        status: 'error',
+                                        exitCode: 1,
+                                        code: 1,
+                                        stdout: `[SEMANTIC GRADE FAILED]\nTes lulus exit code 0, tapi ditolak oleh Sovereign Judge (Skor: ${grade.score}).\nAlasan Juri: ${grade.reason}\n\nIssues:\n${grade.issues.join('\n')}\n\nSilakan perbaiki tes Anda agar benar-benar menguji logika yang baru diubah!`,
+                                        stderr: 'Semantic Validation Failed'
+                                    };
+                                }
+                            }
                         }
                     }
                 }
