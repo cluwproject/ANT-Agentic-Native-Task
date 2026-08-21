@@ -379,7 +379,6 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                     execSpinner.stop();
                     ui.printToolSuccess(toolCall.tool, toolCall.args, browserResult.evidence?.id);
 
-                    currentMessages.push({ role: 'assistant', content: response });
                     const resultStr = truncateToolResult(JSON.stringify(result), maxToolResultChars);
                     const evidTag = browserResult.evidence ? `[EVID:${browserResult.evidence.id}]` : '(tidak ada evidence)';
                     currentMessages.push({
@@ -393,7 +392,6 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                     });
 
                     safeLog('info', 'Tool call berhasil dieksekusi', { tool: toolCall.tool, args: toolCall.args });
-                    attempts++;
                     continue;
                 }
 
@@ -476,7 +474,6 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                     console.log(chalk.green(`    ✔ Selesai dalam ${durationSec}s`));
                 }
 
-                currentMessages.push({ role: 'assistant', content: response });
                 const resultStr = truncateToolResult(JSON.stringify(result), maxToolResultChars);
                 currentMessages.push({
                     role: 'user',
