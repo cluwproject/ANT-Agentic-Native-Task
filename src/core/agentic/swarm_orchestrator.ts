@@ -415,17 +415,7 @@ async function runStaticAudit(
                     }
                 }
 
-                if (findings.length === 0 && filesInspected === filesToScan.length) {
-                    findings.push({
-                        unit: unit.id,
-                        mission_id,
-                        target_file: importedPath.default.relative(process.cwd(), filePath),
-                        threat_type: 'NONE',
-                        risk_level: 'CLEAN',
-                        action_decision: '[ABAIKAN]',
-                        timestamp: new Date().toISOString()
-                    });
-                }
+                // CLEAN logic removed; renderSwarmReport handles empty findings automatically.
             }
         } catch (e: any) {
             Logger.log('ERROR', `[${unit.id}] Scan error on ${targetPath}: ${e.message}`, {}, 'SWARM');
