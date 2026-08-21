@@ -22,6 +22,8 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf dist",
+    "check:build": "tsc -p tsconfig.build.json --noEmit --pretty",
+    "check:drift": "npm run build && git diff --stat dist",
     "prepublishOnly": "npm run clean && npm run build",
     "test": "jest",
     "test:unit": "jest tests/unit",

@@ -14,11 +14,12 @@ const BASE_DIR = process.cwd();
 const ANT_HOME = path.join(os.homedir(), '.ant');
 
 const envCandidates = [
+    process.env.ANT_CLI_HOME ? path.join(process.env.ANT_CLI_HOME, '.env') : '',
     path.join(BASE_DIR, '.env'),
     path.join(ANT_HOME, '.env'),
     path.join(os.homedir(), 'ant-cli', '.env'),
     '/data/data/com.termux/files/home/ant-cli/.env'
-];
+].filter(Boolean);
 
 let activeEnvPath = path.join(BASE_DIR, '.env');
 for (const envPath of envCandidates) {
@@ -131,6 +132,25 @@ async function main() {
     } catch (e: any) {
         // Silently continue
     }
+    
+    // --- ANT BOOT ORCHESTRATOR ---
+    try {
+        await initCockroachDB();
+        const { ANT_Bus } = await import('./events.js');
+        await import('./events_subscriber.js'); // Initialize listeners
+        
+        const { startProactiveEngine, startHeartbeat } = await import('./proactive.js');
+        startProactiveEngine();
+        startHeartbeat();
+        
+        const { startScheduler } = await import('./scheduler.js');
+        startScheduler();
+        
+        ANT_Bus.emit('ant:started', { session: currentSessionId, time: new Date().toISOString() });
+    } catch (e: any) {
+        console.log(chalk.yellow(`[BOOT WARN] Urat saraf ANT gagal distart: ${e.message}`));
+    }
+    // ----------------------------
     
     if (args[0] === 'task') {
         const subCommand = args[1];
@@ -1193,6 +1213,41 @@ async function main() {
             continue;
         }
 
+        // ── AGY CLI Alignment: Connect Meta-Command ───────────────────
+        if (text === '/connect') {
+            console.log(chalk.cyan('\n[ANT CONNECTION DIAGNOSTICS]'));
+            
+            try {
+                const dbHealth = await checkCockroachHealth();
+                if (dbHealth.status === 'CONNECTED' || dbHealth.status === 'LOCAL') {
+                    console.log(chalk.green(`  ✓ CockroachDB: ONLINE (${dbHealth.status} - Memories: ${dbHealth.totalMemories})`));
+                } else {
+                    console.log(chalk.red(`  ✗ CockroachDB: OFFLINE (${dbHealth.details})`));
+                }
+            } catch (e: any) {
+                console.log(chalk.red(`  ✗ CockroachDB: CHECK FAILED (${e.message})`));
+            }
+
+            const telToken = process.env.TELEGRAM_BOT_TOKEN;
+            if (telToken) {
+                console.log(chalk.green(`  ✓ Telegram Bridge: CONFIGURED`));
+            } else {
+                console.log(chalk.dim(`  - Telegram Bridge: NOT CONFIGURED`));
+            }
+
+            try {
+                const { ANT_Bus } = await import('./events.js');
+                const listeners = ANT_Bus.eventNames().map(e => `${String(e)} (${ANT_Bus.listenerCount(e)})`);
+                console.log(chalk.green(`  ✓ Event Bus: ACTIVE [${listeners.join(', ')}]`));
+                ANT_Bus.emit('ant:connection_check', { time: new Date().toISOString() });
+            } catch (e) {
+                console.log(chalk.red(`  ✗ Event Bus: OFFLINE`));
+            }
+
+            console.log(chalk.cyan('Urat saraf ANT terhubung dan termonitor.\n'));
+            continue;
+        }
+
         // ── AGY CLI Alignment: Change Model ───────────────────────────
         if (text.startsWith('/model')) {
             const parts = text.split(' ');
@@ -1200,11 +1255,12 @@ async function main() {
 
             let envPath = path.join(process.cwd(), '.env');
             const envSearch = [
+                process.env.ANT_CLI_HOME ? path.join(process.env.ANT_CLI_HOME, '.env') : '',
                 path.join(process.cwd(), '.env'),
                 path.join(ANT_HOME, '.env'),
                 path.join(os.homedir(), 'ant-cli', '.env'),
                 '/data/data/com.termux/files/home/ant-cli/.env'
-            ];
+            ].filter(Boolean);
             let envContent = '';
             for (const p of envSearch) {
                 if (fs.existsSync(p)) {

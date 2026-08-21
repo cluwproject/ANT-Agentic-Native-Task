@@ -54,7 +54,8 @@ export async function callOpenAICompatible(
       model: finalModel, messages: chatMessages, stream: true,
       tools: !isOllama ? getOpenAIToolDeclarations() as any : undefined,
       ...(isOllamaSLM ? { temperature: 0.3, top_p: 0.85, max_tokens: 512 } : {}),
-    } as any, { body: isOllama ? { keep_alive: 0 } : undefined }); // pass custom body parameters
+      ...(isOllama ? { keep_alive: 0 } : {})
+    } as any);
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content || "";
       aiResponseText += content; if (content) onStream(content);
@@ -71,7 +72,8 @@ export async function callOpenAICompatible(
       model: finalModel, messages: chatMessages,
       tools: !isOllama ? getOpenAIToolDeclarations() as any : undefined,
       ...(isOllamaSLM ? { temperature: 0.3, top_p: 0.85, max_tokens: 512 } : {}),
-    } as any, { body: isOllama ? { keep_alive: 0 } : undefined });
+      ...(isOllama ? { keep_alive: 0 } : {})
+    } as any);
     aiResponseText = completion.choices[0].message?.content || "";
     if (completion.choices[0].message?.tool_calls) {
       nativeToolCalls = completion.choices[0].message.tool_calls.map((tc: any) => {
