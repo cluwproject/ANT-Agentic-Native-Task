@@ -29,6 +29,10 @@ export class RateLimiter {
         this.callLog.set(tool, timestamps);
         return true;
     }
+
+    clear(): void {
+        this.callLog.clear();
+    }
 }
 
 export const globalRateLimiter = new RateLimiter();

@@ -1,4 +1,6 @@
-import { parseFindingCardText, GrayUnit, FindingCard } from '../../src/core/agentic/swarm_orchestrator';
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
+import { parseFindingCardText, GrayUnit } from '../../src/core/agentic/swarm_orchestrator.js';
 
 describe('Swarm Orchestrator - parseFindingCardText', () => {
     const mockUnit: GrayUnit = { id: 'gray-1', name: 'GRAY-1', domain: '', model: '', threatTypes: [] };
@@ -14,10 +16,10 @@ EVIDENCE: const key = "AKIA123..."
 FIX: Use environment variables
         `;
         const findings = parseFindingCardText(text, mockUnit, missionId, targetFile);
-        expect(findings.length).toBe(1);
-        expect(findings[0].threat_type).toBe('Hardcoded API Key | LOCATION: line 42');
-        expect(findings[0].risk_level).toBe('CRITICAL');
-        expect(findings[0].suggested_patch).toBe('Use environment variables');
+        assert.strictEqual(findings.length, 1);
+        assert.strictEqual(findings[0].threat_type, 'Hardcoded API Key | LOCATION: line 42');
+        assert.strictEqual(findings[0].risk_level, 'CRITICAL');
+        assert.strictEqual(findings[0].suggested_patch, 'Use environment variables');
     });
 
     it('should parse multiple finding cards in one response', () => {
@@ -31,11 +33,11 @@ SEVERITY: LOW
 FIX: Fix 2
         `;
         const findings = parseFindingCardText(text, mockUnit, missionId, targetFile);
-        expect(findings.length).toBe(2);
-        expect(findings[0].threat_type).toBe('Issue 1');
-        expect(findings[0].risk_level).toBe('HIGH');
-        expect(findings[1].threat_type).toBe('Issue 2');
-        expect(findings[1].risk_level).toBe('LOW');
+        assert.strictEqual(findings.length, 2);
+        assert.strictEqual(findings[0].threat_type, 'Issue 1');
+        assert.strictEqual(findings[0].risk_level, 'HIGH');
+        assert.strictEqual(findings[1].threat_type, 'Issue 2');
+        assert.strictEqual(findings[1].risk_level, 'LOW');
     });
 
     it('should handle multi-line text gracefully', () => {
@@ -47,14 +49,14 @@ FIX: Multi line
 fix here
         `;
         const findings = parseFindingCardText(text, mockUnit, missionId, targetFile);
-        expect(findings.length).toBe(1);
-        expect(findings[0].threat_type).toBe('Multi line\nissue here');
-        expect(findings[0].suggested_patch).toBe('Multi line\nfix here');
+        assert.strictEqual(findings.length, 1);
+        assert.strictEqual(findings[0].threat_type, 'Multi line\nissue here');
+        assert.strictEqual(findings[0].suggested_patch, 'Multi line\nfix here');
     });
 
     it('should ignore text without TEMUAN keyword', () => {
         const text = "Aman boss tidak ada celah.";
         const findings = parseFindingCardText(text, mockUnit, missionId, targetFile);
-        expect(findings.length).toBe(0);
+        assert.strictEqual(findings.length, 0);
     });
 });
