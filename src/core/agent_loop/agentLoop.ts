@@ -42,7 +42,7 @@ import { gradeTestQuality } from './semanticGrader.js';
 import { getRecentCodeDiff, getTestFileContent } from './diffExtractor.js';
 import { evidenceLocker } from './evidenceLocker.js';
 
-const DEFAULT_MAX_ATTEMPTS = 15;
+const DEFAULT_MAX_ATTEMPTS = parseInt(process.env.ANT_MAX_ITERATIONS || '12', 10) || 12;
 // Batas percobaan perbaikan khusus saat verification guard menolak respons,
 // dihitung terpisah dari attempts biasa supaya tidak "mencuri" jatah langkah
 // tool-call yang legit.

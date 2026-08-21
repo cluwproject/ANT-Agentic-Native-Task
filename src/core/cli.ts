@@ -76,13 +76,25 @@ function readAntIdentity() {
     }
 }
 
+function getPackageVersion(): string {
+    try {
+        const pkgPath = path.join(process.cwd(), 'package.json');
+        if (fs.existsSync(pkgPath)) {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+            if (pkg.version) return `v${pkg.version}`;
+        }
+    } catch {}
+    return 'v0.3.0';
+}
+
 function getAntAscii() {
     const identity = readAntIdentity();
+    const version = getPackageVersion();
     return chalk.green(`
   ANT -- Agentic Native Task
   You Ask. ANT Acts.
 
-  >  Version     : v0.3.0
+  >  Version     : ${version}
   >  Origin      : ${identity.origin} (Built by ${identity.creator})
   >  Companion   : ${identity.activeUser}
   >  Engine      : ANT Sovereign Runtime
@@ -409,30 +421,13 @@ async function main() {
         if (subCommand === 'list') {
             console.log(chalk.cyan('\n[REGISTRY] ANT AGENTS REGISTRY:'));
             try {
-                const agentsDir = path.join(process.cwd(), 'src', 'server', 'agents');
-                const files = await fs.promises.readdir(agentsDir);
-                const tableData = [];
-                for (const file of files) {
-                    if (file.endsWith('_agent.ts') || file.endsWith('_agent.js')) {
-                        const name = file.replace(/\.(ts|js)$/, '');
-                        try {
-                            const modPath = `../agents/${file.replace(/\.ts$/, '.js')}`;
-                            const module = await import(modPath);
-                            if (module.agent) {
-                                tableData.push({
-                                    Name: name,
-                                    Label: module.agent.label || name,
-                                    File: file
-                                });
-                            }
-                        } catch {}
-                    }
-                }
-                if (tableData.length === 0) {
-                    console.log(chalk.yellow('No agents registered.'));
-                } else {
-                    console.table(tableData);
-                }
+                const { SUB_AGENT_REGISTRY } = await import('./agentic/sub_agents.js');
+                const tableData = Object.entries(SUB_AGENT_REGISTRY).map(([key, def]) => ({
+                    Role: key,
+                    Description: def.description,
+                    Tools: def.allowedTools.join(', ')
+                }));
+                console.table(tableData);
             } catch (err: any) {
                 console.error(chalk.red(`Failed to list agents: ${err.message}`));
             }
@@ -440,54 +435,28 @@ async function main() {
         } else if (subCommand === 'run') {
             const agentName = args[2];
             if (!agentName) {
-                console.error(chalk.red('Error: Agent name required. Contoh: ant agent run security_agent google.com'));
+                console.error(chalk.red('Error: Agent role required. Contoh: ant agent run researcher "Riset tren frontier models 2026"'));
                 process.exit(1);
             }
-            
-            let sandbox = true;
-            const runArgs: string[] = [];
-            for (let i = 3; i < args.length; i++) {
-                if (args[i] === '--no-sandbox') {
-                    sandbox = false;
-                } else {
-                    runArgs.push(args[i]);
-                }
-            }
-            
-            // Safe verification to prevent path-traversal
-            const agentsDir = path.join(process.cwd(), 'src', 'server', 'agents');
-            const files = await fs.promises.readdir(agentsDir);
-            const validAgentNames = files
-                .filter(file => file.endsWith('_agent.ts') || file.endsWith('_agent.js'))
-                .map(file => file.replace(/\.(ts|js)$/, ''));
-                
-            if (!validAgentNames.includes(agentName)) {
-                console.error(chalk.red(`Error: Agent '${agentName}' not found in registry.`));
+            const task = args.slice(3).join(' ');
+            if (!task) {
+                console.error(chalk.red('Error: Task description required. Contoh: ant agent run researcher "Riset tren frontier models 2026"'));
                 process.exit(1);
             }
-            
-            console.log(chalk.cyan(`\n[Starting] Agent: ${agentName} [Sandbox: ${sandbox ? 'ON' : 'OFF'}]...`));
             
             try {
-                const fileExt = files.find(f => f.startsWith(agentName + '.'))?.endsWith('.ts') ? '.js' : '.js';
-                const modPath = `../agents/${agentName}${fileExt}`;
-                const module = await import(modPath);
-                
-                if (!module.agent || typeof module.agent.run !== 'function') {
-                    throw new Error(`Agent '${agentName}' does not implement standard agent descriptor.`);
+                const { spawnSubAgent, SUB_AGENT_REGISTRY } = await import('./agentic/sub_agents.js');
+                const brain = await getBrainConfig();
+                const roleKey = agentName.toLowerCase();
+                if (!SUB_AGENT_REGISTRY[roleKey]) {
+                    console.log(chalk.yellow(`[WARN] Role '${agentName}' tidak dikenal. Tersedia: ${Object.keys(SUB_AGENT_REGISTRY).join(', ')}. Menggunakan sub-agen generic.`));
                 }
-                
-                const context = { triggeredBy: 'cli' };
-                if (sandbox) {
-                    console.log(chalk.yellow('[SANDBOX IS ACTIVE] Process restricted to sandbox boundary.'));
-                }
-                
-                const result = await module.agent.run(runArgs, context);
-                console.log(chalk.green('\n[SUCCESS] Agent Execution Result:'));
-                console.log(typeof result === 'object' ? JSON.stringify(result, null, 2) : result);
+                console.log(chalk.cyan(`\n[SPAWNING AGENT] ${agentName.toUpperCase()}...`));
+                const res = await spawnSubAgent(roleKey, task, brain);
+                console.log(chalk.green(`\n[AGENT RESULT (${res.role.toUpperCase()})]:`));
+                console.log(chalk.white(res.output) + '\n');
             } catch (err: any) {
                 console.error(chalk.red(`\n[FAILED] Agent Execution Failed: ${err.message}`));
-                process.exit(1);
             }
             process.exit(0);
         } else {
@@ -591,7 +560,7 @@ async function main() {
         };
 
         console.log(chalk.cyan(`╭${borderH}╮`));
-        printLine(`  ${chalk.bold.white('ANT — Agentic Native Task v0.3.0')}`);
+        printLine(`  ${chalk.bold.white(`ANT — Agentic Native Task ${getPackageVersion()}`)}`);
         printLine('');
         printLine(`  ${chalk.cyan('Model:')} ${chalk.white(activeModel)} (${chalk.dim(provider)})`);
         printLine(`  ${chalk.cyan('Cognitive Core:')} ${chalk.white('ANT Core (MindBy Powered)')}`);
@@ -850,13 +819,18 @@ async function main() {
             }
             console.log(chalk.dim('  Translating & Persisting memory to Dual-Vault...'));
 
-            let finalMemoryContent = memoryContent;
+            // Filter / Redact pola token & rahasia sensitif sebelum disimpan ke memori
+            let sanitizedMemory = memoryContent
+                .replace(/(?:sk-[a-zA-Z0-9_-]{20,}|AIzaSy[a-zA-Z0-9_-]{33}|ghp_[a-zA-Z0-9]{36}|github_pat_[a-zA-Z0-9]{82}|xox[baprs]-[a-zA-Z0-9_-]{10,})/g, '[REDACTED_API_KEY]')
+                .replace(/(?:password|secret|token|api_key|apikey|bearer)\s*[:=]\s*["']?([^\s"']+)["']?/gi, '$1: [REDACTED_SECRET]');
+
+            let finalMemoryContent = sanitizedMemory;
             try {
                 const { chat } = await import('./ai/index.js');
                 const brain = await getBrainConfig();
                 const translated = await chat(
                     brain, 
-                    [{ role: 'user', content: `Translate the following text to English. ONLY output the translation, no quotes, no explanation: ${memoryContent}` }], 
+                    [{ role: 'user', content: `Translate the following text to English. ONLY output the translation, no quotes, no explanation: ${sanitizedMemory}` }], 
                     [], 
                     {}, 
                     "You are a strict translation system."
@@ -1373,79 +1347,6 @@ async function main() {
                 console.error(chalk.red(`\n[SHELL EXCEPTION] ${e.message}\n`));
             }
             continue;
-        }
-
-        // Tangani /loop commands
-        if (text === '/loop') {
-            console.log(chalk.magenta(`\n[AUTOPILOT TRADING LOOP]`));
-            console.log(`Gunakan perintah ini untuk mengatur autopilot:`);
-            console.log(`• ${chalk.bold('/loop start')} - Menyalakan trading autopilot di background`);
-            console.log(`• ${chalk.bold('/loop stop')}  - Mematikan trading autopilot (kembali ke manual)\n`);
-            continue;
-        }
-
-        if (text.startsWith('/loop ')) {
-            const loopAction = text.slice(6).trim().toLowerCase();
-            if (loopAction === 'start' || loopAction === 'stop') {
-                const enable = loopAction === 'start';
-                try {
-                    const envPath = path.join(process.cwd(), '.env');
-                    const envContent = await fs.promises.readFile(envPath, 'utf-8');
-                    const envLines = envContent.split('\n');
-                    const idx = envLines.findIndex(line => line.startsWith('TRADING_LOOP_ENABLED='));
-                    if (idx !== -1) {
-                        envLines[idx] = `TRADING_LOOP_ENABLED=${enable}`;
-                    } else {
-                        envLines.push(`TRADING_LOOP_ENABLED=${enable}`);
-                    }
-                    await fs.promises.writeFile(envPath, envLines.join('\n'));
-                    
-                    // Reload env in process
-                    process.env.TRADING_LOOP_ENABLED = String(enable);
-                    
-                    console.log(chalk.yellow(`\n[TRADING LOOP] Modul trading loop dinonaktifkan di ANT CLI (TRADING_LOOP_ENABLED=${enable}).\n`));
-                } catch (e: any) {
-                    console.log(chalk.red(`\n[ERROR] Gagal mengubah status loop: ${e.message}\n`));
-                }
-                continue;
-            }
-        }
-
-        // Tangani /exness commands (MT5 Autopilot Satellite)
-        if (text === '/exness' || text.startsWith('/exness ')) {
-            const exnessAction = text.replace('/exness', '').trim().toLowerCase();
-            if (exnessAction === 'start' || exnessAction === 'stop') {
-                const enable = exnessAction === 'start';
-                try {
-                    const envPath = path.join(process.cwd(), '.env');
-                    const envContent = await fs.promises.readFile(envPath, 'utf-8').catch(() => '');
-                    const envLines = envContent.split('\n');
-                    const idx = envLines.findIndex(line => line.startsWith('EXNESS_AUTOTRADE_ENABLED='));
-                    if (idx !== -1) {
-                        envLines[idx] = `EXNESS_AUTOTRADE_ENABLED=${enable}`;
-                    } else {
-                        envLines.push(`EXNESS_AUTOTRADE_ENABLED=${enable}`);
-                    }
-                    await fs.promises.writeFile(envPath, envLines.join('\n'));
-                    process.env.EXNESS_AUTOTRADE_ENABLED = String(enable);
-
-                    if (enable) {
-                        console.log(chalk.green(`\n[EXNESS MT5 SATELLITE] Autopilot Exness diaktifkan (EXNESS_AUTOTRADE_ENABLED=true). Berjalan otonom.🟢\n`));
-                    } else {
-                        console.log(chalk.yellow(`\n[EXNESS MT5 SATELLITE] Autopilot Exness dinonaktifkan (EXNESS_AUTOTRADE_ENABLED=false). Loop dihentikan.⏸️\n`));
-                    }
-                } catch (e: any) {
-                    console.log(chalk.red(`\n[ERROR] Gagal mengubah status Exness Autopilot: ${e.message}\n`));
-                }
-                continue;
-            } else {
-                console.log(chalk.cyan(`\n[EXNESS MT5 AUTONOMOUS SATELLITE]`));
-                console.log(`Gunakan perintah ini untuk mengelola Autopilot Exness $10-mu:`);
-                console.log(`• ${chalk.bold('/exness start')} - Menyalakan Exness MT5 Autopilot di background`);
-                console.log(`• ${chalk.bold('/exness stop')}  - Mematikan Exness MT5 Autopilot (kembali ke manual)`);
-                console.log(`• ${chalk.bold('/exness journal')} - Melihat log jurnal keputusan trading otonom ANT\n`);
-                continue;
-            }
         }
 
         // Tangani /session commands (List & Load)

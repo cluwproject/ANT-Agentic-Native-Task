@@ -1,6 +1,6 @@
 {
   "name": "ant-cli",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "ANT — Agentic Native Task. You Ask. ANT Acts.",
   "type": "module",
   "bin": {

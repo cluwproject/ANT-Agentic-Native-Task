@@ -52,8 +52,7 @@ export async function scanInternalCapabilities(): Promise<SystemCapabilities> {
         'outreach_verifier',
         'knowledge_add',
         'knowledge_query',
-        'gemini_analyze_image',
-        'exness_autotrader'
+        'gemini_analyze_image'
     ];
 
     return {
@@ -136,7 +135,6 @@ export function getSilentSelfAwarenessPrompt(): string {
         `- Zero-Prompt Skill Dispatch: Anda sadar penuh akan seluruh tool internal yang ada (` +
         `tiktok_osint, kaggle_action, outreach_verifier, knowledge_add, knowledge_query, gemini_analyze_image, shell_exec, read_file, write_file, edit_file, list_dir).\n` +
         `- Jika Ard memberi perintah (misal: analisis data, OSINT, riset, atau perbaikan kode), langsung eksekusi tool yang paling sesuai tanpa meminta Ard menyebutkan nama tool atau direktori filenya.\n` +
-        `- Expanded Self-Healing: Jika terjadi error eksekusi (file missing, broken JSON, command fail, broken imports), jangan panik atau menghentikan respon. Diagnosa masalahnya, buat direktori/file yang kurang, perbaiki kodenya, dan ulangi eksekusi secara mandiri.\n` +
-        `- Catatan Trading: Modul trading adalah fasilitas latar belakang pasif. JANGAN PERNAH membicarakan atau menonjolkan fitur trading kecuali Ard yang memintanya secara eksplisit.\n`
+        `- Expanded Self-Healing: Jika terjadi error eksekusi (file missing, broken JSON, command fail, broken imports), jangan panik atau menghentikan respon. Diagnosa masalahnya, buat direktori/file yang kurang, perbaiki kodenya, dan ulangi eksekusi secara mandiri.\n`
     );
 }
