@@ -74,6 +74,7 @@ export async function askUser(promptText: string = 'You ❯ '): Promise<string> 
                 }
 
                 // Normal typing / small input
+                process.stdout.write('\r\x1b[K'); // Bersihkan prompt manual sebelumnya
                 const rl = readline.createInterface({
                     input: process.stdin,
                     output: process.stdout,
@@ -85,11 +86,8 @@ export async function askUser(promptText: string = 'You ❯ '): Promise<string> 
                     }
                 });
 
-                // Tulis balik apa yang diketik user selama 30ms pertama
-                // rl.write() mensimulasikan ketikan, jadi tidak akan hilang
-                rl.write(pasteBuffer);
-
-                rl.question('', async (answer) => {
+                // Gunakan native prompt dari readline agar saat redraw tidak hilang
+                rl.question(promptText, async (answer) => {
                     rl.close();
                     const trimmed = (answer || '').trim();
                     if (trimmed === '/' || trimmed === '/help') {
@@ -99,6 +97,9 @@ export async function askUser(promptText: string = 'You ❯ '): Promise<string> 
                         resolve(trimmed);
                     }
                 });
+                
+                // Tulis balik apa yang diketik user (pasteBuffer) SETELAH question dipanggil
+                rl.write(pasteBuffer);
             }, 30);
         };
 
