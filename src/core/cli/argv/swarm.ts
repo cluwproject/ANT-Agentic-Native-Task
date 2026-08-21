@@ -7,18 +7,44 @@ export async function handleSwarmArgv(args: string[]): Promise<boolean> {
     const subCommand = args[1];
     
     if (subCommand === 'report') {
-        let missionId = args[2];
+        const isJson = args.includes('--json');
+        let missionId = args.slice(2).find(a => a !== '--json' && !a.startsWith('-'));
+        
         if (!missionId) {
             const { getLatestMissionId } = await import('../../agentic/latest_mission.js');
             const latest = await getLatestMissionId();
             if (latest) {
                 missionId = latest;
-                console.log(chalk.cyan(`\n[AUTO] Memilih misi terakhir: ${missionId}`));
+                if (!isJson) {
+                    console.log(chalk.cyan(`\n[AUTO] Memilih misi terakhir: ${missionId}`));
+                }
             } else {
-                console.error(chalk.red('Error: Tidak ada misi yang ditemukan.'));
+                if (isJson) {
+                    process.stderr.write(JSON.stringify({ error: 'No mission found' }) + '\n');
+                } else {
+                    console.error(chalk.red('Error: Tidak ada misi yang ditemukan.'));
+                }
                 process.exit(1);
             }
         }
+
+        if (isJson) {
+            try {
+                const { getOrBuildSwarmReport } = await import('../../agentic/swarm_report.js');
+                const report = await getOrBuildSwarmReport(missionId);
+                if (report) {
+                    process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+                    process.exit(0);
+                } else {
+                    process.stderr.write(JSON.stringify({ error: `Mission report not found for ${missionId}` }) + '\n');
+                    process.exit(1);
+                }
+            } catch (err: any) {
+                process.stderr.write(JSON.stringify({ error: err.message }) + '\n');
+                process.exit(1);
+            }
+        }
+
         try {
             const { getBrainConfig } = await import('../../../shared/data.js');
             const brain = await getBrainConfig();

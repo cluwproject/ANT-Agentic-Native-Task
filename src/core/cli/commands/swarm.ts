@@ -28,17 +28,33 @@ export async function handleSwarmCommands(text: string, ctx: CliContext): Promis
 
     // ── /report ───────────────────────────────────────────────────────
     if (text.startsWith('/report')) {
-        let missionId = text.replace(/^\/report\s*/, '').trim();
+        const isJson = text.includes('--json');
+        const cleanText = text.replace('--json', '').trim();
+        let missionId = cleanText.replace(/^\/report\s*/, '').trim();
         if (!missionId) {
             const { getLatestMissionId } = await import('../../agentic/latest_mission.js');
             const latest = await getLatestMissionId();
             if (latest) {
                 missionId = latest;
-                console.log(chalk.cyan(`  [AUTO] Memilih misi terakhir: ${missionId}`));
+                if (!isJson) console.log(chalk.cyan(`  [AUTO] Memilih misi terakhir: ${missionId}`));
             } else {
                 console.log(chalk.yellow('  Tidak ada misi yang ditemukan. Gunakan: /report <mission_id>'));
                 return true;
             }
+        }
+        if (isJson) {
+            try {
+                const { getOrBuildSwarmReport } = await import('../../agentic/swarm_report.js');
+                const report = await getOrBuildSwarmReport(missionId);
+                if (report) {
+                    console.log(JSON.stringify(report, null, 2));
+                } else {
+                    console.log(chalk.red(`  Report JSON tidak ditemukan untuk ${missionId}`));
+                }
+            } catch (err: any) {
+                console.log(chalk.red(`  Report JSON Error: ${err.message}`));
+            }
+            return true;
         }
         try {
             const brain = await getBrainConfig();

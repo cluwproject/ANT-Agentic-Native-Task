@@ -4,6 +4,7 @@ import chalk from 'chalk';
 import { Logger } from '../../utils/logger.js';
 import { chat } from '../ai/index.js';
 import { MissionBlackboard } from './swarm_orchestrator.js';
+import { readSwarmReportJson, writeSwarmReportJson } from './swarm_report.js';
 
 const BLACKBOARD_DIR = path.join(process.cwd(), 'workspace', 'missions');
 const REPORTS_DIR = path.join(process.cwd(), 'workspace', 'reports');
@@ -61,6 +62,17 @@ ${JSON.stringify(board.findings, null, 2)}
         
         await fs.writeFile(reportPath, responseText.content);
         
+        try {
+            const mdRelPath = path.join('workspace', 'reports', reportFilename).replace(/\\/g, '/');
+            const existingReport = await readSwarmReportJson(mission_id);
+            if (existingReport) {
+                existingReport.artifacts.markdown_report = mdRelPath;
+                await writeSwarmReportJson(existingReport);
+            }
+        } catch {
+            // Ignore non-fatal report artifact sync error
+        }
+
         console.log(chalk.green(`  ✓ Laporan berhasil dibuat: file://${reportPath}`));
         return { path: reportPath, content: responseText.content };
 

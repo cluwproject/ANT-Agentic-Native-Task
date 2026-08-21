@@ -15,6 +15,7 @@ import ora from 'ora';
 import { Logger } from '../../utils/logger.js';
 import { chat } from '../ai/index.js';
 import { GRAY_UNIT_PROMPTS } from './gray_prompts.js';
+import { buildSwarmReportFromBoard, writeSwarmReportJson } from './swarm_report.js';
 
 export function parseFindingCardText(text: string, unit: GrayUnit, mission_id: string, target_file: string): FindingCard[] {
     const findings: FindingCard[] = [];
@@ -555,8 +556,10 @@ export async function launchSwarmAudit(
             path.join(BLACKBOARD_DIR, `${mission_id}.json`),
             JSON.stringify(finalBlackboard, null, 2)
         );
+        const report = buildSwarmReportFromBoard(finalBlackboard, duration_ms);
+        await writeSwarmReportJson(report);
     } catch (e: any) {
-        Logger.log('ERROR', `Failed to write final mission blackboard: ${e.message}`, { mission_id }, 'SWARM');
+        Logger.log('ERROR', `Failed to write final mission blackboard or JSON report: ${e.message}`, { mission_id }, 'SWARM');
     }
 
     return {
