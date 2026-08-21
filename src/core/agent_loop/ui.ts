@@ -59,6 +59,7 @@ export function startSpinner(text: string): any {
 
 /**
  * Tampilkan status routing kognitif (model/provider/tier/reason).
+ * Hanya ditampilkan saat awal sesi atau ketika model berganti.
  */
 export function printRoutingStatus(metadata: RoutingMetadata, lastModel: string): string {
     const currentModel = metadata.model || 'Unknown';
@@ -67,9 +68,11 @@ export function printRoutingStatus(metadata: RoutingMetadata, lastModel: string)
     const currentReason = metadata.reason || '-';
 
     if (lastModel && lastModel !== currentModel) {
-        console.log(chalk.yellow(`\n[Model Changed] `) + chalk.dim(`${lastModel} -> `) + chalk.green.bold(currentModel) + chalk.dim(` (${currentReason})` + '\n'));
-    } else {
-        console.log(chalk.dim(`Cognitive Route: ${chalk.cyan(currentTier)} (${chalk.white(currentModel)} via ${chalk.white(currentProvider)}) [Reason: ${chalk.italic(currentReason)}]` + '\n'));
+        console.log(chalk.yellow(`\n[Model Switched] `) + chalk.dim(`${lastModel} ➔ `) + chalk.cyan.bold(`${currentModel} (${currentProvider})`) + '\n');
+    } else if (!lastModel) {
+        const isDebug = process.env.ANT_DEBUG === '1' || process.env.ANT_DEBUG === 'true';
+        const reasonStr = isDebug ? ` [Reason: ${chalk.italic(currentReason)}]` : '';
+        console.log(chalk.dim(`Cognitive Route: ${chalk.cyan(currentTier)} (${chalk.white(currentModel)} via ${chalk.white(currentProvider)})${reasonStr}`) + '\n');
     }
     return currentModel;
 }
@@ -99,7 +102,13 @@ export function printThought(thought: string, durationSec: number = 0, estimated
 
 /** Render a beautiful unified-like git diff for file writes and edits */
 export function printFileDiff(filePath: string, newContent: string) {
-    const absolutePath = path.resolve(process.cwd(), 'workspace', filePath);
+    let absolutePath = path.resolve(process.cwd(), filePath);
+    if (!fs.existsSync(absolutePath)) {
+        const workspacePath = path.resolve(process.cwd(), 'workspace', filePath);
+        if (fs.existsSync(workspacePath)) {
+            absolutePath = workspacePath;
+        }
+    }
     console.log(chalk.cyan(`\nFILE TARGET: ${chalk.bold(filePath)}`));
     console.log(chalk.dim('──────────────────────────────────────────────────────────────────'));
 
@@ -243,17 +252,36 @@ export function printToolSuccess(toolName: string, args: Record<string, any> = {
     }
 
     let displayArg = argValue;
-    let suffix = '';
-
-    if (displayArg.length > 55) {
-        const prefixLen = 24;
-        const suffixLen = 24;
+    if (displayArg.length > 60) {
+        const prefixLen = 30;
+        const suffixLen = 25;
         displayArg = displayArg.slice(0, prefixLen) + '...' + displayArg.slice(-suffixLen);
-        suffix = ' (ctrl+o to expand)';
     }
 
     const evidStr = evidenceId ? ` [EVID:${evidenceId}]` : '';
-    console.log(chalk.cyan(`● ${actionLabel}(${displayArg})${suffix}`) + chalk.dim(evidStr));
+    console.log(chalk.cyan(`● ${actionLabel}(${displayArg})`) + chalk.dim(evidStr));
+}
+
+/** Print clean, compact 3-5 line preview of tool execution stdout */
+export function printToolResultPreview(result: any, maxLines: number = 4) {
+    if (!result) return;
+    let outputStr = '';
+    if (typeof result === 'string') outputStr = result;
+    else if (result.stdout) outputStr = result.stdout;
+    else if (result.output) outputStr = result.output;
+    else if (result.content) outputStr = result.content;
+    
+    if (!outputStr || typeof outputStr !== 'string') return;
+    const lines = outputStr.trim().split('\n').filter(Boolean);
+    if (lines.length === 0) return;
+    
+    const preview = lines.slice(0, maxLines);
+    preview.forEach(line => {
+        console.log(chalk.dim(`    │ ${line.slice(0, 100)}`));
+    });
+    if (lines.length > maxLines) {
+        console.log(chalk.dim(`    │ ... (+${lines.length - maxLines} lines)`));
+    }
 }
 
 export function printToolFailure(toolName: string, args: Record<string, any> = {}, error: string = '') {
@@ -290,8 +318,8 @@ export function printToolFailure(toolName: string, args: Record<string, any> = {
     }
 
     let displayArg = argValue;
-    if (displayArg.length > 55) {
-        displayArg = displayArg.slice(0, 22) + '...' + displayArg.slice(-25) + ' (ctrl+o to expand)';
+    if (displayArg.length > 60) {
+        displayArg = displayArg.slice(0, 30) + '...' + displayArg.slice(-25);
     }
 
     console.log(chalk.cyan(`● ${actionLabel}(${displayArg})`) + chalk.red(` failed: ${error}`));

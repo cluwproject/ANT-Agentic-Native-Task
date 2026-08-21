@@ -809,6 +809,104 @@ async function main() {
             continue;
         }
 
+        // ── GIT COMMANDS: /git status | /git diff | /git log ───────────
+        if (text.startsWith('/git')) {
+            const gitSub = text.replace(/^\/git\s*/, '').trim().toLowerCase();
+            try {
+                const { execSync } = await import('child_process');
+                if (gitSub === 'status' || gitSub === '') {
+                    const out = execSync('git status --short', { encoding: 'utf-8', cwd: process.cwd() });
+                    console.log(chalk.cyan('\n[GIT STATUS]'));
+                    console.log(out ? chalk.white(out) : chalk.green('Working tree clean.'));
+                } else if (gitSub === 'diff') {
+                    const out = execSync('git diff', { encoding: 'utf-8', cwd: process.cwd() });
+                    console.log(chalk.cyan('\n[GIT DIFF]'));
+                    console.log(out ? chalk.white(out) : chalk.dim('No uncommitted diff changes.'));
+                } else if (gitSub === 'log') {
+                    const out = execSync('git log -n 5 --oneline', { encoding: 'utf-8', cwd: process.cwd() });
+                    console.log(chalk.cyan('\n[GIT LOG (Recent 5)]'));
+                    console.log(chalk.white(out));
+                } else {
+                    const out = execSync(`git ${gitSub}`, { encoding: 'utf-8', cwd: process.cwd() });
+                    console.log(chalk.white(out));
+                }
+            } catch (err: any) {
+                console.log(chalk.red(`  [GIT ERROR] ${err.message}`));
+            }
+            console.log();
+            continue;
+        }
+
+        // ── AGENT DISPATCH: /agent ─────────────────────────────────────
+        if (text.startsWith('/agent')) {
+            const parts = text.split(' ');
+            const sub = parts[1]?.toLowerCase();
+            const { SUB_AGENT_REGISTRY, spawnSubAgent } = await import('./agentic/sub_agents.js');
+            
+            if (sub === 'list' || !sub) {
+                console.log(chalk.cyan('\n[REGISTRY] ANT REGISTERED SUB-AGENTS:'));
+                const tableData = Object.entries(SUB_AGENT_REGISTRY).map(([key, def]) => ({
+                    Role: key,
+                    Description: def.description,
+                    Tools: def.allowedTools.join(', ')
+                }));
+                console.table(tableData);
+                console.log();
+                continue;
+            } else if (sub === 'run') {
+                const roleName = parts[2]?.toLowerCase();
+                const task = parts.slice(3).join(' ').trim();
+                if (!roleName || !task) {
+                    console.log(chalk.yellow('  Usage: /agent run <role> <task description>'));
+                    console.log(chalk.dim('  Example: /agent run researcher "Analisis update LLM terbaru"'));
+                    continue;
+                }
+                try {
+                    const brain = await getBrainConfig();
+                    console.log(chalk.cyan(`\n[SPAWNING AGENT] ${roleName.toUpperCase()}...`));
+                    const res = await spawnSubAgent(roleName, task, brain, contextHistory);
+                    console.log(chalk.green(`\n[AGENT RESULT (${res.role.toUpperCase()})]:`));
+                    console.log(chalk.white(res.output) + '\n');
+                } catch (err: any) {
+                    console.log(chalk.red(`  [AGENT ERROR] ${err.message}`));
+                }
+                continue;
+            }
+        }
+
+        // ── TASK SCHEDULER: /task ──────────────────────────────────────
+        if (text.startsWith('/task')) {
+            const parts = text.split(' ');
+            const sub = parts[1]?.toLowerCase();
+            const { customSchedules, addCustomSchedule, loadCustomSchedules } = await import('./scheduler.js');
+            await loadCustomSchedules();
+
+            if (sub === 'list' || !sub) {
+                console.log(chalk.cyan('\n[TASKS] SCHEDULED BACKGROUND TASKS:'));
+                if (customSchedules.length === 0) {
+                    console.log(chalk.yellow('  No custom scheduled tasks. Use /task schedule <cron> <command>'));
+                } else {
+                    console.table(customSchedules);
+                }
+                console.log();
+                continue;
+            } else if (sub === 'schedule') {
+                const cronAndCmd = text.replace(/^\/task\s+schedule\s*/, '').trim();
+                const match = cronAndCmd.match(/^["']([^"']+)["']\s+["']?([^"']+)["']?$/) || cronAndCmd.match(/^(\S+\s+\S+\s+\S+\s+\S+\s+\S+)\s+(.+)$/);
+                if (match) {
+                    const cron = match[1];
+                    const command = match[2];
+                    const id = await addCustomSchedule(cron, command);
+                    console.log(chalk.green(`  [OK] Task registered with ID: ${id} (Cron: ${cron})`));
+                } else {
+                    console.log(chalk.yellow('  Usage: /task schedule "<cron_expr>" "<command>"'));
+                    console.log(chalk.dim('  Example: /task schedule "*/30 * * * *" "npm test"'));
+                }
+                console.log();
+                continue;
+            }
+        }
+
         // ── MINDBY MEMORY: /store ──────────────────────────────────────
         if (text.startsWith('/store')) {
             const memoryContent = text.replace(/^\/store\s*/, '').trim();

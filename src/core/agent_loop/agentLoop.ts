@@ -471,6 +471,7 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
 
                 const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
                 ui.printToolSuccess(toolCall.tool, toolCall.args, evidence.id);
+                ui.printToolResultPreview(result, 4);
                 if (toolCall.tool === 'shell_exec') {
                     console.log(chalk.green(`    ✔ Selesai dalam ${durationSec}s`));
                 }

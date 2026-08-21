@@ -55,9 +55,7 @@ export function isToolAutoApproved(tool: string, riskLevel: 'LOW' | 'MEDIUM' | '
 const SAFE_TOOLS = new Set([
     'read_file', 'list_dir', 'env_check', 'web_request', 'image_generate', 'open_browser',
     'git_status', 'git_diff', 'git_log', 'git_checkpoint', 'git_commit',
-    'mexc_get_balance_futures', 'mexc_get_ticker_futures', 'mexc_get_open_positions',
-    'mexc_get_open_orders', 'mexc_get_order_history', 'mexc_get_index_price', 'mexc_get_risk_info',
-    'mexc_get_klines'
+    'grep_search', 'web_search', 'fetch_url_content'
 ]);
 
 type ArgValidator = (args: Record<string, any>) => string | null;
@@ -123,7 +121,7 @@ export async function requestApproval(
         return { 
             decision: 'denied', 
             isSafe: false,
-            reason: `[RATE LIMIT EXCEEDED] Tool '${toolCall.tool}' dipanggil terlalu cepat (>15x per menit). Ini berpotensi menghabiskan API kredit atau terjebak dalam loop. Misi dibatalkan sementara. Panggil tool 'ask_human' atau turunkan kecepatan.` 
+            reason: `[RATE LIMIT EXCEEDED] Tool '${toolCall.tool}' dipanggil terlalu cepat (>15x per menit). Misi dibatalkan sementara untuk mencegah deadlock loop.` 
         };
     }
 
@@ -178,10 +176,8 @@ export async function requestApproval(
             : (toolCall.args.content || toolCall.args.code);
 
         ui.printFileDiff(filePath, fileContent);
-        console.log(chalk.bold('\nAccept this file edit?'));
-        console.log('  1. Yes, accept this change (Sekali)');
-        console.log(`  2. Yes, approve all '${toolCall.tool}' for this session (Jangan tanya lagi)`);
-        console.log('  3. No, reject this change (Tolak)');
+        console.log(chalk.bold('\nApprove this file change?'));
+        console.log(chalk.dim('  [y] once   [a] always this session   [n] deny   [v] view full'));
         
         while (true) {
             const answer = await askQuestion(chalk.cyan('> '));
@@ -190,22 +186,32 @@ export async function requestApproval(
             if (normalized === '' || normalized === '1' || normalized === 'y' || normalized === 'yes') {
                 return { decision: 'approved', isSafe: false };
             }
-            if (normalized === '2' || normalized === 'all' || normalized === 'always') {
+            if (normalized === '2' || normalized === 'a' || normalized === 'all' || normalized === 'always') {
                 addSessionPolicy(toolCall.tool, risk);
-                console.log(chalk.green(`  ✓ Auto-approve diaktifkan untuk aksi '${toolCall.tool}' (Risk: ${risk}).`));
+                console.log(chalk.green(`  ✓ Auto-approve diaktifkan untuk '${toolCall.tool}' (Risk: ${risk}) selama sesi ini.`));
                 return { decision: 'approved', isSafe: false };
             }
             if (normalized === '3' || normalized === 'n' || normalized === 'no') {
                 return { decision: 'denied', isSafe: false };
             }
-            console.log(chalk.yellow('Pilih 1, 2, atau 3.'));
+            if (normalized === 'v' || normalized === 'view') {
+                console.log('\n' + chalk.dim('─'.repeat(60)));
+                console.log(fileContent);
+                console.log(chalk.dim('─'.repeat(60)) + '\n');
+                continue;
+            }
+            console.log(chalk.yellow('Pilih: [y] approve, [a] always session, [n] deny, [v] view'));
         }
     }
 
     ui.printApprovalBox(toolCall.tool, risk, reason);
+    const argSummary = JSON.stringify(toolCall.args);
+    if (argSummary && argSummary.length > 2) {
+        console.log(chalk.dim(`  Args        : ${argSummary.slice(0, 80)}${argSummary.length > 80 ? '...' : ''}`));
+    }
 
     while (true) {
-        const answer = await askQuestion('\n⚠️  Approve execution? (1/Y: Approve, 2/Always: Allow Tool Session, 3/N: Reject, V: Details): ');
+        const answer = await askQuestion(chalk.yellow('\n⚠️  Approve execution? ') + chalk.dim('[y] once  [a] always  [n] deny  [v] details: '));
         const normalized = answer.trim().toLowerCase();
         
         if (normalized === 'v' || normalized === 'view') {
@@ -215,10 +221,14 @@ export async function requestApproval(
             continue;
         }
         
-        if (normalized === '2' || normalized === 'always' || normalized === 'all' || normalized === 'a') {
+        if (normalized === '2' || normalized === 'a' || normalized === 'always' || normalized === 'all') {
             addSessionPolicy(toolCall.tool, risk);
-            console.log(chalk.green(`  ✓ Auto-approve diaktifkan untuk aksi '${toolCall.tool}' (Risk: ${risk}).`));
+            console.log(chalk.green(`  ✓ Auto-approve diaktifkan untuk '${toolCall.tool}' (Risk: ${risk}) selama sesi ini.`));
             return { decision: 'approved', isSafe: false };
+        }
+
+        if (normalized === '3' || normalized === 'n' || normalized === 'no') {
+            return { decision: 'denied', isSafe: false };
         }
 
         const approved = normalized === '' || normalized === '1' || normalized === 'y' || normalized === 'yes';
