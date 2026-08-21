@@ -326,39 +326,51 @@ async function runStaticAudit(
     const importedPath = await import('path');
     const importedFs = await import('fs/promises');
 
-    const OSINT_PATTERNS: Record<string, RegExp> = {
-        // GRAY-2: OSINT Profiling (Looking for hardcoded emails or usernames)
-        BLIND_USERNAME: /const\s+targetUser\s*=\s*|username\s*:\s*['"][^'"]+['"]/gi,
-        SOSMED_LINKAGE: /(tiktok\.com|twitter\.com|instagram\.com|github\.com)\/[a-zA-Z0-9_]+/gi,
-        
-        // GRAY-3: Email Intel (Looking for leaked emails or gravatar links)
-        BREACHED_EMAIL: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
-        HIDDEN_GRAVATAR: /gravatar\.com\/avatar\/[a-f0-9]{32}/gi,
-        
-        // GRAY-4: Infra
-        OPEN_PORTS: /port\s*:\s*[0-9]{2,5}|listen\([0-9]{2,5}\)/gi,
-        EXPOSED_DNS: /(dns\.resolveMx|resolveTxt)/g,
-        
-        // GRAY-5: Dark Web
-        TOR_LEAK: /[a-z2-7]{16,56}\.onion/gi,
-        ONION_MARKET_MENTION: /darknet|silkroad|alphabay|hidden service/gi,
-        
-        // GRAY-1: Legacy Memory/Logic (Still checking code issues)
-        BUFFER_OVERFLOW: /Buffer\.allocUnsafe|new Buffer\(/g,
-        MEMORY_LEAK: /process\.env\.(API_KEY|SECRET|PASSWORD|TOKEN)/g
+    const STATIC_THREAT_PATTERNS: Record<string, RegExp> = {
+        // ── GRAY-1: Memory & Logic Guardian ──────────────────────────────
+        BUFFER_OVERFLOW: /\b(?:Buffer\.allocUnsafe|new\s+Buffer\s*\(|strcpy|strcat|sprintf\s*\()/g,
+        MEMORY_LEAK: /\b(?:setInterval|addEventListener|process\.on)\s*\([^)]*\)(?![^]*?(?:clearInterval|removeEventListener|removeAllListeners))/g,
+        RACE_CONDITION: /(?:(?:let|var)\s+\w+\s*=\s*(?:false|true);(?![^]*?await)|checkAndSet|withoutLock)/g,
+        REDOS: /(?:\([a-zA-Z0-9_+*]+\)\+|\([a-zA-Z0-9_+*]+\)\*|\/.*(\w\+)+\/)/g,
+
+        // ── GRAY-2: Injection Sifter ──────────────────────────────────────
+        SQL_INJECTION: /(?:query|execute|raw|whereRaw)\s*\(\s*[`"'].*\$\{|\b(?:UNION\s+SELECT|SELECT\s+.*FROM\s+.*WHERE\s+.*=.*\$)\b/gi,
+        XSS: /(?:innerHTML|outerHTML|document\.write|dangerouslySetInnerHTML)\s*=|v-html\s*=/gi,
+        COMMAND_INJECTION: /\b(?:exec|execSync|spawn|spawnSync|fork)\s*\([^)]*(?:\$\{|\+\s*\w+)/g,
+        PATH_TRAVERSAL: /(?:\.\.\/|\.\.\\|path\.resolve\s*\([^)]*req\.(?:query|params|body))/g,
+
+        // ── GRAY-3: Auth & Identity Architect ────────────────────────────
+        IDOR: /(?:req\.params\.(?:id|userId)|req\.query\.(?:id|userId))(?![^]*?(?:session|auth|checkOwnership|currentUser))/g,
+        JWT_FLAW: /(?:jwt\.verify\s*\([^)]*algorithms\s*:\s*\[['"]none['"]\]|jwt\.sign\s*\([^)]*expiresIn\s*:\s*0\))/gi,
+        BROKEN_AUTH: /(?:password\s*===\s*['"]|skipAuth|bypassAuth|auth\s*:\s*false)/gi,
+
+        // ── GRAY-4: Supply Chain Sentinel ────────────────────────────────
+        VULN_DEPENDENCY: /(?:"(?:event-stream|flatmap-stream|colors|faker|node-ipc)":|"express":\s*"[<~^]?[1-3]\.)/g,
+        SUSPICIOUS_SCRIPT: /(?:curl\s+-[sS]*L?\s+https?:\/\/|wget\s+https?:\/\/.*\|\s*(?:bash|sh)|eval\s*\(Buffer\.from)/gi,
+
+        // ── GRAY-5: Cloud & Config Auditor ───────────────────────────────
+        HARDCODED_SECRET: /(?:(?:api[_-]?key|secret[_-]?key|aws[_-]?secret|password|private[_-]?key|auth[_-]?token)\s*[:=]\s*['"][a-zA-Z0-9_\-.~+/=]{8,}['"]|sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{20,}|AKIA[0-9A-Z]{16})/gi,
+        IAM_MISCONFIG: /(?:"Effect"\s*:\s*"Allow"\s*,\s*"Action"\s*:\s*"\*"\s*,\s*"Resource"\s*:\s*"\*")/g,
+        CLOUD_MISCONFIG: /(?:Access-Control-Allow-Origin:\s*\*|http:\/\/0\.0\.0\.0|rejectUnauthorized:\s*false)/gi
     };
 
     const RISK_MAP: Record<string, 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'> = {
-        BLIND_USERNAME: 'MEDIUM',
-        SOSMED_LINKAGE: 'HIGH',
-        BREACHED_EMAIL: 'CRITICAL',
-        HIDDEN_GRAVATAR: 'MEDIUM',
-        OPEN_PORTS: 'HIGH',
-        EXPOSED_DNS: 'LOW',
-        TOR_LEAK: 'CRITICAL',
-        ONION_MARKET_MENTION: 'CRITICAL',
         BUFFER_OVERFLOW: 'HIGH',
-        MEMORY_LEAK: 'CRITICAL'
+        MEMORY_LEAK: 'MEDIUM',
+        RACE_CONDITION: 'MEDIUM',
+        REDOS: 'MEDIUM',
+        SQL_INJECTION: 'CRITICAL',
+        XSS: 'HIGH',
+        COMMAND_INJECTION: 'CRITICAL',
+        PATH_TRAVERSAL: 'HIGH',
+        IDOR: 'HIGH',
+        JWT_FLAW: 'CRITICAL',
+        BROKEN_AUTH: 'CRITICAL',
+        VULN_DEPENDENCY: 'HIGH',
+        SUSPICIOUS_SCRIPT: 'CRITICAL',
+        HARDCODED_SECRET: 'CRITICAL',
+        IAM_MISCONFIG: 'CRITICAL',
+        CLOUD_MISCONFIG: 'HIGH'
     };
 
     let filesInspected = 0;
@@ -373,7 +385,7 @@ async function runStaticAudit(
             if (stat.isDirectory()) {
                 const files = await importedFs.default.readdir(targetPath);
                 filesToScan = files
-                    .filter(f => f.endsWith('.ts') || f.endsWith('.js'))
+                    .filter(f => f.endsWith('.ts') || f.endsWith('.js') || f.endsWith('.json') || f.endsWith('.yml'))
                     .map(f => importedPath.default.join(targetPath, f))
                     .slice(0, SLM_MAX_FILES_PER_UNIT);
             } else {
@@ -395,7 +407,7 @@ async function runStaticAudit(
                 const content = await importedFs.default.readFile(filePath, 'utf-8');
                 filesInspected++;
 
-                for (const [threatType, pattern] of Object.entries(OSINT_PATTERNS)) {
+                for (const [threatType, pattern] of Object.entries(STATIC_THREAT_PATTERNS)) {
                     // Only check relevant threats for this unit's domain
                     const isRelevant = unit.threatTypes.includes(threatType);
                     if (!isRelevant) continue;
@@ -415,8 +427,6 @@ async function runStaticAudit(
                         });
                     }
                 }
-
-                // CLEAN logic removed; renderSwarmReport handles empty findings automatically.
             }
         } catch (e: any) {
             Logger.log('ERROR', `[${unit.id}] Scan error on ${targetPath}: ${e.message}`, {}, 'SWARM');
@@ -425,18 +435,24 @@ async function runStaticAudit(
     return findings;
 }
 
-function getSuggestedPatch(threatType: string): string {
+export function getSuggestedPatch(threatType: string): string {
     const patches: Record<string, string> = {
-        BLIND_USERNAME: 'Lakukan Identity Correlation via cross_platform_scanner.js. Jangan asumsikan identitas.',
-        SOSMED_LINKAGE: 'Ekstrak bio dan avatar untuk reverse image search.',
-        BREACHED_EMAIL: 'Jalankan email_analyzer.js untuk membedah MX, Gravatar, dan eksistensi Deep Web.',
-        HIDDEN_GRAVATAR: 'Lakukan MD5 Hash pada email dan fetch id.gravatar.com/hash.json.',
-        OPEN_PORTS: 'Pastikan port ini tidak terekspos ke Surface Web (Gunakan firewall/VPC).',
-        EXPOSED_DNS: 'Periksa perlindungan Cloudflare/Proxy untuk menutupi IP asli.',
-        TOR_LEAK: 'SANGAT KRITIS. Alamat .onion bocor ke Surface Web. Pantau akses via proxy SOCKS5 lokal.',
-        ONION_MARKET_MENTION: 'Gunakan GRAY-5 (Deep Web Recon) untuk menyelidiki aktivitas forum ini.',
-        BUFFER_OVERFLOW: 'Periksa alokasi memori yang tidak aman.',
-        MEMORY_LEAK: 'Hapus hardcoded secret.'
+        BUFFER_OVERFLOW: 'Gunakan Buffer.alloc() yang terinisialisasi nol atau alokasi memory-safe.',
+        MEMORY_LEAK: 'Pastikan event listener atau interval dibersihkan saat lifecycle komponen berakhir.',
+        RACE_CONDITION: 'Gunakan mutex / transactional lock atau atomic operations untuk state concurrency.',
+        REDOS: 'Hindari nested quantifiers pada regular expression; gunakan RE2 atau regex linier.',
+        SQL_INJECTION: 'Gunakan parameterized queries (prepared statements) atau ORM query builder.',
+        XSS: 'Sanitasi output menggunakan DOMPurify atau gunakan textContent alih-alih innerHTML.',
+        COMMAND_INJECTION: 'Hindari passing user input langsung ke shell; gunakan execFile dengan argumen terpisah.',
+        PATH_TRAVERSAL: 'Validasi path menggunakan path.normalize() dan pastikan berada di dalam whitelist direktori.',
+        IDOR: 'Validasi kepemilikan resource terhadap user context (session.userId) sebelum operasi.',
+        JWT_FLAW: 'Wajibkan algoritma eksplisit (HS256/RS256) dan tetapkan masa kadaluarsa token.',
+        BROKEN_AUTH: 'Gunakan protokol autentikasi standar (OAuth2/OIDC/Bcrypt) dan tolak flag bypass.',
+        VULN_DEPENDENCY: 'Update versi package ke rilis terbaru atau ganti dependency yang terkena CVE.',
+        SUSPICIOUS_SCRIPT: 'Audit npm lifecycle hooks (preinstall/postinstall) dan hapus download eksternal pipe.',
+        HARDCODED_SECRET: 'Pindahkan kredensial ke environment variables (.env) atau secret manager.',
+        IAM_MISCONFIG: 'Terapkan prinsip Least Privilege; batasi Action dan Resource secara spesifik.',
+        CLOUD_MISCONFIG: 'Batasi CORS ke domain terpercaya dan jangan gunakan binding wildcard 0.0.0.0.'
     };
     return patches[threatType] || 'Delegasikan ke GRAY unit spesifik untuk penyelidikan mendalam.';
 }
