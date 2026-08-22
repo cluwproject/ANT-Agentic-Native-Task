@@ -3,7 +3,7 @@
   "scaffold": ["npx create-next-app@latest . --typescript --tailwind --eslint --app --use-npm"],
   "install": ["npm install", "npm install prisma --save-dev", "npm install @prisma/client"],
   "dev": "npm run dev",
-  "test": "npm test",
+  "test": "npm run build",
   "healthcheck": {
     "url": "http://127.0.0.1:3000",
     "expectStatus": 200
