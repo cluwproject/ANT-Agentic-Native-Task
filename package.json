@@ -27,7 +27,7 @@
     "check:drift": "npm run build && git diff --stat dist",
     "prepublishOnly": "npm run clean && npm run build",
     "test": "npm run test:unit",
-    "test:unit": "node --import tsx --test tests/unit/**/*.test.ts",
+    "test:unit": "node --import tsx --test \"tests/unit/**/*.test.ts\"",
     "test:integration": "jest tests/integration",
     "test:coverage": "jest --coverage"
   },
