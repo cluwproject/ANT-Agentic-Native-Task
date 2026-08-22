@@ -173,11 +173,27 @@ ant-cli/
 
 ---
 
+## 🏛️ Architecture Council & Cross-Model Synthesis
+
+Arsitektur ANT v0.4 (The Sovereign Runtime Era) dirumuskan dan diuji secara ketat melalui konsensus lintas arsitektur kognitif (*Cross-Model Peer Review*):
+- **Ard (Renaldy Adri):** Chief Architect, Sovereign Operator & Visionary.
+- **Antigravity (Agy):** Lead Coding Pair & Runtime Engineer.
+- **Frontier Architectural Council (Synthesis):**
+  - **GPT-4o/o3:** *Cognitive State vs Memory Separation & Recovery State Machine.*
+  - **Kimi:** *Distributed Concurrency, Event-Driven Callbacks, & Worktree Isolation.*
+  - **Qwen 3.8 Max:** *Pragmatic Doktrin P1–P4, Pilar 0 Security Fence, & ADR-001 Git-First Architecture.*
+  - **Grok:** *Red-Team Threat Analysis, npm Script Hardening, & Mobile Recovery Branches.*
+  - **Claude 3.7:** *Variable-Friction Approval, Anti-Automation Bias, & Grand Consolidation.*
+
+Lihat naskah lengkap spesifikasi di [**`ROADMAP_UBIQUITOUS_COMPANION.md`**](ROADMAP_UBIQUITOUS_COMPANION.md).
+
+---
+
 ## 📜 Intellectual Property & Sovereign Declaration
 
 - **Creator / Operator:** Ard
 - **Parent Architecture:** CLUW-Genesis
-- **Version:** v0.3.0+ (Menuju v0.4) — Swarm Intelligence, CI/CD, & Scaffolding
+- **Version:** v0.3.5 (Menuju v0.4) — Swarm Intelligence, CI/CD, & Scaffolding
 - **License:** [Apache 2.0 License](LICENSE)
 
-*"Model AI bersifat sementara. Arsitektur kognitif, memori, dan keamanan eksekusi bersifat berkelanjutan."*
+*"Model AI bersifat sementara. Arsitektur kognitif, memori, dan kedaulatan eksekusi bersifat abadi."*
