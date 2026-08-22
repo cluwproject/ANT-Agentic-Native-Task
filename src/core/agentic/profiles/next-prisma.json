@@ -1,0 +1,17 @@
+{
+  "id": "next-prisma",
+  "scaffold": ["npx create-next-app@latest . --typescript --tailwind --eslint --app --use-npm"],
+  "install": ["npm install", "npm install prisma --save-dev", "npm install @prisma/client"],
+  "dev": "npm run dev",
+  "test": "npm test",
+  "healthcheck": {
+    "url": "http://127.0.0.1:3000",
+    "expectStatus": 200
+  },
+  "allowedShellPrefixes": ["npm", "npx", "node", "git", "prisma", "tsc", "jest"],
+  "paths": {
+    "app": "app",
+    "api": "app/api",
+    "prisma": "prisma"
+  }
+}
