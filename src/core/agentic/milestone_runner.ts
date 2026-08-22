@@ -105,7 +105,7 @@ export class MilestoneRunner {
              
              if (swarmResult) {
                 // S5 - Secure gate + block on CRITICAL
-                const criticalCount = swarmResult.findings.filter(f => f.severity === 'CRITICAL').length;
+                const criticalCount = swarmResult.findings.filter(f => f.risk_level === 'CRITICAL').length;
                 if (criticalCount > 0) {
                    console.error(chalk.red(`\n❌ [Milestone] SECURE Gagal: Ditemukan ${criticalCount} isu CRITICAL.`));
                    console.log(chalk.yellow(`Mohon periksa laporan di workspace/reports/${swarmResult.mission_id}_report.json`));
