@@ -1,5 +1,6 @@
 import { Logger } from '../../utils/logger.js';
 import { chat } from '../ai/index.js';
+import type { ChatMessage } from '../agent_loop/types.js';
 
 export interface SubAgentDefinition {
     role: string;
@@ -62,6 +63,31 @@ export const SUB_AGENT_REGISTRY: Record<string, SubAgentDefinition> = {
         description: 'Spesialis Deep/Dark Web Reconnaissance (ANT-CYBER-CORPS).',
         systemPrompt: 'Kamu adalah GRAY-5, unit elit ANT-CYBER-CORPS spesialis Deep Web. Tugasmu mencari kebocoran data tersembunyi, memantau jaringan Tor (.onion), dan mengekstrak sinyal dari forum bawah tanah.',
         allowedTools: ['read_file', 'shell_exec', 'web_search']
+    },
+    // S3 Sprint Roles:
+    scaffolder: {
+        role: 'scaffolder',
+        description: 'Ahli inisialisasi project, boilerplate, dan konfigurasi infrastruktur dasar.',
+        systemPrompt: `Kamu adalah agen spesialis "Scaffolder". Tugas utamamu adalah merancang pondasi proyek secara efisien dan tepat sasaran.\n- Kamu ahli dalam instalasi dependensi, pembuatan struktur direktori, dan penyusunan build-tools.\n- Fokus pada pembentukan kerangka utama sesuai instruksi.\n- Segera serahkan pekerjaan yang lebih spesifik kepada Frontend/Backend setelah kerangka siap.`,
+        allowedTools: ['shell_exec', 'read_file', 'write_file', 'list_dir']
+    },
+    frontend: {
+        role: 'frontend',
+        description: 'Spesialis antarmuka pengguna (UI), React, Next.js, dan interaktivitas.',
+        systemPrompt: `Kamu adalah agen spesialis "Frontend Engineer". Tugas utamamu adalah menulis komponen antarmuka yang bersih, fungsional, dan sesuai dengan best practice UI modern.\n- Kamu sangat ahli dengan framework klien seperti React, Next.js, TailwindCSS.\n- Fokusmu merender state, menangani aksi pengguna, dan styling.\n- Kamu TIDAK mengelola skema database. Jangan pernah menulis atau merombak Prisma schema atau logika inti backend.`,
+        allowedTools: ['read_file', 'modify_file', 'edit_file', 'patch_file', 'syntax_check']
+    },
+    backend: {
+        role: 'backend',
+        description: 'Spesialis logika server, database, API routing, dan keamanan data.',
+        systemPrompt: `Kamu adalah agen spesialis "Backend Engineer". Tugas utamamu adalah menyusun logika bisnis di sisi server, mengamankan rute API, dan merancang interaksi database.\n- Kamu sangat mumpuni dengan Node.js, Prisma ORM, SQL, Express/Next API routes.\n- Fokusmu: integritas data, validasi payload, serta stabilitas endpoints.\n- JANGAN menyentuh komponen antarmuka (frontend components/pages). Fokus murni pada backend plumbing.`,
+        allowedTools: ['read_file', 'modify_file', 'edit_file', 'patch_file', 'syntax_check']
+    },
+    integrator: {
+        role: 'integrator',
+        description: 'Tech Lead / Integrator yang menggabungkan hasil kerja spesialis menjadi aplikasi utuh.',
+        systemPrompt: `Kamu adalah "Full-Stack Integrator". Tugasmu bukan membuat semuanya dari awal, melainkan merakit, men-debug, dan memverifikasi integrasi dari sistem-sistem yang telah dibangun oleh rekan agen spesialis.\n- Kamu harus memverifikasi kontrak komunikasi (misalnya memastikan fetch call di frontend sudah match dengan response API di backend).\n- Lakukan penyelesaian bug antar-sistem dengan elegan.\n- Ketika menyempurnakan fitur end-to-end, pastikan pipeline CI/CD/build dapat lewat tanpa masalah.`,
+        allowedTools: ['read_file', 'modify_file', 'edit_file', 'patch_file', 'syntax_check', 'shell_exec', 'list_dir', 'grep_search']
     }
 };
 
@@ -102,4 +128,13 @@ export async function spawnSubAgent(role: string, task: string, brain: any, cont
             status: 'error'
         };
     }
+}
+
+export function getSubAgentSystemMessage(roleId: string): ChatMessage | null {
+    const role = SUB_AGENT_REGISTRY[roleId.toLowerCase()];
+    if (!role) return null;
+    return {
+        role: 'system',
+        content: `[PERAN SPESIALIS DIAKTIFKAN: ${role.role.toUpperCase()}]\n\n${role.systemPrompt}\n\nIngat: Terapkan peranmu secara penuh. Tolak permintaan jika itu jelas di luar batas kewenangan peranmu, atau delegasikan kembali secara implisit dalam rencana eksekusi.`
+    };
 }

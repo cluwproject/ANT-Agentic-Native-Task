@@ -40,7 +40,11 @@
     "code-agent",
     "task-automation"
   ],
-  "license": "MIT",
+  "author": "Ard <ard@ant.local>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ant-agent/ant/issues"
+  },
   "engines": {
     "node": ">=20.0.0"
   },

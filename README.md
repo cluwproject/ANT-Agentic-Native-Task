@@ -170,6 +170,6 @@ ant-cli/
 - **Creator / Operator:** Ard
 - **Parent Architecture:** CLUW-Genesis
 - **Version:** v0.3.0+ (Menuju v0.4) — Swarm Intelligence, CI/CD, & Scaffolding
-- **License:** [MIT License](LICENSE)
+- **License:** [Apache 2.0 License](LICENSE)
 
 *"Model AI bersifat sementara. Arsitektur kognitif, memori, dan keamanan eksekusi bersifat berkelanjutan."*
