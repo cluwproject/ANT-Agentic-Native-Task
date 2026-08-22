@@ -10,6 +10,8 @@ export interface MilestoneContext {
   profile: ProjectProfile;
   targetDir: string;
   maxPatchAttempts: number;
+  role?: string;
+  implementContext?: string;
 }
 
 export class MilestoneRunner {
@@ -25,11 +27,24 @@ export class MilestoneRunner {
     
     let currentPrompt = initialPrompt || 'Silakan lanjutkan setup dan integrasi awal proyek ini.';
     let verifyErrorLog = '';
+    let initialGitSnapshot: string | null = null;
 
     while (this.state !== 'DONE') {
       switch (this.state) {
         case 'INIT':
-          console.log(chalk.blue('[Milestone] INIT: Validasi lingkungan'));
+          console.log(chalk.blue('[Milestone] INIT: Validasi lingkungan & Snapshot Checkpoint'));
+          try {
+            const gitCheck = await executeAction('shell_exec', { command: 'git rev-parse HEAD', cwd: this.context.targetDir }, 1, { cwd: this.context.targetDir, manual_approval: true });
+            if (gitCheck && (gitCheck as any).stdout) {
+              initialGitSnapshot = (gitCheck as any).stdout.trim();
+              if (initialGitSnapshot) {
+                console.log(chalk.dim(`  • Git Snapshot Anchor: ${initialGitSnapshot.slice(0, 7)}`));
+              }
+            }
+          } catch {
+            // Target dir is fresh or not yet a git repo
+            initialGitSnapshot = null;
+          }
           this.state = 'SCAFFOLD';
           break;
           
@@ -48,13 +63,31 @@ export class MilestoneRunner {
           break;
           
         case 'IMPLEMENT':
-          console.log(chalk.blue('\n[Milestone] IMPLEMENT: Menjalankan agent loop untuk implementasi fitur'));
+          let contextMsgs: any[] = [];
           
-          if (verifyErrorLog) {
-            currentPrompt = `Tahap VERIFY sebelumnya gagal. Mohon perbaiki error berikut agar aplikasi dapat lulus test dan build.\n\nError log:\n${verifyErrorLog}`;
+          if (this.context.implementContext) {
+             contextMsgs.push({ role: 'system', content: this.context.implementContext });
           }
 
-          const loopResult = await runCliAgentLoopDetailed(currentPrompt, [], { maxAttempts: 15 });
+          if (this.context.role) {
+             const { getSubAgentSystemMessage } = await import('./sub_agents.js');
+             const roleMsg = getSubAgentSystemMessage(this.context.role);
+             if (roleMsg) {
+                 contextMsgs.push(roleMsg);
+             } else {
+                 console.log(chalk.yellow(`\n[Milestone] Peringatan: Peran spesialis '${this.context.role}' tidak ditemukan di registry. Berjalan tanpa topi peran.`));
+             }
+          }
+
+          // Tambahkan error VERIFY sebelumnya jika ini adalah siklus patch (self-healing)
+          if (verifyErrorLog) {
+             const patchPrompt = `Tahap VERIFY sebelumnya gagal dengan log berikut. Mohon analisis dan perbaiki error ini:\n\n\`\`\`\n${verifyErrorLog}\n\`\`\`\n\nEksekusi aksi yang diperlukan untuk memperbaiki kode, lalu selesaikan tugasmu (stop memanggil tools) agar dapat diverifikasi ulang.`;
+             contextMsgs.push({ role: 'user', content: patchPrompt });
+          }
+
+          console.log(chalk.blue(`[Milestone] IMPLEMENT: Menjalankan agent loop...${this.context.role ? ` (Peran: ${this.context.role})` : ''}`));
+          
+          const loopResult = await runCliAgentLoopDetailed(currentPrompt, contextMsgs);
           
           if (loopResult.cancelled) {
             throw new Error('Pipeline dibatalkan oleh pengguna (SIGINT) saat fase IMPLEMENT.');
@@ -84,8 +117,22 @@ export class MilestoneRunner {
           if (!verifySuccess) {
             this.context.maxPatchAttempts--;
             if (this.context.maxPatchAttempts <= 0) {
-              console.error(chalk.red('[Milestone] Gagal melewati tahap VERIFY dan telah kehabisan batas maxPatchAttempts.'));
-              throw new Error('Batas patching terlampaui pada tahap VERIFY.');
+              console.error(chalk.red('\n❌ [Milestone] Gagal melewati tahap VERIFY dan telah kehabisan batas maxPatchAttempts.'));
+              
+              if (initialGitSnapshot) {
+                console.log(chalk.yellow(`[Milestone Rollback] Mengembalikan workspace ke Git Snapshot Anchor (${initialGitSnapshot.slice(0, 7)})...`));
+                try {
+                  await executeAction('shell_exec', { 
+                    command: `git reset --hard ${initialGitSnapshot} && git clean -fd`, 
+                    cwd: this.context.targetDir 
+                  }, 1, { cwd: this.context.targetDir, manual_approval: true });
+                  console.log(chalk.green('✅ [Milestone Rollback] Workspace berhasil di-rollback ke kondisi aman tanpa kode rusak.'));
+                } catch (rbErr: any) {
+                  console.error(chalk.red(`[Milestone Rollback] Gagal melakukan rollback otomatis: ${rbErr.message}`));
+                }
+              }
+
+              throw new Error('Batas patching terlampaui pada tahap VERIFY. Transaksi dibatalkan.');
             }
             console.log(chalk.yellow(`[Milestone] Mengembalikan pipeline ke state IMPLEMENT untuk patching. (Sisa attempts: ${this.context.maxPatchAttempts})`));
             this.state = 'IMPLEMENT';
