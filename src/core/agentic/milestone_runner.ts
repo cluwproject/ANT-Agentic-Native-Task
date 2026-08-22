@@ -171,6 +171,23 @@ export class MilestoneRunner {
     }
     
     console.log(chalk.green.bold('\n🚀 [Milestone] DONE: Pipeline selesai sepenuhnya.'));
+    
+    // Auto-Distill verified workflow into Procedural Memory
+    try {
+      const { distillMilestoneProcedure } = await import('../procedural_distiller.js');
+      const distilled = await distillMilestoneProcedure(
+        this.context.profile.id,
+        this.context.targetDir,
+        initialPrompt || `Setup dan integrasi profil ${this.context.profile.id}`,
+        [`milestone_${this.context.profile.id}_success`]
+      );
+      if (distilled) {
+        console.log(chalk.cyan(`🧠 [Procedural Memory] Berhasil mengkristalisasi keahlian baru: ${distilled.id} (Gold Standard)`));
+      }
+    } catch {
+      // Non-blocking procedural distillation
+    }
+
     return true;
   }
 }

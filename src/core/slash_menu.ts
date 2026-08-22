@@ -28,6 +28,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     { command: '/health',            description: 'Audit CockroachDB cluster & cognitive memory health' },
     { command: '/swarm',             description: 'Launch ANT-CYBER-CORPS 5-unit parallel security audit' },
     { command: '/sync',              description: 'Flush offline memory queue → sync to CockroachDB cloud' },
+    { command: '/consolidate',       description: 'Trigger autonomous memory sleep cycle & knowledge consolidation' },
     { command: '/resume',            description: 'Resume previous session by ID' },
     { command: '/model',             description: 'Hot-swap active AI model (Ollama/Bedrock/OpenAI)' },
     { command: '/session list',      description: 'View all saved conversation sessions' },

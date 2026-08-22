@@ -12,7 +12,7 @@ import { handleShellCommands } from './shell.js';
 export const HANDLED_PREFIXES = [
     '/new_chat', '/clear', '/plan', '/branch', '/store', '/recall',
     '/memories', '/vault', '/mailbox', '/health', '/swarm', '/sync',
-    '/resume', '/model', '/session', '/checkpoint', '/undo', '/skills',
+    '/consolidate', '/resume', '/model', '/session', '/checkpoint', '/undo', '/skills',
     '/agent', '/task', '/git', '/help', '/exit', '/quit', '/report',
     '/osint', '/connect'
 ] as const;

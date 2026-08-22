@@ -163,5 +163,28 @@ export async function handleMemoryCommands(text: string, ctx: CliContext): Promi
         return true;
     }
 
+    // ── /consolidate ──────────────────────────────────────────────────
+    if (text === '/consolidate') {
+        console.log(chalk.cyan('\n[Autonomous Memory Consolidation] Menjalankan siklus konsolidasi memori...'));
+        try {
+            const { consolidateMemories } = await import('../../memory_consolidation.js');
+            const res = await consolidateMemories();
+            if (res.status === 'success') {
+                console.log(chalk.green(`  ✅ ${res.summary}`));
+                if (res.details && res.details.length > 0) {
+                    res.details.forEach(d => console.log(chalk.dim(`     • ${d}`)));
+                }
+            } else if (res.status === 'empty') {
+                console.log(chalk.cyan(`  ℹ️  ${res.summary}`));
+            } else {
+                console.log(chalk.yellow(`  ⚠️  ${res.summary}`));
+            }
+        } catch (e: any) {
+            console.log(chalk.red(`  [ERROR] Konsolidasi memori gagal: ${e.message}`));
+        }
+        console.log();
+        return true;
+    }
+
     return false;
 }
