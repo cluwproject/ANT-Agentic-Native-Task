@@ -271,49 +271,33 @@ If a feature reports success, there should be a reliable mechanism for verifying
 
 # 🧪 Testing Your Changes
 
-Before submitting code, run the following checks.
+Before submitting code, run the following checks. 
+Kami menggunakan `npm run ci` sebagai standar validasi utama.
 
-### 1. Type checking
-
+### 1. Menjalankan Semua Cek Sekaligus (Simulasi CI)
 ```bash
-npm run typecheck
+npm run ci
 ```
+Perintah ini akan secara otomatis menjalankan:
+1. `npm run typecheck` (`tsc --noEmit`)
+2. `npm run build`
+3. `npm run test:unit`
 
-### 2. Production build
-
+### 2. Menjalankan Unit Test (Spesifik)
 ```bash
-npm run build
+npm run test:unit
 ```
+Memastikan logika inti agen dan ledger tidak rusak (41/41 passing).
 
 ### 3. CLI boot test
-
 ```bash
-node bin/ant.js --help
+node dist/core/cli.js --help
 ```
 
 ### 4. Git status
-
 ```bash
 git status
 ```
-
-If the project provides additional test commands, run the relevant test suite as well.
-
----
-
-# 🧪 Test Before You Commit
-
-A basic contribution workflow is:
-
-```bash
-npm run typecheck
-npm run build
-node bin/ant.js --help
-git status
-git diff
-```
-
-For changes affecting agent execution, tools, memory, security, or evidence, perform additional targeted tests before submitting the change.
 
 ---
 

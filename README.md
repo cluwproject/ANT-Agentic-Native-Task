@@ -32,14 +32,22 @@ ANT berjalan langsung di terminal (Mac, Linux, Windows, Termux), mampu membaca/m
 - Opsional: Kunci API (Anthropic, OpenAI, atau Gemini) untuk akses model cloud yang lebih cerdas.
 - Opsional: Ollama untuk *embedding* 768-dim (`ollama pull nomic-embed-text`) dan model SLM lokal offline.
 
-### Instalasi
+### Instalasi (Untuk Pengguna Akhir)
+Gunakan perintah standar berikut untuk menginstal dan menjalankan ANT CLI:
+
 ```bash
 git clone https://github.com/cluwproject/ANT-Agentic-Native-Task.git
 cd ANT-Agentic-Native-Task
-npm ci
-npm run ci  # (Opsional) Build, Typecheck, dan Unit Tests (41/41)
-npm start
+npm install        # Menginstal seluruh dependensi standar
+npm run build      # Mengompilasi kode TypeScript
+npm start          # Memulai ANT CLI
 ```
+
+### Untuk Kontributor / Developer (Opsional)
+Jika Anda ikut mengembangkan basis kode ini, pastikan kode Anda lolos standar *Continuous Integration* (CI) sebelum melakukan _Push_:
+- `npm run test:unit` : Menjalankan 41/41 unit test lokal secara offline.
+- `npm run ci` : Mensimulasikan pipeline GitHub Actions secara lokal (Typecheck + Build + Test). 
+*(Catatan: Anda tidak perlu perintah CI jika hanya ingin menggunakan CLI-nya).*
 
 ### Setup Lingkungan (`.env`)
 Salin `.env.example` ke `.env` lalu sesuaikan dengan model yang ingin Anda gunakan.
