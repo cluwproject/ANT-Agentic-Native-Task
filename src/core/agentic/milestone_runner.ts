@@ -36,7 +36,8 @@ export class MilestoneRunner {
             console.log(chalk.dim(`> ${cmd}`));
             const result = await executeAction('shell_exec', { command: cmd, cwd: this.context.targetDir }, 1, { cwd: this.context.targetDir });
             if (result && result.status === 'error') {
-               console.error(chalk.red(`[Milestone] Error saat SCAFFOLD: ${result.stderr || result.error}`));
+               const errStr = (result as any).stderr || (result as any).error || 'Unknown shell error';
+               console.error(chalk.red(`[Milestone] Error saat SCAFFOLD: ${errStr}`));
                throw new Error(`Scaffold gagal pada perintah: ${cmd}`);
             }
           }
