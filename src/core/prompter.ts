@@ -26,15 +26,35 @@ export async function askUser(promptText: string = 'You ❯ '): Promise<string> 
             }
         });
 
-        rl.question(promptText, async (answer) => {
-            rl.close();
-            const trimmed = (answer || '').trim();
-            if (trimmed === '/' || trimmed === '/help') {
-                const selected = await showSlashMenu('/');
-                resolve(selected ? selected.trim() : '');
+        let accumulated = '';
+        let timer: NodeJS.Timeout | null = null;
+
+        // Cetak prompt ke layar
+        rl.setPrompt(promptText);
+        rl.prompt();
+
+        rl.on('line', (line) => {
+            if (accumulated === '') {
+                accumulated = line;
             } else {
-                resolve(trimmed);
+                accumulated += '\n' + line;
             }
+
+            if (timer) clearTimeout(timer);
+
+            // Beri jeda 30ms untuk menangkap line berikutnya jika user mem-paste block text.
+            timer = setTimeout(async () => {
+                rl.close();
+                const trimmed = (accumulated || '').trim();
+                
+                // Cek slash command jika single line '/'
+                if (trimmed === '/' || trimmed === '/help') {
+                    const selected = await showSlashMenu('/');
+                    resolve(selected ? selected.trim() : '');
+                } else {
+                    resolve(trimmed);
+                }
+            }, 30);
         });
     });
 }
