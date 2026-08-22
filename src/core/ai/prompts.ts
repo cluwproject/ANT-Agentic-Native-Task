@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import * as yaml from 'js-yaml';
-import { SOVEREIGN_SEAL_BLOCK, CLONED_MODEL_CHARACTER } from '../sovereign_seal.js';
+import { getSovereignSealBlock, CLONED_MODEL_CHARACTER } from '../sovereign_seal.js';
 
 let soulCache: any = null;
 let soulCacheTime = 0;
@@ -82,6 +82,9 @@ export async function buildFullSystemInstruction(systemInstruction: string, loca
   const hasTavily = !!(localBrain.tavily_api_key && localBrain.tavily_api_key.trim().length > 5);
   const capabilityBlock = localBrain._capabilityMap || '';
   
-  return timeAwareness + systemInstruction + normalizer + cognitiveBondBlock + SOVEREIGN_SEAL_BLOCK + CLONED_MODEL_CHARACTER + capabilityBlock + TOOL_PROMPT +
+  const userName = process.env.USER_NAME || soul.traits?.address_user_as || 'Operator';
+  const sealBlock = getSovereignSealBlock(userName);
+
+  return timeAwareness + systemInstruction + normalizer + cognitiveBondBlock + sealBlock + CLONED_MODEL_CHARACTER + capabilityBlock + TOOL_PROMPT +
     `\nNote: ${hasTavily ? 'Tavily Search AKTIF (Gunakan tool: "web_search").' : (isGeminiNode ? 'Google Search tersedia secara native.' : 'Gunakan web_search untuk informasi terbaru.')}`;
 }
