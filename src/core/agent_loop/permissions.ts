@@ -62,20 +62,24 @@ const SAFE_TOOLS = new Set([
     'grep_search', 'web_search', 'fetch_url_content'
 ]);
 
-type ArgValidator = (args: Record<string, any>) => string | null;
+import { isShellCommandAllowed } from './allowlist';
+type ArgValidator = (args: Record<string, any>) => string | null | { isAutoApproved: boolean };
 
 const ARG_VALIDATORS: Record<string, ArgValidator> = {
     shell_exec: (args) => {
         const cmd = String(args?.command || '');
-        const dangerousPatterns = [
-            /rm\s+-rf\s+\//,
-            /:\(\)\{.*;\s*:.*\}/,
-            /mkfs(\.\w+)?\s+\/dev/,
-            /dd\s+if=.*of=\/dev\/(sd|nvme|hd)/
-        ];
-        if (dangerousPatterns.some(p => p.test(cmd))) {
-            return `Perintah shell terdeteksi pola berisiko tinggi: "${cmd.slice(0, 80)}"`;
+        const allowedStatus = isShellCommandAllowed(cmd);
+        
+        if (allowedStatus === false) {
+            return `Command ditolak oleh security policy (deny list): "${cmd.slice(0, 80)}"`;
         }
+        
+        if (allowedStatus === true) {
+            // Signal to approval flow that this specific command is auto-approved
+            return { isAutoApproved: true };
+        }
+        
+        // manual_approval
         return null;
     }
 };
@@ -84,7 +88,7 @@ export function isSafeTool(toolName: string): boolean {
     return SAFE_TOOLS.has(toolName);
 }
 
-export function runArgValidator(toolCall: ToolCall): string | null {
+export function runArgValidator(toolCall: ToolCall): string | null | { isAutoApproved: boolean } {
     const validator = ARG_VALIDATORS[toolCall.tool];
     if (!validator) return null;
     return validator(toolCall.args);
@@ -154,11 +158,18 @@ export async function requestApproval(
 
     const safe = isSafeTool(toolCall.tool);
 
-    const blockReason = runArgValidator(toolCall);
-    if (blockReason) {
+    const validationResult = runArgValidator(toolCall);
+    if (validationResult && typeof validationResult === 'object' && validationResult.isAutoApproved) {
         ui.printToolCallHeader(toolCall.tool);
         ui.printToolArgs(toolCall.args);
-        ui.printBlocked(blockReason);
+        console.log(chalk.dim(`  Auto-approved by shell allowlist.`));
+        return { decision: 'auto', isSafe: true };
+    }
+    
+    if (typeof validationResult === 'string') {
+        ui.printToolCallHeader(toolCall.tool);
+        ui.printToolArgs(toolCall.args);
+        ui.printBlocked(validationResult);
         return { decision: 'denied', isSafe: safe };
     }
 
