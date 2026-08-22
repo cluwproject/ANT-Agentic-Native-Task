@@ -5,12 +5,14 @@ export const DEFAULT_ALLOWED_PREFIXES = [
 ];
 
 export const DENIED_PATTERNS = [
-  /\|\s*sh/,          // curl | sh
-  /\|\s*bash/,        // curl | bash
-  />\s*\/dev\//,      // redirect to devices
-  /rm\s+-rf\s+\//,    // rm -rf /
-  /mkfs/,             // format
-  /dd\s+if=/          // disk dump
+  /\|\s*sh\b/,                // curl | sh
+  /\|\s*bash\b/,              // curl | bash
+  />\s*\/dev\//,              // redirect to devices
+  /rm\s+-rf\s+\//,            // rm -rf /
+  /mkfs/,                     // format
+  /dd\s+if=/,                 // disk dump
+  /curl\s+-[a-zA-Z]*s.*\|\s*(sh|bash)/i, // silent curl pipe sh
+  /wget\s+-[a-zA-Z]*O-.*\|\s*(sh|bash)/i  // wget pipe sh
 ];
 
 /**

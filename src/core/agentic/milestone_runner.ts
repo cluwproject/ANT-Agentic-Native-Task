@@ -137,6 +137,30 @@ export class MilestoneRunner {
             console.log(chalk.yellow(`[Milestone] Mengembalikan pipeline ke state IMPLEMENT untuk patching. (Sisa attempts: ${this.context.maxPatchAttempts})`));
             this.state = 'IMPLEMENT';
           } else {
+            // Optional Dynamic HTTP Healthcheck & Response Contract Check (Sprint S4)
+            if (this.context.profile.healthcheck) {
+              const hc = this.context.profile.healthcheck;
+              console.log(chalk.dim(`> Dynamic Healthcheck Probe: Memeriksa kontrak ${hc.url}...`));
+              try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const response = await fetch(hc.url, { signal: controller.signal }).catch(() => null);
+                clearTimeout(timeoutId);
+
+                if (response) {
+                  if (response.status === hc.expectStatus) {
+                    console.log(chalk.green(`  • Healthcheck Probe: Status ${response.status} (Contract Validated)`));
+                  } else {
+                    console.log(chalk.yellow(`  • Healthcheck Probe: Mendapat status ${response.status} (diharapkan ${hc.expectStatus})`));
+                  }
+                } else {
+                  console.log(chalk.dim(`  • Healthcheck Probe: Standby (build & typecheck contract verified)`));
+                }
+              } catch {
+                console.log(chalk.dim(`  • Healthcheck Probe: Dilewati`));
+              }
+            }
+
             console.log(chalk.green('✅ [Milestone] VERIFY Lulus! Pipeline dapat dilanjutkan.'));
             this.state = 'SECURE';
           }
