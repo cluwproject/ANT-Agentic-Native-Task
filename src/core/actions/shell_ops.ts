@@ -150,7 +150,9 @@ export async function handleShellOps(action: string, details: any, workspaceDir:
         }
 
         try {
-            const { stdout, stderr } = await execAsync(command, { timeout: 30000, signal: context?.abortSignal });
+            const cwd = details.cwd || context?.cwd || baseDir;
+            const timeout = details.timeout || 300000;
+            const { stdout, stderr } = await execAsync(command, { cwd, timeout, signal: context?.abortSignal });
             return { status: 'success', stdout, stderr, exitCode: 0 };
         } catch (cmdError: any) {
             return { status: 'error', error: cmdError.message, stdout: cmdError.stdout || '', stderr: cmdError.stderr || '', exitCode: typeof cmdError.code === 'number' ? cmdError.code : 1 };

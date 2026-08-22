@@ -1,6 +1,6 @@
 {
   "id": "next-prisma",
-  "scaffold": ["npx create-next-app@latest . --typescript --tailwind --eslint --app --use-npm"],
+  "scaffold": ["npx create-next-app@latest . --typescript --tailwind --eslint --app --use-npm --src-dir false --import-alias \"@/*\" --yes"],
   "install": ["npm install", "npm install prisma --save-dev", "npm install @prisma/client"],
   "dev": "npm run dev",
   "test": "npm run build",
