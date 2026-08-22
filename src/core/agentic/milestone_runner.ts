@@ -37,7 +37,7 @@ export class MilestoneRunner {
           console.log(chalk.blue('[Milestone] SCAFFOLD: Menjalankan skrip inisialisasi'));
           for (const cmd of this.context.profile.scaffold) {
             console.log(chalk.dim(`> ${cmd}`));
-            const result = await executeAction('shell_exec', { command: cmd, cwd: this.context.targetDir }, 1, { cwd: this.context.targetDir });
+            const result = await executeAction('shell_exec', { command: cmd, cwd: this.context.targetDir }, 1, { cwd: this.context.targetDir, manual_approval: true });
             if (result && result.status === 'error') {
                const errStr = (result as any).stderr || (result as any).error || 'Unknown shell error';
                console.error(chalk.red(`[Milestone] Error saat SCAFFOLD: ${errStr}`));
@@ -72,7 +72,7 @@ export class MilestoneRunner {
           // Execute dev/build/test if provided in profile (we'll map 'test' for now)
           if (this.context.profile.test) {
             console.log(chalk.dim(`> Menjalankan test: ${this.context.profile.test}`));
-            const testResult = await executeAction('shell_exec', { command: this.context.profile.test, cwd: this.context.targetDir }, 1, { cwd: this.context.targetDir });
+            const testResult = await executeAction('shell_exec', { command: this.context.profile.test, cwd: this.context.targetDir }, 1, { cwd: this.context.targetDir, manual_approval: true });
             
             if (testResult && testResult.status === 'error') {
                verifySuccess = false;
