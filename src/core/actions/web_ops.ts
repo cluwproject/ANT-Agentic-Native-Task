@@ -111,19 +111,29 @@ export async function handleWebOps(action: string, details: any, workspaceDir: s
                 }
             } catch {}
 
-            // ── LAYER 3: NATIVE ZERO-DEPENDENCY HTTP SEARCH (HN + WIKIPEDIA) ──
+            // ── LAYER 3: DUCKDUCKGO HTML SCRAPER (TERMUX-SAFE) ──
+            const ddgResults = await ddgHtmlSearchFallback(details.query || searchQuery);
+            if (ddgResults.length > 0) {
+                return {
+                    status: 'success',
+                    results: ddgResults,
+                    note: 'Results gathered via DuckDuckGo HTML Scraper as Tavily & Playwright were unavailable.',
+                };
+            }
+
+            // ── LAYER 4: NATIVE ZERO-DEPENDENCY HTTP SEARCH (HN + WIKIPEDIA) ──
             const nativeResults = await nativeHttpSearchFallback(details.query || searchQuery);
             if (nativeResults.length > 0) {
                 return {
                     status: 'success',
                     results: nativeResults,
-                    note: 'Results gathered via Native HTTP Bridge (Hacker News & Wikipedia) as Tavily & Playwright were unavailable.',
+                    note: 'Results gathered via Native HTTP Bridge (Hacker News & Wikipedia) as other engines failed.',
                 };
             }
 
             return {
                 status: 'error',
-                message: 'Semua mesin pencari (Tavily, Browser Bridge, Native HTTP) tidak dapat dihubungi saat ini.'
+                message: 'Semua mesin pencari (Tavily, Browser Bridge, DuckDuckGo, Native HTTP) tidak dapat dihubungi saat ini.'
             };
         }
     }
@@ -263,5 +273,37 @@ async function nativeHttpSearchFallback(query: string): Promise<any[]> {
         Logger.log('WARN', `Wikipedia Search Fallback failed: ${e.message}`, {}, 'WEB_OPS');
     }
 
+    return results;
+}
+
+async function ddgHtmlSearchFallback(query: string): Promise<any[]> {
+    const results: any[] = [];
+    try {
+        const res = await axios.post('https://html.duckduckgo.com/html/', 'q=' + encodeURIComponent(query), {
+            timeout: 8000,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+        const html = res.data;
+        const regex = /<a class="result__url" href="([^"]+)">[^<]*<\/a>.*?<a class="result__snippet[^>]*>(.*?)<\/a>/gs;
+        let match;
+        while ((match = regex.exec(html)) !== null) {
+            let url = match[1];
+            if (url.startsWith('//duckduckgo.com/l/?uddg=')) {
+                url = decodeURIComponent(url.split('uddg=')[1].split('&')[0]);
+            }
+            results.push({
+                title: url,
+                url: url,
+                content: match[2].replace(/<[^>]+>/g, '').trim(),
+                source: 'DuckDuckGo HTML'
+            });
+            if (results.length >= 5) break;
+        }
+    } catch (e: any) {
+        Logger.log('WARN', 'DuckDuckGo Search Fallback failed: ' + e.message, {}, 'WEB_OPS');
+    }
     return results;
 }
