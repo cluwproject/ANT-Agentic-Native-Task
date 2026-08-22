@@ -4,6 +4,7 @@ import { handleTaskArgv } from './task.js';
 import { handleMailboxArgv } from './mailbox.js';
 import { handleSwarmArgv } from './swarm.js';
 import { handleAgentArgv } from './agent.js';
+import { handleScaffoldArgv } from './scaffold.js';
 import { runCliAgentLoop, closeCli } from '../../agent_loop/index.js';
 
 export function printCliHelp(): void {
@@ -15,6 +16,7 @@ export function printCliHelp(): void {
     console.log('  -h, --help                Menampilkan panduan bantuan ini.');
     console.log('  --sandbox                 Menjalankan CLI dalam lingkungan terisolasi (sandbox).\n');
     console.log(chalk.bold('Subcommands Mandiri:'));
+    console.log('  ant scaffold <profile> <dir>           Buat project baru berbasis profil (L1/L2)');
     console.log('  ant agent list                         Daftar 9 sub-agen spesialis terdaftar');
     console.log('  ant agent run <role> "<task>"          Eksekusi sub-agen spesifik secara langsung');
     console.log('  ant swarm "<goal>" "<target>"          Jalankan 5-Unit Swarm Security Audit');
@@ -35,6 +37,7 @@ export async function routeArgv(args: string[], sessionId: string): Promise<bool
         process.exit(0);
     }
 
+    if (await handleScaffoldArgv(args)) return true;
     if (await handleTaskArgv(args)) return true;
     if (await handleMailboxArgv(args, sessionId)) return true;
     if (await handleSwarmArgv(args)) return true;

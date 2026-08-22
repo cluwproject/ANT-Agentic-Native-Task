@@ -37,7 +37,7 @@ export async function main() {
     const sessionId = `cli-session-${Date.now()}`;
 
     // 1. Boot system if running a subcommand that requires database/events/auth
-    const needsBoot = args[0] && ['swarm', 'agent', 'mailbox', 'task'].includes(args[0]);
+    const needsBoot = args[0] && ['swarm', 'agent', 'mailbox', 'task', 'scaffold'].includes(args[0]);
     if (needsBoot) {
         await bootSystem(sessionId, activeEnvPath);
     }

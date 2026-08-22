@@ -1,5 +1,6 @@
-import { ProjectProfile } from './profile';
-import { executeAction } from '../agent_loop/agentLoop';
+import { ProjectProfile } from './profile.js';
+import { executeAction } from '../actions/index.js';
+import chalk from 'chalk';
 
 export type MilestoneState = 'INIT' | 'SCAFFOLD' | 'IMPLEMENT' | 'VERIFY' | 'SECURE' | 'DONE';
 
@@ -18,29 +19,33 @@ export class MilestoneRunner {
   }
 
   async run(initialPrompt: string): Promise<boolean> {
-    console.log(`[Milestone] Memulai pipeline untuk profil: ${this.context.profile.id}`);
+    console.log(chalk.cyan(`[Milestone] Memulai pipeline untuk profil: ${this.context.profile.id}`));
     
     // Skeleton State Machine
     while (this.state !== 'DONE') {
       switch (this.state) {
         case 'INIT':
-          console.log('[Milestone] INIT: Validasi lingkungan');
+          console.log(chalk.blue('[Milestone] INIT: Validasi lingkungan'));
           // Validasi direktori kosong, dll
           this.state = 'SCAFFOLD';
           break;
           
         case 'SCAFFOLD':
-          console.log('[Milestone] SCAFFOLD: Menjalankan skrip inisialisasi');
+          console.log(chalk.blue('[Milestone] SCAFFOLD: Menjalankan skrip inisialisasi'));
           for (const cmd of this.context.profile.scaffold) {
-            console.log(`> ${cmd}`);
-            // await executeAction(...) in real integration
+            console.log(chalk.dim(`> ${cmd}`));
+            const result = await executeAction('shell_exec', { command: cmd, cwd: this.context.targetDir }, 1, { cwd: this.context.targetDir });
+            if (result && result.status === 'error') {
+               console.error(chalk.red(`[Milestone] Error saat SCAFFOLD: ${result.stderr || result.error}`));
+               throw new Error(`Scaffold gagal pada perintah: ${cmd}`);
+            }
           }
           this.state = 'IMPLEMENT';
           break;
           
         case 'IMPLEMENT':
-          console.log('[Milestone] IMPLEMENT: Menjalankan agent loop untuk implementasi fitur');
-          // Disini Agent Loop dipanggil dengan role 'integrator' / 'backend' / 'frontend'
+          console.log(chalk.blue('[Milestone] IMPLEMENT: Menjalankan agent loop untuk implementasi fitur'));
+          // Placeholder for real agent loop
           this.state = 'VERIFY';
           break;
           
