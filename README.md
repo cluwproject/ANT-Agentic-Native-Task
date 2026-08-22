@@ -1,324 +1,175 @@
-# ANT-CLI (Agentic Native Task)
-### Sovereign Agentic CLI Assistant
+# 🐜 ANT (Agentic Native Task) CLI
 
-> **You Ask. ANT Acts. Memory Persists. Evidence Remains.**
-
----
-
-## 1. Executive Summary
-
-**ANT-CLI (Agentic Native Task)** is a sovereign, terminal-native **Agentic Assistant** designed to be your cognitive partner directly inside the command line. Built for mobile-first operators and developers, it is heavily optimized to run seamlessly on constrained environments like **Termux (Android)** and edge devices. ANT operates as a lightweight, memory-efficient intelligence layer that understands your local workspace, retains persistent semantic memory, and executes complex reasoning tasks.
-
-Beneath its simple interface, ANT hides a powerful, modular architecture capable of deploying specialized sub-agents for advanced tactical tasks—all while keeping your primary terminal environment clean and responsive.
-
-ANT is built on the philosophy of **Model Independence and Absolute Sovereignty**:
-- **Swappable AI Brain:** Users can easily switch the underlying LLM engine (AWS Bedrock, Anthropic Claude, Google Gemini, OpenAI, DeepSeek, or Local Ollama) without breaking the core system architecture.
-- **Persistent Memory:** Powered by CockroachDB Serverless, ensuring all contextual memory and operational logs survive system reboots.
-- **Edge-Ready & Termux Optimized:** Specifically designed for low-RAM devices utilizing Local SLMs (Small Language Models) to prevent OOM crashes on mobile terminals.
-
-```text
-                   USER / OPERATOR
-                          │
-                 [ Command / Prompt ]
-                          │
-                          ▼
-                 ┌─────────────────┐
-                 │  ANT Commander  │ ◄── Swappable LLM Brain
-                 └────────┬────────┘     (Bedrock, Claude, Ollama)
-                          │
-    ┌─────────────────────┼──────────────────────┐
-    ▼                     ▼                      ▼
- HTN Planner       MindBy Memory OS          Tool Engine
- (ReAct Loop)    (CockroachDB + Vector)    (Terminal/Shell)
-                          │
-                          ▼
-                 ANT-CYBER-CORPS
-        ┌──────────────────────────────────┐
-        │  GRAY-1  GRAY-2  GRAY-3          │
-        │  GRAY-4  GRAY-5  (Parallel Swarm)│
-        └──────────────────────────────────┘
-                          │
-                          ▼
-               COCKROACHDB CLOUD (Memory & Ledger)
-```
+<div align="center">
+  <img src="https://raw.githubusercontent.com/cluwproject/ANT-Agentic-Native-Task/main/docs/assets/ant_logo.png" alt="ANT Logo" width="200"/>
+  
+  *Native Agentic Commander for Sovereign Developers*
+</div>
 
 ---
 
-## 2. MindBy — Cognitive Memory System
+ANT is a **terminal-native coding agent**: a ReAct tool loop equipped with approval gates, an optional security swarm, persistent memory, and **profile-based project scaffolding** (`ant scaffold`). It accelerates full-stack work—scaffolding, testing, debugging, and auditing—while keeping humans as the architects of product and production.
 
-### 4-Tier Memory Architecture
+ANT berjalan langsung di terminal (Mac, Linux, Windows, Termux), mampu membaca/menulis file, menjalankan perintah shell, hingga melakukan perbaikan error otonom (self-healing), namun dibatasi oleh *allowlist* keamanan dan *Milestone pipeline* agar tidak bertindak destruktif.
 
-| Layer | File/Table | Purpose |
-| :--- | :--- | :--- |
-| **Working** | `context.json` | Active conversation memory & task state |
-| **Episodic** | `episodic.json` | Execution logs, error debugging, system events |
-| **Semantic** | `semantic_memories` (CockroachDB) | Long-term knowledge, 768-dim vector embedding |
-| **Core** | `core.json` | Permanent facts, user preferences, agent constitution |
+## 🚀 Fitur Utama
 
-### Dual-Vault Resilience
-
-```text
-ONLINE  ──► CockroachDB Serverless  (Vector Indexing, ACID, Multi-region)
-OFFLINE ──► Local JSON Vault        (workspace/memories/*.json)
-                │
-                └── workspace/memories/pending_sync.json  ← offline queue
-                      │
-                      └── /sync  ← dispatch to cloud when online
-```
-
-### Embedding Pipeline (Offline-First)
-
-- **Primary Provider:** `nomic-embed-text` via Ollama (274 MB, offline, 768-dim)
-- **Cloud Provider (Optional):** AWS Bedrock Titan / OpenAI `text-embedding-3-small`
-- Vectors are safely persisted in CockroachDB using `VECTOR(768)` indexing.
+- **Terminal-Native & Cross-Platform:** Bekerja langsung di mesin Anda, dari MacBook Pro hingga Android Termux.
+- **Project Scaffolding (Milestone Runner):** Buat proyek full-stack (mis. Next.js + Prisma) melalui satu perintah berjenjang (INIT → SCAFFOLD → IMPLEMENT → VERIFY → SECURE).
+- **The Agent Loop (ReAct):** Membaca log error, memperbaiki kode, dan menjalankannya lagi secara otonom (*self-healing*).
+- **Security Swarm (ANT-CYBER-CORPS):** Orkestrasi 5 Gray Unit ber-taksonomi untuk mengaudit keamanan lokal Anda (mencari celah auth, memory leaks, atau hardcoded secrets).
+- **Dual-Vault Memory (MindBy 4-Tier):** Memori persisten antar-sesi. Mode offline menggunakan JSON lokal, mode cloud tersinkronisasi via CockroachDB (Vector 768-dim).
+- **Shell Allowlist & Gatekeeper:** Mengamankan mesin Anda dengan pola `default deny` untuk perintah destruktif, dan `auto-approve` untuk *tools* pengembangan (seperti `npm`, `tsc`, `git`).
+- **Evidence-Based Claims:** Agen tidak bisa berhalusinasi "sudah memperbaiki kode". Setiap eksekusi sukses wajib mencatatkan *evidence* (SHA-256 hash) di Ledger.
 
 ---
 
-## 3. ANT-CYBER-CORPS — Tactical Security Swarm
+## 🛠 Panduan Instalasi (Quickstart)
 
-5 Gray Units operate **in parallel** (`Promise.all`) to perform comprehensive security audits:
+### Prasyarat
+- Node.js 20+
+- Git
+- Opsional: Kunci API (Anthropic, OpenAI, atau Gemini) untuk akses model cloud yang lebih cerdas.
+- Opsional: Ollama untuk *embedding* 768-dim (`ollama pull nomic-embed-text`) dan model SLM lokal offline.
 
-| Unit | Name | Domain Specialization |
-| :--- | :--- | :--- |
-| GRAY-1 | Memory & Logic Guardian | Internal Code Audits, Buffer Overflow, Race Conditions |
-| GRAY-2 | Public Footprint Monitor | Open-Source Threat Intelligence (OSINT), Surface Web Scans |
-| GRAY-3 | Credential Leak Checker | Deep Web Database Correlation, Email & Password Leaks |
-| GRAY-4 | Cloud Infrastructure Scanner | Port Scanning, S3 Bucket Misconfigurations, Topology Mapping |
-| GRAY-5 | Threat Intelligence Engine | Vulnerability Correlation, Threat Pattern Analysis |
-
-### Swarm Execution Flow
-
-```text
-ant swarm "Goal" "Target"
-      │
-      ├── createMission()  →  workspace/missions/<id>.json  (Blackboard)
-      │
-      ├── Promise.all([
-      │     runStaticAudit(GRAY-1, Target),
-      │     runStaticAudit(GRAY-2, Target),
-      │     runStaticAudit(GRAY-3, Target),
-      │     runStaticAudit(GRAY-4, Target),
-      │     runStaticAudit(GRAY-5, Target)
-      │   ])
-      │
-      ├── Findings Consolidation → workspace/missions/<id>.json
-      │
-      └── renderSwarmReport()  →  Actionable intelligence rendered in terminal
-```
-
----
-
-## 4. Self-Healing Architecture
-
-```text
-Layer 1: JSON Repair via System Prompt
-  └── If model output is invalid JSON → retry with repair instructions
-
-Layer 2: File Rollback (SelfHealer)
-  └── Automatically restores corrupt files from .bak backups
-
-Layer 3: Mailbox Handover
-  └── If unit consistently fails → hands over control to the Commander LLM
-```
-
----
-
-## 5. Quickstart & Cross-Platform Setup
-
-ANT dirancang untuk berjalan di berbagai lingkungan (Edge to Desktop) dengan instalasi instan.
-
-### Prerequisites (Prasyarat Umum)
-- **Node.js** >= 20.0.0
-- **Git** terpasang di sistem operasi.
-- **Ollama** (Untuk memori lokal & *embedding* 768-dim):
-  ```bash
-  ollama pull nomic-embed-text
-  ```
-
-### Panduan Instalasi per Platform
-
-**A. Windows (CMD / PowerShell)**
-Buka `Command Prompt` (CMD) atau `PowerShell` sebagai Administrator (opsional tapi disarankan), lalu jalankan:
-```cmd
-git clone https://github.com/cluwproject/ANT-Agentic-Native-Task.git
-cd ANT-Agentic-Native-Task
-npm install
-npm run build
-npm start
-```
-*Catatan untuk PowerShell: Jika mendapat error eksekusi script, jalankan `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` terlebih dahulu.*
-
-**B. macOS / Linux (Terminal)**
-Buka aplikasi `Terminal`, lalu jalankan:
+### Instalasi
 ```bash
 git clone https://github.com/cluwproject/ANT-Agentic-Native-Task.git
 cd ANT-Agentic-Native-Task
-npm install
-npm run build
+npm ci
+npm run ci  # (Opsional) Build, Typecheck, dan Unit Tests (41/41)
 npm start
 ```
 
-**C. Android (Termux)**
-Buka aplikasi `Termux` (pastikan *storage permission* sudah aktif), lalu jalankan:
-```bash
-pkg install git nodejs -y
-git clone https://github.com/cluwproject/ANT-Agentic-Native-Task.git
-cd ANT-Agentic-Native-Task
-npm install
-npm run build
-npm start
-```
-
-### Konfigurasi Pertama (Identity Setup)
-Saat pertama kali menjalankan `npm start`, ANT akan meminta **Identitas Pengguna**:
-```text
-[ANT INITIALIZATION]
-Identitas belum diatur. Siapa yang sedang mengakses sistem ini?
-Masukkan nama Anda: 
-```
-Masukkan nama Anda. Identitas ini akan digunakan ANT untuk menyapa dan melacak log operasi, namun **Origin Sistem** akan tetap terkunci pada pendirinya (*CLUW Genesis / Ard*).
-
-### Konfigurasi `.env` (Lanjutan)
-Copy `.env.example` → `.env` untuk mengatur konfigurasi Anda. ANT mendukung berbagai jenis otak AI (Lokal maupun API Cloud):
+### Setup Lingkungan (`.env`)
+Salin `.env.example` ke `.env` lalu sesuaikan dengan model yang ingin Anda gunakan.
 
 ```env
 # ─────────────────────────────────────────────────────────
-# PILIHAN 1: LOCAL MODEL (Tanpa API Key, 100% Offline)
+# PILIHAN: CLOUD API MODEL (Sangat disarankan untuk full-stack)
 # ─────────────────────────────────────────────────────────
-# AI_PROVIDER=ollama
-# CUSTOM_MODEL=xxxx
-# BASE_URL=http://localhost:11434/v1
+AI_PROVIDER=anthropic      # Opsi: anthropic, openai, google, aws_bedrock
+CUSTOM_MODEL=claude-3-5-sonnet-20240620
+ANTHROPIC_API_KEY=sk-xxxxxxxxxxxxx
 
 # ─────────────────────────────────────────────────────────
-# PILIHAN 2: CLOUD API MODEL (Lebih cerdas, butuh API Key)
+# DATABASE MEMORY (Opsional)
 # ─────────────────────────────────────────────────────────
-AI_PROVIDER=xxxxx      # Opsi: anthropic, openai, google, aws_bedrock, etc
-CUSTOM_MODEL=xxxxx
-ANTHROPIC_API_KEY=skxxxxxxxxxxxxx
-# OPENAI_API_KEY=sk-xxxxxxxxxxxxx
-# GEMINI_API_KEY=AIzaSyxxxxxxxxxx
-
-# ─────────────────────────────────────────────────────────
-# DATABASE MEMORY
-# ─────────────────────────────────────────────────────────
-# CockroachDB (Opsional — jika dikosongkan, ANT akan menggunakan JSON lokal)
-DATABASE_URL=postgresql://<username>:<password>@<cluster>.cockroachlabs.cloud:26257/defaultdb?sslmode=verify-full
-```
-
-### Menjalankan ANT (Kapan Saja)
-```bash
-# Menjalankan dari source code
-npm start
-
-# Atau menjalankan secara global (jika sudah di-link)
-ant
+# Jika dikosongkan, memori disimpan di JSON lokal (workspace/memories/)
+DATABASE_URL=postgresql://<user>:<pass>@<cluster>.cockroachlabs.cloud:26257/defaultdb
 ```
 
 ---
 
-## 📟 Referensi Slash Command
+## 💻 CLI Commands (Subcommands Mandiri)
+
+Selain dijalankan secara interaktif (REPL), ANT menyediakan perintah CLI langsung (dari luar REPL):
+
+| Command | Fungsi |
+| :--- | :--- |
+| `ant` | Buka ANT dalam REPL interaktif |
+| `ant scaffold <profile> <dir>` | Buat project baru terstruktur (mis: `next-prisma`) |
+| `ant swarm "<goal>" "<target>"` | Jalankan audit keamanan (Gray Units) |
+| `ant swarm report [--json]` | Ekstrak laporan keamanan dalam Markdown/JSON |
+| `ant agent list \| run` | Kelola dan panggil Sub-Agen spesialis langsung |
+| `ant task list \| schedule` | Manajemen background task otomatis |
+| `ant mailbox list \| verify` | Audit transaksi dan integritas memori inter-model |
+
+### Project Scaffolding (Contoh)
+```bash
+ant scaffold next-prisma ./my-app
+```
+*Pipeline* ini memandu agen melalui tahap `INIT → SCAFFOLD → IMPLEMENT → VERIFY → SECURE` berdasarkan kontrak di `src/core/agentic/profiles/next-prisma.json`.
+
+---
+
+## 📟 Referensi Slash Commands (Interaktif)
+
+Ketik perintah berikut setelah Anda berada di dalam REPL ANT (`npm start`):
 
 ### Memory & Vault
-| Command | Fungsi |
-| :--- | :--- |
-| `/store <teks>` | Simpan memori semantik ke Dual-Vault (embedding nyata 768-dim) |
-| `/recall <query>` | Cari memori via Vector Cosine Similarity (cloud + local) |
-| `/memories` | Lihat semua memori tersimpan di CockroachDB |
-| `/vault [cloud\|local]` | Ganti vault aktif (CockroachDB cloud / local offline) |
-| `/sync` | Flush antrian offline `pending_sync.json` → kirim ke CockroachDB |
+- `/store <teks>` — Simpan memori semantik ke Dual-Vault (embedding 768-dim)
+- `/recall <query>` — Cari memori berdasarkan Vector Cosine Similarity
+- `/memories` — Lihat semua memori tersimpan
+- `/vault [cloud|local]` — Pindah engine memori 
+- `/sync` — Flush antrian memori offline ke CockroachDB
 
-### Keamanan & Audit
-| Command | Fungsi |
-| :--- | :--- |
-| `/swarm [path]` | Launch 5 Gray Unit paralel untuk audit keamanan kode |
-| `/health` | Audit koneksi CockroachDB, statistik memori & evidence |
+### Pendelegasian & Swarm
+- `/swarm [path]` — Trigger manual **ANT-CYBER-CORPS** untuk mengaudit path.
+- `/report [--json]` — Tarik artefak laporan dari misi Swarm terakhir.
+- `/osint` — Pusat investigasi taktis multi-dimensi.
+- `/plan <misi>` — Buat rancangan eksekusi kompleks (HTN Planner).
 
-### Reasoning & Planning
-| Command | Fungsi |
-| :--- | :--- |
-| `/plan <misi>` | Buat rencana terstruktur dengan HTN Planner |
-| `/branch` | Buat, daftar, atau checkout conversation branch |
-| `/checkpoint` | Simpan Git commit checkpoint dari workspace saat ini |
-| `/skills` | Lihat daftar custom skills yang tersedia |
-
-### Session & Model
-| Command | Fungsi |
-| :--- | :--- |
-| `/model <nama>` | Hot-swap model AI aktif (Ollama / Bedrock / OpenAI) |
-| `/session list` | Lihat semua session tersimpan |
-| `/resume [id]` | Lanjutkan session sebelumnya dengan context bridging |
-| `/mailbox` | Inspeksi inter-model relay & handover ledger |
-
-### Sistem
-| Command | Fungsi |
-| :--- | :--- |
-| `/undo` | Restore file dari backup `.bak` terakhir |
-| `/git status\|diff\|log` | Operasi Git dari dalam CLI |
-| `/help` | Tampilkan semua command & opsi operasional |
-| `/exit` | Keluar dengan ritual konsolidasi memori |
+### Session & Konfigurasi
+- `/model <nama>` — Ganti model AI yang aktif (Hot-swap) secara on-the-fly.
+- `/connect <url>` — Koneksi ke MCP (Model Context Protocol) Server terluar.
+- `/agent <aksi>` — Cek status sub-agen otonom.
+- `/checkpoint` — Lakukan git commit state workspace saat ini.
 
 ---
 
-## 🗂️ Struktur Proyek
+## 🛡️ Arsitektur Keamanan & Audit (Swarm)
+
+ANT menggunakan unit audit (*Gray Units*) yang berjalan secara **sequential** untuk memastikan perangkat dengan keterbatasan memori (seperti Termux/Android) tidak meledak kehabisan RAM. Mode konkurensi (paralel) bersifat *opt-in* (`ANT_SWARM_MODE=concurrent`).
+
+```text
+ANT-CYBER-CORPS (Sequential Code-Audit, Termux-safe)
+  ├─ GRAY-1 : Memory Leak / Buffer Overflow / IPC
+  ├─ GRAY-2 : Injection / Sanitization (SQLi, XSS)
+  ├─ GRAY-3 : Auth / Access Control / JWT
+  ├─ GRAY-4 : Supply Chain / Dependency risks
+  └─ GRAY-5 : Hardcoded Secrets / Cloud / IAM Misconfig
+       ↓
+  Blackboard JSON 
+       ↓
+  report.json (Mesin) + report.md (Manusia)
+```
+
+**Batasan Akses Shell (Allowlist Gatekeeper):**  
+ANT **tidak** mengeksekusi shell secara membabi buta. Ia menggunakan L5 Allowlist:
+*   `npm`, `npx`, `node`, `tsc`, `git` = Auto-Approve
+*   `rm -rf /`, `curl | sh`, `dd` = Hard Block
+*   Lainnya = Meminta manual *approval* [y/n/a] dari User.
+
+---
+
+## 🗂️ Struktur Direktori Proyek
 
 ```
 ant-cli/
 ├── src/
 │   ├── core/
-│   │   ├── cli.ts                    # Entry point CLI + semua slash commands
-│   │   ├── mindby_cockroach.ts       # CockroachDB Dual-Vault engine
-│   │   ├── memory.ts                 # 4-Tier local memory + getEmbedding()
-│   │   ├── slash_menu.ts             # Autocomplete slash menu
-│   │   ├── ai/
-│   │   │   ├── index.ts              # AI adapter (Ollama/Bedrock/OpenAI)
-│   │   │   └── tiers/slm.ts          # SLM distillation handler
+│   │   ├── cli/
+│   │   │   ├── index.ts              # Modular CLI Boot & Router
+│   │   │   ├── commands/             # Logika command CLI (Scaffold, Swarm, dll)
+│   │   │   └── argv/                 # Argv parsing (yargs fallback)
 │   │   ├── agent_loop/
-│   │   │   ├── agentLoop.ts          # ReAct loop utama + metrics
-│   │   │   ├── evidenceLedger.ts     # SHA-256 evidence tracking
-│   │   │   └── healing.ts            # Self-healing 3-layer
+│   │   │   ├── agentLoop.ts          # Core ReAct Loop
+│   │   │   ├── permissions.ts        # Manual Approval & Evidence
+│   │   │   └── allowlist.ts          # Fase 4E Shell Gatekeeper
 │   │   └── agentic/
-│   │       ├── swarm_orchestrator.ts # ANT-CYBER-CORPS swarm engine ← BARU
-│   │       ├── planner.ts            # HTN Planner
-│   │       ├── mailbox/              # Inter-model relay + circuit breaker
-│   │       ├── branching.ts          # Conversation branching
-│   │       └── sub_agents.ts         # Sub-agent execution
-│   ├── shared/
-│   │   └── data.ts                   # getBrainConfig() — model config
-│   └── utils/
-│       └── logger.ts                 # Structured logging
+│   │       ├── swarm_orchestrator.ts # Arsitektur Gray Units & Blackboard
+│   │       ├── swarm_report.ts       # Generator Artifact JSON (Fase 4B)
+│   │       ├── milestone_runner.ts   # State Machine Scaffolding
+│   │       └── profiles/             # L1 Spesifikasi Proyek (next-prisma.json)
 ├── workspace/
-│   ├── memories/
-│   │   ├── semantic.json             # Local semantic vault
-│   │   ├── episodic.json             # Episodic log
-│   │   ├── core.json                 # Core facts
-│   │   └── pending_sync.json         # Offline sync queue ← BARU
-│   └── missions/
-│       └── mission-<id>.json         # Swarm blackboard ← BARU
-├── .env.example                      # Template konfigurasi lengkap
-└── README.md
+│   ├── memories/                     # Local vault (semantic, core, episodic)
+│   ├── missions/                     # Penyimpanan misi aktif
+│   └── reports/                      # Artefak JSON Swarm report
+├── tests/
+│   └── unit/                         # 100% Native Node Test Runner (node:test)
+├── .github/
+│   └── workflows/ci.yml              # CI Pipeline (Typecheck + Build + Unit Tests)
+└── .env.example
 ```
-
----
-
-## 🛠️ Technology Stack
-
-| Layer | Teknologi |
-| :--- | :--- |
-| **Persistent Memory** | CockroachDB Serverless (`VECTOR(768)`, ACID, Multi-region) |
-| **Embedding Engine** | `nomic-embed-text` via Ollama (768-dim, offline-first) |
-| **Commander LLM** | Ollama cloud models / AWS Bedrock / OpenAI compatible |
-| **Swarm SLM** | `qwen2.5:0.5b` via Ollama (Gray Unit 0.5B) | You can Edit/Change
-| **Runtime** | Node.js 20+, TypeScript, ESM |
-| **Protocol** | Model Context Protocol (MCP), ANT-MAIL/1.0 |
-| **Evidence** | SHA-256 kriptografis, CockroachDB `evidence_ledger` |
 
 ---
 
 ## 📜 Intellectual Property & Sovereign Declaration
 
-- **Creator / Operator:**Ard
+- **Creator / Operator:** Ard
 - **Parent Architecture:** CLUW-Genesis
-- **Version:** v0.3.0 — Swarm Intelligence & Memory Hardening
+- **Version:** v0.3.0+ (Menuju v0.4) — Swarm Intelligence, CI/CD, & Scaffolding
 - **License:** [MIT License](LICENSE)
 
-*"Model AI bersifat sementara. Arsitektur kognitif dan memori bersifat berkelanjutan."*
+*"Model AI bersifat sementara. Arsitektur kognitif, memori, dan keamanan eksekusi bersifat berkelanjutan."*
