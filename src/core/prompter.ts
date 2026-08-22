@@ -26,35 +26,63 @@ export async function askUser(promptText: string = 'You ❯ '): Promise<string> 
             }
         });
 
+        // ── Bracketed Paste Mode ──────────────────────────────────────────
+        // Aktifkan BPM di terminal: saat user paste, teks dibungkus
+        //  \x1b[200~ ... \x1b[201~  sehingga kita bisa kumpulkan semua
+        // baris sebelum Enter ditekan. Aman di Termux & Linux TTY.
+        // Bila terminal tidak mendukung BPM, fallback ke mode normal.
+        let bpmEnabled = false;
+        if (process.stdin.isTTY && process.stdout.isTTY) {
+            process.stdout.write('\x1b[?2004h');
+            bpmEnabled = true;
+        }
+
         let accumulated = '';
+        let isPasting = false;
         let timer: NodeJS.Timeout | null = null;
 
-        // Cetak prompt ke layar
         rl.setPrompt(promptText);
         rl.prompt();
 
+        // Tangkap data raw untuk mendeteksi marker BPM
+        if (bpmEnabled) {
+            process.stdin.on('data', (chunk: Buffer | string) => {
+                const data = chunk.toString();
+                if (data.includes('\x1b[200~')) {
+                    isPasting = true;
+                    accumulated += data.replace(/\x1b\[200~/g, '');
+                } else if (data.includes('\x1b[201~')) {
+                    isPasting = false;
+                    accumulated += data.replace(/\x1b\[201~/g, '');
+                } else if (isPasting) {
+                    accumulated += data;
+                }
+            });
+        }
+
         rl.on('line', (line) => {
-            if (accumulated === '') {
-                accumulated = line;
-            } else {
-                accumulated += '\n' + line;
+            // Jika BPM aktif dan sedang dalam proses paste, tunda pengiriman
+            if (isPasting) {
+                return;
             }
 
             if (timer) clearTimeout(timer);
 
-            // Beri jeda 30ms untuk menangkap line berikutnya jika user mem-paste block text.
+            // Gabungkan accumulated paste + baris terakhir yang diketik/Enter
+            const fullInput = accumulated ? (accumulated + '\n' + line).trim() : line.trim();
+            accumulated = '';
+
             timer = setTimeout(async () => {
                 rl.close();
-                const trimmed = (accumulated || '').trim();
-                
-                // Cek slash command jika single line '/'
-                if (trimmed === '/' || trimmed === '/help') {
+                if (bpmEnabled) process.stdout.write('\x1b[?2004l');
+
+                if (fullInput === '/' || fullInput === '/help') {
                     const selected = await showSlashMenu('/');
                     resolve(selected ? selected.trim() : '');
                 } else {
-                    resolve(trimmed);
+                    resolve(fullInput);
                 }
-            }, 30);
+            }, 10);
         });
     });
 }
