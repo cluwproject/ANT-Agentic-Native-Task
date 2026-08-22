@@ -62,7 +62,7 @@ const SAFE_TOOLS = new Set([
     'grep_search', 'web_search', 'fetch_url_content'
 ]);
 
-import { isShellCommandAllowed } from './allowlist';
+import { isShellCommandAllowed } from './allowlist.js';
 type ArgValidator = (args: Record<string, any>) => string | null | { isAutoApproved: boolean };
 
 const ARG_VALIDATORS: Record<string, ArgValidator> = {
