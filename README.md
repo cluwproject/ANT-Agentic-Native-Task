@@ -1,5 +1,7 @@
 # 🐜 ANT (Agentic Native Task) CLI
 
+[![CI](https://github.com/cluwproject/ANT-Agentic-Native-Task/actions/workflows/ci.yml/badge.svg)](https://github.com/cluwproject/ANT-Agentic-Native-Task/actions/workflows/ci.yml)
+
 <div align="center">
   <img src="https://raw.githubusercontent.com/cluwproject/ANT-Agentic-Native-Task/main/docs/assets/ant_logo.png" alt="ANT Logo" width="200"/>
   
@@ -45,7 +47,7 @@ npm start          # Memulai ANT CLI
 
 ### Untuk Kontributor / Developer (Opsional)
 Jika Anda ikut mengembangkan basis kode ini, pastikan kode Anda lolos standar *Continuous Integration* (CI) sebelum melakukan _Push_:
-- `npm run test:unit` : Menjalankan 93/93 unit test lokal secara offline (termasuk security bypass suite).
+- `npm run test:unit` : Menjalankan 96/96 unit test lokal secara offline (termasuk security bypass suite).
 - `npm run ci` : Mensimulasikan pipeline GitHub Actions secara lokal (Typecheck + Build + Test). 
 *(Catatan: Anda tidak perlu perintah CI jika hanya ingin menggunakan CLI-nya).*
 
