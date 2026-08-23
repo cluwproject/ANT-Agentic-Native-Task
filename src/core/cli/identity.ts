@@ -37,7 +37,7 @@ export function getPackageVersion(): string {
             if (pkg.version) return `v${pkg.version}`;
         }
     } catch {}
-    return 'v0.3.0';
+    return 'v0.3.5';
 }
 
 export function getAntAscii(): string {

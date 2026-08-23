@@ -72,3 +72,7 @@ workspace/
 
 # Cognitive runtime state (per-install, bukan aset repo)
 brain/
+
+# Local test scaffolds
+my-test-app/
+test-*/

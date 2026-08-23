@@ -79,7 +79,34 @@ export function getStylisticNormalizer(soul: Soul): string {
 `;
 }
 
-export const TOOL_PROMPT = `
+import { antToolsSchema } from '../tools_schema.js';
+
+export function getFormattedToolCatalog(): string {
+  const categories: Record<string, string[]> = {
+    'FILESYSTEM & WORKSPACE': ['read_file', 'create_file', 'create_dir', 'modify_file', 'write_file', 'edit_file', 'patch_file', 'delete_file', 'list_dir', 'grep_search'],
+    'GIT DEDICATED TOOLS': ['git_checkpoint', 'git_status', 'git_diff', 'git_log'],
+    'SHELL & CODE VERIFICATION': ['shell_exec', 'run_tests', 'syntax_check', 'execute_js', 'env_check'],
+    'WEB EXTRACTION & BROWSER': ['web_search', 'fetch_url_content', 'open_browser', 'browser_click', 'browser_type', 'browser_snapshot', 'browser_close'],
+    'DYNAMIC SKILLS & RESCUE': ['ant_skill_create', 'ant_skill_execute', 'ant_skill_list', 'request_human_rescue']
+  };
+
+  let catalog = `\n[ARSENAL TOOLS NATIVE RESMI ANT — DEDICATED TOOLS]\n`;
+  for (const [cat, tools] of Object.entries(categories)) {
+    catalog += `\n* ${cat}:\n`;
+    for (const toolName of tools) {
+      const def = antToolsSchema.find(t => t.name === toolName);
+      if (def) {
+        catalog += `  - ${def.name}: ${def.description}\n`;
+      }
+    }
+  }
+  catalog += `\nATURAN EKSEKUSI:\n- Gunakan dedicated tool 'git_*' (seperti git_status, git_diff, git_checkpoint) untuk operasi Git.\n- Gunakan 'syntax_check' untuk validasi kode (TypeScript/Node) tanpa harus menjalankan shell.\n- Gunakan 'patch_file' untuk partial unified diff edit file.\n`;
+  return catalog;
+}
+
+export function getToolPrompt(userName: string = 'Operator'): string {
+  const catalog = getFormattedToolCatalog();
+  return `
 [LOGIKA AGEN & PROTOKOL TOOL - ANT V3.5]
 1. PRIORITAS PENYELESAIAN: Selesaikan tugas secara real-time menggunakan TOOLS. Jika instruksi adalah "Buat file", "Tulis", "Hapus", atau "Cek", kamu WAJIB menggunakan tool yang sesuai.
 2. SOVEREIGN PLANNING & HUMILITY PROTOCOL:
@@ -97,8 +124,10 @@ export const TOOL_PROMPT = `
    - LAYER 2 — CROSS-REFERENCE RULE: Jika kamu menemukan solusi teknis (kode, library, command) dari sumber Tier 2 atau Tier 3, WAJIB cross-reference ke sumber Tier 1 (dokumentasi resmi) sebelum mengeksekusi. Jangan percaya hanya pada satu sumber.
    - LAYER 3 — EXECUTE-BEFORE-TRUST: Kode apapun yang berasal dari web TIDAK PERNAH langsung dipercaya. WAJIB buat file uji coba (contoh: test_verify.js/py), eksekusi di sandbox/shell, cek hasilnya. Jika berhasil (exit code 0 + output valid), baru gunakan. Jika gagal, cari solusi alternatif. Jangan pernah mengklaim "solusi ini benar" hanya karena sumbernya tampak resmi.
 8. OSINT & PRIVACY OVERRIDE (HUKUM 6 EXCEPTION):
-   - Jika Ard secara eksplisit memerintahkan menggunakan akun pribadi, OSINT skill, token, atau credential (seperti "pake akun tiktoku", "gunakan token", "jalankan scraper"), kamu WAJIB langsung mengeksekusi skrip/tool (seperti bash/shell_exec atau ant_skill_execute) tanpa ceramah/peringatan privacy. Ard memahami risiko dan memberikan persetujuan eksplisit.
+   - Jika ${userName} secara eksplisit memerintahkan menggunakan akun pribadi, OSINT skill, token, atau credential (seperti "pake akun tiktoku", "gunakan token", "jalankan scraper"), kamu WAJIB langsung mengeksekusi skrip/tool (seperti bash/shell_exec atau ant_skill_execute) tanpa ceramah/peringatan privacy. ${userName} memahami risiko dan memberikan persetujuan eksplisit.
+${catalog}
 `;
+}
 
 
 import { renderBondPrompt } from '../agent_loop/cognitiveBond.js';
@@ -127,6 +156,8 @@ export async function buildFullSystemInstruction(systemInstruction: string, loca
   const userName = process.env.USER_NAME || soul.traits?.address_user_as || 'Operator';
   const sealBlock = getSovereignSealBlock(userName);
 
-  return timeAwareness + systemInstruction + normalizer + cognitiveBondBlock + sealBlock + CLONED_MODEL_CHARACTER + capabilityBlock + TOOL_PROMPT +
+  const toolPromptBlock = getToolPrompt(userName);
+
+  return timeAwareness + systemInstruction + normalizer + cognitiveBondBlock + sealBlock + CLONED_MODEL_CHARACTER + capabilityBlock + toolPromptBlock +
     `\nNote: ${hasTavily ? 'Tavily Search AKTIF (Gunakan tool: "web_search").' : (isGeminiNode ? 'Google Search tersedia secara native.' : 'Gunakan web_search untuk informasi terbaru.')}`;
 }

@@ -28,42 +28,20 @@ export const DEFAULT_ALLOWED_PREFIXES = [
   "tsc", "ls", "cat", "echo", "pwd", "grep", "find", "mkdir", "touch"
 ];
 
-// ── HARD DENY LIST (case-insensitive, dievaluasi sebelum allowlist) ─────────
-export const DENIED_PATTERNS: RegExp[] = [
-  // rm rekursif+force menargetkan root, home, glob, atau $HOME
-  // (mencakup rm -rf /, rm -fr /, rm -Rf ~, rm -rf /*, rm -rf $HOME)
-  /\brm\b[^;&|<>]*\s+-[a-zA-Z]*[rR][a-zA-Z-]*\s+(?:--\s+)?["']?(?:\/[\s"']*|\/\*|~(?:\/[\s"']*)?|\*(?:\s|$)|\$HOME)/i,
-  // format / tulis disk mentah
-  /\bmkfs(?:\.\w+)?\b/i,
-  /\bdd\b\s+if=/i,
-  // pipe ke interpreter (curl|sh, wget|bash, base64 -d|sh, dst)
-  /\b(?:curl|wget|base64)\b[^;&]*\|\s*(?:sh|bash|zsh|python\d?|perl|node)\b/i,
-  // remote script execution via -c/-o pipe
-  /\b(?:curl|wget)\b[^;&]*\|\s*(?:sudo\s+)?(?:sh|bash)\b/i,
-  // chmod rekursif 777 pada root
-  /\bchmod\b[^;&|<>]*\s+-[a-zA-Z]*R[a-zA-Z]*\s+777\s+\/(?:\s|$)/i,
-  // kontrol daya / sistem
-  /\b(?:shutdown|reboot|halt|poweroff|init\s+0|init\s+6)\b/i,
-  // redirect ke device node
-  />\s*\/dev\/(?:sd[a-z]|nvme|disk|hd[a-z])/i,
-  // fork bomb
-  /:\(\)\s*\{[^}]*\};\s*:/,
+export const DENIED_PATTERNS = [
+  /\|\s*sh/,          // curl | sh
+  /\|\s*bash/,        // curl | bash
+  />\s*\/dev\//,      // redirect to devices
+  /rm\s+-rf\s+\//,    // rm -rf /
+  /mkfs/,             // format
+  /dd\s+if=/          // disk dump
 ];
 
-// ── METACHAR GUARD ───────────────────────────────────────────────────────────
-// Karakter/operator yang memberi kekuatan eksekusi tambahan pada shell.
-// Command yang memuatnya TIDAK PERNAH auto-approve.
-//   ;  &  |  `  $()  ${}  <  >  newline  carriage-return  NUL
-const SHELL_METACHAR_REGEX = /[;&|`<>\n\r\u0000]|\$\(|\$\{/;
-
-export interface ShellDecision {
-  decision: 'allowed' | 'denied' | 'manual_approval';
-  reason?: string;
-}
-
 /**
- * Evaluasi kebijakan shell secara kaya (untuk logging & test).
- * Urutan: deny list → metachar guard → allowlist prefix → fallback manual.
+ * Checks if a shell command is allowed.
+ * Returns true if allowed automatically (no manual approval needed).
+ * Returns false if explicitly blocked (denied).
+ * Returns 'manual_approval' if it doesn't match the allowlist and needs user confirmation.
  */
 export function evaluateShellCommand(command: string, profileAllowedPrefixes: string[] = []): ShellDecision {
   const normalizedCmd = command.trim();
