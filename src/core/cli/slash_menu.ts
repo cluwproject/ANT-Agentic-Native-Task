@@ -16,6 +16,7 @@ export interface SlashCommand {
 export const SLASH_COMMANDS: SlashCommand[] = [
     { command: '/new_chat',          description: 'Start fresh conversation session (clear context)' },
     { command: '/clear',             description: 'Clear screen and refresh active session' },
+    { command: '/workspace',         description: 'Browse & open workspace folders/files inline' },
     { command: '/plan',              description: 'Generate or review multi-step HTN execution plan' },
     { command: '/branch list',       description: 'List all saved conversation branches' },
     { command: '/branch create',     description: 'Create and save branch from current conversation' },
@@ -41,6 +42,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     { command: '/agent list',        description: 'List available custom agents' },
     { command: '/agent run',         description: 'Execute specific agent manually' },
     { command: '/task schedule',     description: 'Schedule background task with cron expression' },
+    { command: '/task',       description: 'Approval Gate: Review & eksekusi misi/task pending' },
     { command: '/task list',         description: 'List registered scheduled tasks' },
     { command: '/git status',        description: 'View Git repository working status' },
     { command: '/git diff',          description: 'View current code diff changes' },
