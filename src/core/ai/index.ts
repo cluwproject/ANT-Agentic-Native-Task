@@ -82,13 +82,24 @@ export async function chat(
   await Logger.log('AI', `Triage Result: ${triagePath}`, { score: triagePath }, 'TRIAGE');
 
   const localBrain = { ...brain };
-  const provider = localBrain.provider || 'Google Gemini';
-  
-  const envKey = (process.env.GEMINI_API_KEY || '').trim();
-  const isEnvKeyValid = envKey.length > 10 && envKey !== 'YOUR_API_KEY';
+  const provider = localBrain.provider || process.env.AI_PROVIDER || 'Google Gemini';
   
   if (!localBrain.api_key || localBrain.api_key.trim().length < 5 || localBrain.api_key === 'YOUR_API_KEY') {
-    if (isEnvKeyValid) localBrain.api_key = envKey;
+    localBrain.api_key = (
+      process.env.OPENAI_API_KEY || 
+      process.env.OPENROUTER_API_KEY || 
+      process.env.GEMINI_API_KEY || 
+      process.env.ANTHROPIC_API_KEY || 
+      ''
+    ).trim();
+  }
+
+  if (!localBrain.base_url) {
+    localBrain.base_url = process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL || '';
+  }
+
+  if (!localBrain.custom_model && process.env.CUSTOM_MODEL) {
+    localBrain.custom_model = process.env.CUSTOM_MODEL;
   }
 
   const apiKey = (localBrain.api_key || '').trim();
@@ -159,9 +170,8 @@ export async function chat(
         resText = antRes.text;
         nativeToolCalls = antRes.nativeToolCalls;
       } else {
-        let baseURL = localBrain.base_url;
-        if (currentIsDeepSeek) baseURL = 'https://api.deepseek.com';
-        else if (currentProvider === 'OpenAI' && (!localBrain.base_url || localBrain.api_key === process.env.OPENAI_API_KEY?.trim())) baseURL = 'https://api.openai.com/v1';
+        let baseURL = localBrain.base_url || process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL;
+        if (currentIsDeepSeek) baseURL = baseURL || 'https://api.deepseek.com';
         else if (isOllama) baseURL = baseURL || 'http://localhost:11434/v1';
         else baseURL = baseURL || 'https://api.openai.com/v1';
 
