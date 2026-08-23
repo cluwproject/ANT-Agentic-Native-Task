@@ -69,3 +69,5 @@ coverage/
 *.seed
 *.pid.lock
 workspace/
+my-test-app/
+test-*/
