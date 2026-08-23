@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { Logger } from '../utils/logger.js';
-import { storeMemory, getEmbedding } from './memory.js';
-import { storeCockroachMemory } from './mindby_cockroach.js';
+import { storeMemory, getEmbedding } from './memory/memory.js';
+import { storeCockroachMemory } from './memory/mindby_cockroach.js';
 
 const BASE_DIR = process.cwd();
 const MEMORY_DIR = path.join(BASE_DIR, 'workspace', 'memories');

@@ -28,13 +28,26 @@ export const DEFAULT_ALLOWED_PREFIXES = [
   "tsc", "ls", "cat", "echo", "pwd", "grep", "find", "mkdir", "touch"
 ];
 
+export type ShellDecision = {
+  decision: 'allowed' | 'denied' | 'manual_approval';
+  reason?: string;
+};
+
+// Operator shell berbahaya untuk auto-approve:
+// pipe, chaining, sequencer, substitusi ($, backtick), redirection, newline smuggling.
+export const SHELL_METACHAR_REGEX = /[|&;`$><\r\n]/;
+
 export const DENIED_PATTERNS = [
-  /\|\s*sh/,          // curl | sh
-  /\|\s*bash/,        // curl | bash
+  /\|\s*sh\b/i,       // curl | sh
+  /\|\s*bash\b/i,     // curl | bash
   />\s*\/dev\//,      // redirect to devices
-  /rm\s+-rf\s+\//,    // rm -rf /
-  /mkfs/,             // format
-  /dd\s+if=/          // disk dump
+  // rm rekursif-force ke root/home/env — tahan variasi flag (-rf, -fr, -Rf, --recursive)
+  // dan case-insensitive (RM -RF /). Target: "/", "/*", "~", "~/", "$HOME".
+  /\brm\s+(?:-{1,2}[\w-]+\s+)+(?:\/(?:\*|\s|$)|~(?:\/)?(?:\s|$)|\$HOME\b)/i,
+  /mkfs/i,            // format
+  /\bdd\s+if=/i,      // disk dump (case-insensitive: DD IF=)
+  /\bchmod\s+-R\s+777\s+\//i, // world-writable pada root
+  /\b(?:shutdown|reboot|halt|poweroff)\b/i // power control sistem
 ];
 
 /**

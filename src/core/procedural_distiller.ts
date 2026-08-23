@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { Logger } from '../utils/logger.js';
-import { storeMemory } from './memory.js';
+import { storeMemory } from './memory/memory.js';
 
 const BASE_DIR = process.cwd();
 const MEMORY_DIR = path.join(BASE_DIR, 'workspace', 'memories');
