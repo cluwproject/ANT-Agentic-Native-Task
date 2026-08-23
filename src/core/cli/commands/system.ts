@@ -143,5 +143,13 @@ export async function handleSystemCommands(text: string, ctx: CliContext): Promi
         return true;
     }
 
+    // ── /doctor ───────────────────────────────────────────────────────
+    if (text.startsWith('/doctor')) {
+        const { runDoctor } = await import('./doctor.js');
+        const args = text.split(' ').slice(1);
+        await runDoctor(args);
+        return true;
+    }
+
     return false;
 }

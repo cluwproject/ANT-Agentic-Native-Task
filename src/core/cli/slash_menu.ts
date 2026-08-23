@@ -26,6 +26,7 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     { command: '/vault',             description: 'Switch active memory vault (CockroachDB cloud / local)' },
     { command: '/mailbox',           description: 'Open inter-model relay & handover ledger' },
     { command: '/health',            description: 'Audit CockroachDB cluster & cognitive memory health' },
+    { command: '/doctor',            description: 'Diagnose ANT core health (SQLite, API, Env, Node.js)' },
     { command: '/swarm',             description: 'Launch ANT-CYBER-CORPS 5-unit parallel security audit' },
     { command: '/sync',              description: 'Flush offline memory queue → sync to CockroachDB cloud' },
     { command: '/consolidate',       description: 'Trigger autonomous memory sleep cycle & knowledge consolidation' },

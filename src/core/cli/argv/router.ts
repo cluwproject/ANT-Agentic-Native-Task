@@ -26,7 +26,8 @@ export function printCliHelp(): void {
     console.log('  ant mailbox inspect <id>               Inspeksi detail entri mailbox');
     console.log('  ant mailbox verify                     Audit integritas kriptografi rantai ledger');
     console.log('  ant task list                          Daftar tugas latar belakang terjadwal');
-    console.log('  ant task schedule "<cron>" "<command>" Daftarkan tugas otomatisasi cron\n');
+    console.log('  ant task schedule "<cron>" "<command>" Daftarkan tugas otomatisasi cron');
+    console.log('  ant doctor                             Diagnosis kesehatan ANT core (SQLite, API, Env)\n');
 }
 
 export async function routeArgv(args: string[], sessionId: string): Promise<boolean> {
@@ -35,6 +36,12 @@ export async function routeArgv(args: string[], sessionId: string): Promise<bool
     if (args.includes('-h') || args.includes('--help')) {
         printCliHelp();
         process.exit(0);
+    }
+
+    if (args[0] === 'doctor') {
+        const { runDoctor } = await import('../commands/doctor.js');
+        const success = await runDoctor(args.slice(1));
+        process.exit(success ? 0 : 1);
     }
 
     if (await handleScaffoldArgv(args)) return true;

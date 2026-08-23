@@ -12,7 +12,7 @@ import { handleScaffoldCommands } from './scaffold.js';
 
 export const HANDLED_PREFIXES = [
     '/new_chat', '/clear', '/plan', '/branch', '/store', '/recall',
-    '/memories', '/vault', '/mailbox', '/health', '/swarm', '/sync',
+    '/memories', '/vault', '/mailbox', '/health', '/doctor', '/swarm', '/sync',
     '/consolidate', '/scaffold', '/resume', '/model', '/session', '/checkpoint', '/undo', '/skills',
     '/agent', '/task', '/git', '/help', '/exit', '/quit', '/report',
     '/osint', '/connect'
