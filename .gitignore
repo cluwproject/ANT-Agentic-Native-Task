@@ -69,3 +69,6 @@ coverage/
 *.seed
 *.pid.lock
 workspace/
+
+# Cognitive runtime state (per-install, bukan aset repo)
+brain/

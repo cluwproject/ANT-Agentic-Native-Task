@@ -179,7 +179,7 @@ export function startScheduler() {
     try {
       const { getBrainConfig } = await import('../shared/data.js');
       const { tieredChat } = await import('./tiered_ai.js');
-      const { semanticSearch } = await import('./memory.js');
+      const { semanticSearch } = await import('./memory/memory.js');
       
       const config = await getBrainConfig();
       const context = await semanticSearch("rencana ard, tugas penting, prioritas", "semantic", 5);
@@ -285,7 +285,7 @@ export function startScheduler() {
   scheduleTask('Memory Consolidation', 180, async () => {
     Logger.log('INFO', 'Running Memory Consolidation (Episodic → Semantic)...', {}, 'MEMORY');
     try {
-      const { consolidateMemories } = await import('./memory.js');
+      const { consolidateMemories } = await import('./memory/memory.js');
       await consolidateMemories();
       ANT_Bus.emit('system.autonomous_event', {
         title: '🧠 Memory Consolidated',
@@ -301,7 +301,7 @@ export function startScheduler() {
   // PROACTIVE TASK: Memory Pruning (Setiap 7 hari)
   scheduleTask('Memory Pruning', 10080, async () => {
     try {
-      const { pruneMemories } = await import('./memory.js');
+      const { pruneMemories } = await import('./memory/memory.js');
       await pruneMemories();
     } catch (e: any) {
       Logger.log('ERROR', `Memory pruning task failed: ${e.message}`, {}, 'MEMORY');

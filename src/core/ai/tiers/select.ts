@@ -1,5 +1,5 @@
 import { Logger } from '../../../utils/logger.js';
-import { semanticSearch } from '../../memory.js';
+import { semanticSearch } from '../../memory/memory.js';
 
 export async function analyzeComplexity(brain: any, prompt: string, attachments?: any[]): Promise<{ tier: 'SLM' | 'LLM', reason: string }> {
   return { tier: 'LLM', reason: 'Sticky Mode: Dynamic swapping disabled.' };

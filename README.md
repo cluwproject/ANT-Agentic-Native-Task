@@ -27,7 +27,7 @@ ANT berjalan langsung di terminal (Mac, Linux, Windows, Termux), mampu membaca/m
 ## 🛠 Panduan Instalasi (Quickstart)
 
 ### Prasyarat
-- Node.js 20+
+- Node.js 22+
 - Git
 - Opsional: Kunci API (Anthropic, OpenAI, atau Gemini) untuk akses model cloud yang lebih cerdas.
 - Opsional: Ollama untuk *embedding* 768-dim (`ollama pull nomic-embed-text`) dan model SLM lokal offline.
@@ -45,7 +45,7 @@ npm start          # Memulai ANT CLI
 
 ### Untuk Kontributor / Developer (Opsional)
 Jika Anda ikut mengembangkan basis kode ini, pastikan kode Anda lolos standar *Continuous Integration* (CI) sebelum melakukan _Push_:
-- `npm run test:unit` : Menjalankan 41/41 unit test lokal secara offline.
+- `npm run test:unit` : Menjalankan 93/93 unit test lokal secara offline (termasuk security bypass suite).
 - `npm run ci` : Mensimulasikan pipeline GitHub Actions secara lokal (Typecheck + Build + Test). 
 *(Catatan: Anda tidak perlu perintah CI jika hanya ingin menggunakan CLI-nya).*
 

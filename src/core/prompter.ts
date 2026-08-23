@@ -10,7 +10,7 @@
  */
 
 import readline from 'readline';
-import { SLASH_COMMANDS, showSlashMenu } from './slash_menu.js';
+import { SLASH_COMMANDS, showSlashMenu } from './cli/slash_menu.js';
 
 export async function askUser(promptText: string = 'You ❯ '): Promise<string> {
     return new Promise((resolve) => {

@@ -17,6 +17,11 @@ export async function main() {
     const BASE_DIR = process.cwd();
     const ANT_HOME = path.join(os.homedir(), '.ant');
 
+    // Precedence deterministik: HANYA SATU file .env yang dimuat (yang pertama
+    // ditemukan dalam urutan prioritas di bawah). Versi lama memuat semua
+    // kandidat sekaligus sehingga variabel bisa tertimpa diam-diam antar-file
+    // (vektor config-injection) dan `activeEnvPath` tidak konsisten dengan
+    // nilai yang benar-benar aktif.
     const envCandidates = [
         process.env.ANT_CLI_HOME ? path.join(process.env.ANT_CLI_HOME, '.env') : '',
         path.join(BASE_DIR, '.env'),
@@ -26,12 +31,25 @@ export async function main() {
     ].filter(Boolean);
 
     let activeEnvPath = path.join(BASE_DIR, '.env');
-    for (const envPath of envCandidates) {
-        if (fs.existsSync(envPath)) {
-            dotenv.config({ path: envPath });
-            activeEnvPath = envPath;
-        }
+    const resolvedEnvPath = envCandidates.find(p => fs.existsSync(p));
+    if (resolvedEnvPath) {
+        dotenv.config({ path: resolvedEnvPath });
+        activeEnvPath = resolvedEnvPath;
+        console.log(chalk.dim(`[ENV] Loaded configuration from: ${resolvedEnvPath}`));
+    } else {
+        console.log(chalk.dim('[ENV] No .env file found — using process environment defaults.'));
     }
+
+    // Watermark integrity self-check (Fase 2): pastikan engine provenance
+    // berfungsi (inject → extract roundtrip) sebelum sesi dimulai.
+    // Non-blocking: kegagalan hanya diperingatkan, tidak menghentikan boot.
+    try {
+        const { injectWatermark, extractWatermark } = await import('../../utils/watermark.js');
+        const probe = injectWatermark('boot-check');
+        if (!extractWatermark(probe)) {
+            console.log(chalk.yellow('[WATERMARK] Self-check FAILED — output provenance mungkin tidak terverifikasi.'));
+        }
+    } catch {}
 
     const args = process.argv.slice(2);
     const sessionId = `cli-session-${Date.now()}`;
@@ -154,7 +172,7 @@ export async function main() {
         // Handle slash menu trigger
         if (text === '/' || text === '/help') {
             process.stdout.write('\x1B[1A\x1B[2K\r');
-            const { showSlashMenu } = await import('../slash_menu.js');
+            const { showSlashMenu } = await import('./slash_menu.js');
             const selected = await showSlashMenu('/');
             if (selected && selected.trim()) {
                 text = selected.trim();

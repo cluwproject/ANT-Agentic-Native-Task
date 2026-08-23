@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { HANDLED_PREFIXES, dispatchSlash } from '../../src/core/cli/commands/index.js';
-import { SLASH_COMMANDS } from '../../src/core/slash_menu.js';
+import { SLASH_COMMANDS } from '../../src/core/cli/slash_menu.js';
 import type { CliContext } from '../../src/core/cli/types.js';
 
 describe('Slash Commands & Registry Audit', () => {

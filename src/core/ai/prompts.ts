@@ -1,29 +1,71 @@
 import fs from 'fs/promises';
 import path from 'path';
 import * as yaml from 'js-yaml';
-import { getSovereignSealBlock, CLONED_MODEL_CHARACTER } from '../sovereign_seal.js';
+import { getSovereignSealBlock, CLONED_MODEL_CHARACTER } from '../../security/sovereign_seal.js';
 
-let soulCache: any = null;
+// ============================================================================
+// Typed contracts — menggantikan `any` pada versi sebelumnya.
+// ============================================================================
+
+/** Identitas dasar agen dari config/soul.yaml */
+export interface SoulIdentity {
+    name?: string;
+    short_name?: string;
+    creator?: string;
+}
+
+/** Trait personalitas & sapaan pengguna */
+export interface SoulTraits {
+    tone?: string;
+    address_user_as?: string;
+}
+
+/** Konfigurasi "Soul" — dimuat dari config/soul.yaml (YAML) */
+export interface Soul {
+    identity?: SoulIdentity;
+    traits?: SoulTraits;
+}
+
+const DEFAULT_SOUL: Soul = {
+    identity: { name: "ANT", short_name: "ANT", creator: "Ard" },
+    traits: { tone: "Warm, Professional, Agentic" }
+};
+
+/**
+ * State brain lokal yang dipakai saat menyusun system instruction.
+ * Index signature dipertahankan karena sumbernya env/brain config dinamis,
+ * namun field yang dikonsumsi modul ini kini bertipe eksplisit.
+ */
+export interface BrainState {
+    provider?: string;
+    custom_model?: string;
+    tavily_api_key?: string;
+    _capabilityMap?: string;
+    [key: string]: unknown;
+}
+
+let soulCache: Soul | null = null;
 let soulCacheTime = 0;
 const SOUL_TTL = 5 * 60 * 1000;
 const SOUL_FILE = path.join(process.cwd(), 'config', 'soul.yaml');
 
-export async function getSoul() {
+export async function getSoul(): Promise<Soul> {
   if (soulCache && Date.now() - soulCacheTime < SOUL_TTL) return soulCache;
   try {
     const content = await fs.readFile(SOUL_FILE, 'utf-8');
-    soulCache = yaml.load(content);
+    const parsed = yaml.load(content);
+    // Guard: soul.yaml harus berupa object; jika tidak valid, pakai default.
+    soulCache = (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
+      ? (parsed as Soul)
+      : DEFAULT_SOUL;
     soulCacheTime = Date.now();
     return soulCache;
-  } catch (e) {
-    return {
-      identity: { name: "ANT", short_name: "ANT", creator: "Ard" },
-      traits: { tone: "Warm, Professional, Agentic" }
-    };
+  } catch {
+    return DEFAULT_SOUL;
   }
 }
 
-export function getStylisticNormalizer(soul: any) {
+export function getStylisticNormalizer(soul: Soul): string {
   const tone = soul.traits?.tone || "Warm, Professional, Relaxed";
   const userName = process.env.USER_NAME || soul.traits?.address_user_as || "Operator";
   return `
@@ -61,7 +103,7 @@ export const TOOL_PROMPT = `
 
 import { renderBondPrompt } from '../agent_loop/cognitiveBond.js';
 
-export async function buildFullSystemInstruction(systemInstruction: string, localBrain: any, isGeminiNode: boolean): Promise<string> {
+export async function buildFullSystemInstruction(systemInstruction: string, localBrain: BrainState, isGeminiNode: boolean): Promise<string> {
   const soul = await getSoul();
   const providerLow = (localBrain.provider || '').toLowerCase();
   const modelLow = (localBrain.custom_model || '').toLowerCase();

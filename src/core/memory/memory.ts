@@ -1,8 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { getEmbedding as _aiGetEmbedding } from './ai.js';
-import { getBrainConfig } from '../shared/data.js';
-import { Logger } from '../utils/logger.js';
+import { getEmbedding as _aiGetEmbedding } from '../ai.js';
+import { getBrainConfig } from '../../shared/data.js';
+import { Logger } from '../../utils/logger.js';
 
 const BASE_DIR = process.cwd();
 const MEMORY_DIR = path.join(BASE_DIR, 'workspace', 'memories');
@@ -227,7 +227,7 @@ export async function consolidateMemories() {
     if (episodeEntries.length < 5) return; // Tidak cukup data
     
     const config = await getBrainConfig();
-    const { chat } = await import('./ai.js');
+    const { chat } = await import('../ai.js');
     
     // Buat summary dari semua episode
     const episodeSummary = episodeEntries

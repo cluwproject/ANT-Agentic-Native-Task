@@ -2,7 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import axios from 'axios';
 import fs from 'fs/promises';
 import { Logger } from '../../utils/logger.js';
-import { validateResponseWithSeal } from '../sovereign_seal.js';
+import { validateResponseWithSeal } from '../../security/sovereign_seal.js';
 import { generateCapabilityMap, detectMoodFromText, saveArdState, incrementSessionCount, saveReasoningEntry, extractThoughtBlock } from '../ard_intelligence.js';
 import { buildFullSystemInstruction } from './prompts.js';
 import { detectProvider, providerHealth, clearProviderHealth, getLocalSandboxResponse } from './router.js';

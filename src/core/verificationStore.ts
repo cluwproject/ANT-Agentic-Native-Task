@@ -1,3 +1,9 @@
+/**
+ * @deprecated (Fase 3 audit) Modul ini tidak memiliki importer aktif dari entry point
+ * (cli/index.ts -> boot -> agent loop). Akan DIHAPUS pada release berikutnya.
+ * mindby_os / mindby_habitat hanyalah alias dari ant_os / ant_habitat.
+ * Jika Anda membutuhkan modul ini, laporkan sebelum v0.5.
+ */
 import fs from 'fs/promises';
 import path from 'path';
 import { ApprovalStore, ApprovalRecord } from './verificationGuard.js';

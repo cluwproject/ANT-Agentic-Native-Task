@@ -1,6 +1,6 @@
 import { chat } from '../index.js';
 import { Logger } from '../../../utils/logger.js';
-import { semanticSearch } from '../../memory.js';
+import { semanticSearch } from '../../memory/memory.js';
 import { ANT_Bus } from '../../events.js';
 import { handleSLMTier } from './slm.js';
 import { filterSensitiveData } from './select.js';

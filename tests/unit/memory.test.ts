@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { getEmbedding } from '../../src/core/memory.js';
+import { getEmbedding } from '../../src/core/memory/memory.js';
 
 describe('Memory System Unit Tests', () => {
     it('should correctly handle embeddings placeholder', async () => {

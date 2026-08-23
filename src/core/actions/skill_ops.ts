@@ -72,7 +72,7 @@ export async function handleSkillOps(action: string, details: any, workspaceDir:
     }
 
     if (action === 'memory_store') {
-        const { storeMemory } = await import('../memory.js');
+        const { storeMemory } = await import('../memory/memory.js');
         const { layer, key, value, tags } = details;
         const success = await storeMemory(layer || 'semantic', key, value, tags || []);
         return { status: success ? 'success' : 'error', message: success ? `Memory stored: ${key}` : 'Memory store failed' };
@@ -81,7 +81,7 @@ export async function handleSkillOps(action: string, details: any, workspaceDir:
     if (action === 'memory_recall') {
         const { key, query } = details;
         if (query) {
-            const { semanticSearch } = await import('../memory.js');
+            const { semanticSearch } = await import('../memory/memory.js');
             const results = await semanticSearch(query);
             return { status: 'success', results, mode: 'semantic' };
         }

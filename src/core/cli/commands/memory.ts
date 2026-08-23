@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import type { CliContext } from '../types.js';
-import { storeCockroachMemory, recallCockroachMemory, listCockroachMemories, setVaultMode, getVaultMode, checkCockroachHealth } from '../../mindby_cockroach.js';
+import { storeCockroachMemory, recallCockroachMemory, listCockroachMemories, setVaultMode, getVaultMode, checkCockroachHealth } from '../../memory/mindby_cockroach.js';
 import { getBrainConfig } from '../../../shared/data.js';
 
 export async function handleMemoryCommands(text: string, ctx: CliContext): Promise<boolean> {
@@ -40,7 +40,7 @@ export async function handleMemoryCommands(text: string, ctx: CliContext): Promi
             // Silent fallback
         }
 
-        const { storeMemory, getEmbedding } = await import('../../memory.js');
+        const { storeMemory, getEmbedding } = await import('../../memory/memory.js');
         const memKey = `mem_${Date.now()}`;
         const embedding = await getEmbedding(finalMemoryContent).catch(() => []);
         await storeMemory('semantic', memKey, finalMemoryContent, ['cli_user', 'operator']);
@@ -73,7 +73,7 @@ export async function handleMemoryCommands(text: string, ctx: CliContext): Promi
             return true;
         }
         console.log(chalk.dim(`  Recalling memories matching: "${query}"...`));
-        const { getEmbedding } = await import('../../memory.js');
+        const { getEmbedding } = await import('../../memory/memory.js');
         const embedding = await getEmbedding(query).catch(() => []);
         const results = await recallCockroachMemory(embedding, 5);
         if (results.length === 0) {

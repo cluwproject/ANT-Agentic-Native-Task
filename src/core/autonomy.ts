@@ -14,7 +14,7 @@ export async function runSelfReflection() {
     if (!config.api_key) return;
 
     // Use Semantic Search to find relevant context
-    const { semanticSearch } = await import('./memory.js');
+    const { semanticSearch } = await import('./memory/memory.js');
     const recentContext = await semanticSearch("rencana ard, tugas ant, status proyek", "semantic", 3);
     
     let contextBrief = recentContext.length > 0 

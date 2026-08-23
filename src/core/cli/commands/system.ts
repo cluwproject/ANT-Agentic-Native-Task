@@ -20,7 +20,7 @@ export async function handleSystemCommands(text: string, ctx: CliContext): Promi
         
         // 1. CockroachDB
         try {
-            const { checkCockroachHealth, getVaultMode } = await import('../../mindby_cockroach.js');
+            const { checkCockroachHealth, getVaultMode } = await import('../../memory/mindby_cockroach.js');
             const chk = await checkCockroachHealth();
             const statusColor = chk.status === 'CONNECTED' ? chalk.green : chk.status === 'LOCAL' ? chalk.cyan : chalk.red;
             console.log(`  • CockroachDB Vault  : ${statusColor(chk.status)} (${chk.details}) [Mode: ${getVaultMode().toUpperCase()}]`);
@@ -138,7 +138,7 @@ export async function handleSystemCommands(text: string, ctx: CliContext): Promi
 
     // ── /help ─────────────────────────────────────────────────────────
     if (text === '/help') {
-        const { showSlashMenu } = await import('../../slash_menu.js');
+        const { showSlashMenu } = await import('../slash_menu.js');
         await showSlashMenu('/');
         return true;
     }

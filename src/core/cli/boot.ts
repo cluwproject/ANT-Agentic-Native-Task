@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { initCockroachDB } from '../mindby_cockroach.js';
+import { initCockroachDB } from '../memory/mindby_cockroach.js';
 import { enforceAuthGate } from '../../security/auth.js';
 import { SelfHealer } from '../healing.js';
 import { ensureIdentity } from './identity.js';
