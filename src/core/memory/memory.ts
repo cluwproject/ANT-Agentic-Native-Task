@@ -3,6 +3,7 @@ import path from 'path';
 import { getEmbedding as _aiGetEmbedding } from '../ai.js';
 import { getBrainConfig } from '../../shared/data.js';
 import { Logger } from '../../utils/logger.js';
+import { initSQLiteVault, vaultStore } from './sqlite_vault.js';
 
 const BASE_DIR = process.cwd();
 const MEMORY_DIR = path.join(BASE_DIR, 'workspace', 'memories');
@@ -10,6 +11,7 @@ const CONTEXT_FILE = path.join(MEMORY_DIR, 'context.json'); // Short-term Workin
 const EPISODIC_FILE = path.join(MEMORY_DIR, 'episodic.json'); // Long-term Raw Episodic Log
 const SEMANTIC_FILE = path.join(MEMORY_DIR, 'semantic.json'); // Long-term Knowledge/Patterns
 const CORE_FILE = path.join(MEMORY_DIR, 'core.json'); // Decision/Permanent Facts Memory
+
 
 export interface MemoryEntry {
   data: any;
@@ -28,6 +30,10 @@ export interface PartitionedMemoryStats {
 
 export async function initMemory() {
   await fs.mkdir(MEMORY_DIR, { recursive: true });
+  // Sprint 2: Init SQLite vault (ADR-001) — nol dependency baru, Node built-in
+  try { await initSQLiteVault(); } catch (e: any) {
+    Logger.log('WARN', `[MEMORY] SQLite vault init failed (fallback to JSON): ${e.message}`, {}, 'MEMORY');
+  }
 }
 
 /**
@@ -147,6 +153,10 @@ export async function storeMemory(layer: 'working' | 'episodic' | 'semantic' | '
     };
 
     await fs.writeFile(filePath, JSON.stringify(memory, null, 2));
+    
+    // Sprint 2: Dual-write ke SQLite vault (ADR-001) — fire & forget, tidak blocking
+    vaultStore(key, layer === 'working' ? 'working' : layer, value, embedding || [], tags)
+      .catch((e: any) => Logger.log('WARN', `[MEMORY] SQLite dual-write failed: ${e.message}`, {}, 'MEMORY'));
     
     if (layer === 'episodic') {
        Logger.log('INFO', `Event logged to Episodic Memory: ${key}`, { tags }, 'MEMORY');
