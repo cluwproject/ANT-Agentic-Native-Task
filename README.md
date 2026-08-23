@@ -81,6 +81,7 @@ Selain dijalankan secara interaktif (REPL), ANT menyediakan perintah CLI langsun
 | `ant scaffold <profile> <dir>` | Buat project baru terstruktur (mis: `next-prisma`) |
 | `ant swarm "<goal>" "<target>"` | Jalankan audit keamanan (Gray Units) |
 | `ant swarm report [--json]` | Ekstrak laporan keamanan dalam Markdown/JSON |
+| `ant doctor` | 🩺 Diagnostik kesehatan sistem inti ANT (Env, API, SQLite) |
 | `ant agent list \| run` | Kelola dan panggil Sub-Agen spesialis langsung |
 | `ant task list \| schedule` | Manajemen background task otomatis |
 | `ant mailbox list \| verify` | Audit transaksi dan integritas memori inter-model |
