@@ -177,17 +177,46 @@ ant-cli/
 
 ## 🏛️ Architecture Council & Cross-Model Synthesis
 
-Arsitektur ANT v0.4 (The Sovereign Runtime Era) dirumuskan dan diuji secara ketat melalui konsensus lintas arsitektur kognitif (*Cross-Model Peer Review*):
+Arsitektur ANT v0.4 (The Sovereign Runtime Era) dirumuskan, diuji, dan didogfood secara ketat melalui konsensus lintas arsitektur kognitif (*Cross-Model Peer Review*) — seluruh model di bawah ini adalah kontributor aktif nyata dari rekam jejak kodeks Ard:
+
 - **Ard (Renaldy Adri):** Chief Architect, Sovereign Operator & Visionary.
 - **Antigravity (Agy):** Lead Coding Pair & Runtime Engineer.
-- **Frontier Architectural Council (Synthesis):**
-  - **GPT-4o/o3:** *Cognitive State vs Memory Separation & Recovery State Machine.*
-  - **Kimi:** *Distributed Concurrency, Event-Driven Callbacks, & Worktree Isolation.*
-  - **Qwen 3.8 Max:** *Pragmatic Doktrin P1–P4, Pilar 0 Security Fence, & ADR-001 Git-First Architecture.*
-  - **Grok:** *Red-Team Threat Analysis, npm Script Hardening, & Mobile Recovery Branches.*
-  - **Claude 3.7:** *Variable-Friction Approval, Anti-Automation Bias, & Grand Consolidation.*
-  - **ox-alpha (stealth):** *Live Runtime Validation, Zero-Hallucination Audit, & Evidence-Based Debugging — uji langsung dari dalam ANT CLI v0.3.5.*
-  - **Claude Sonnet 4.6 (Thinking):** *Sprint Planning & Implementation Validation, Debt Sprint Audit, SQLite ADR-001 Spec, & DoD Framework.*
+
+### 🤖 Frontier Architectural Council
+
+**OpenAI Family**
+- **GPT-5.6 Terra:** *Cognitive State Architecture, Recovery State Machine, & Multi-Agent Orchestration Design.*
+- **GPT-5.6 Luna:** *Semantic Memory Layering, Long-Context Reasoning, & Pilar 4 Execution Chain.*
+- **GPT-5.6 Sol:** *Red-Team Adversarial Testing, Shell Hardening Analysis, & Risk Register.*
+
+**Google Gemini Family**
+- **Gemini 3.5 Flash:** *Rapid Prototyping Validation & Tool Schema Iteration.*
+- **Gemini 3.6 Flash:** *Agent Loop Optimization & Streaming Response Protocol.*
+- **Gemini 3.7 Flash:** *Scaffolding Pipeline Design & Dynamic Healthcheck Spec.*
+- **Gemini 3.1 Pro High:** *Deep Architectural Review, ADR-001 Git-First State Store, & Security Fence Specification.*
+
+**Anthropic Claude Family**
+- **Claude Sonnet 5:** *Variable-Friction Approval Gate, Anti-Automation Bias (R6), & Grand Consolidation Synthesis.*
+- **Claude Sonnet 4.6 (Thinking):** *Sprint Planning & Implementation Validation, Debt Sprint Audit, SQLite Vault ADR-001 Spec, & Definition of Done Framework.*
+
+**Kimi (Moonshot AI)**
+- **Kimi 2.6:** *Distributed Concurrency Protocol, Event-Driven Callbacks, & Worktree Isolation Architecture.*
+
+**DeepSeek**
+- **DeepSeek V4 Flash:** *Pragmatic Doktrin P1–P4, Lightweight Inference Optimization, & Termux Mobile Compatibility.*
+- **DeepSeek V4 Pro:** *Pilar 0 Security Fence Hardening, ADR-001 Rationale, & Distributed Lease Protocol Design.*
+
+**MiniMax**
+- **MiniMax M3:** *Proactive Engine Design, Cognitive Event Bus Architecture, & Memory Consolidation Cycle.*
+
+**Mistral / NVIDIA**
+- **Nemotron:** *Embedding Optimization, 768-dim Vector Vault Spec, & Semantic Search Ranking.*
+
+**Stealth**
+- **ox-alpha (stealth/OpenRouter):** *Live Runtime Validation langsung dari dalam ANT CLI v0.3.5 — Zero-Hallucination Audit & Evidence-Based Codebase Debugging.*
+
+**Ollama Local Models (On-Device Sovereign Runtime)**
+- **Qwen 3.8 Max, Gemma series, dan model lokal lainnya:** *Validasi on-device di Termux & Android, Offline-First Resilience Testing, & Latency Benchmarking.*
 
 Lihat naskah lengkap spesifikasi di [**`ROADMAP_UBIQUITOUS_COMPANION.md`**](ROADMAP_UBIQUITOUS_COMPANION.md).
 
