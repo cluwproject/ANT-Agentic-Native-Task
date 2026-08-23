@@ -186,6 +186,8 @@ Arsitektur ANT v0.4 (The Sovereign Runtime Era) dirumuskan dan diuji secara keta
   - **Qwen 3.8 Max:** *Pragmatic Doktrin P1–P4, Pilar 0 Security Fence, & ADR-001 Git-First Architecture.*
   - **Grok:** *Red-Team Threat Analysis, npm Script Hardening, & Mobile Recovery Branches.*
   - **Claude 3.7:** *Variable-Friction Approval, Anti-Automation Bias, & Grand Consolidation.*
+  - **ox-alpha (stealth):** *Live Runtime Validation, Zero-Hallucination Audit, & Evidence-Based Debugging — uji langsung dari dalam ANT CLI v0.3.5.*
+  - **Claude Sonnet 4.6 (Thinking):** *Sprint Planning & Implementation Validation, Debt Sprint Audit, SQLite ADR-001 Spec, & DoD Framework.*
 
 Lihat naskah lengkap spesifikasi di [**`ROADMAP_UBIQUITOUS_COMPANION.md`**](ROADMAP_UBIQUITOUS_COMPANION.md).
 
