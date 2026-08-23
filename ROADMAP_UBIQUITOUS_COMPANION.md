@@ -154,7 +154,27 @@ RECOVER   SECURE (Gray Units 5-Tier Audit)
 ## 📅 Tahapan Eksekusi Bertahap (Phased Validation Roadmap)
 
 - [x] **FASE 1 — FOUNDATION (v0.3.0):** L5 Allowlist, Swarm 5-Unit, Tool Catalog, Memory Consolidation, & Procedural Distillation.
-- [ ] **FASE 2 — RESILIENCE (v0.3.5):** Sprint S4 (Dynamic HTTP Healthcheck & Response Contract Testing di VERIFY Gate) + Hardening `npm --ignore-scripts`.
+- [x] **FASE 2 — RESILIENCE (v0.3.5):** Sprint S4 (Dynamic HTTP Healthcheck & Response Contract Testing di VERIFY Gate) + Debt Sprint + SQLite Vault (ADR-001).
 - [ ] **FASE 3 — REMOTE DISPATCH (v0.4.0-Alpha):** Pilar 0 (Security Fence) + Pilar 1 (Telegram Bot MVP, Scope-Locked Approval Gate, Worktree Isolation).
 - [ ] **FASE 4 — SESSION TELEPORT (v0.4.0-Beta):** Pilar 2 (Git-First State Sync, Lease Lock Heartbeat, Vector Delta Sync).
 - [ ] **FASE 5 — AMBIENT GUARDIAN (v0.4.0-GA):** Pilar 3 (`ant watch` Mode, Variable-Friction Approval, Open Standard MCP Support).
+
+---
+
+## ✅ Definition of Done (DoD) per Fase
+
+### FASE 2 (v0.3.x) — Resilience & Scaffolding Engine
+- [x] Scaffolding pipeline 5-state berjalan dan terbukti di disk
+- [x] Dynamic healthcheck probe di gerbang VERIFY
+- [x] 100%+ unit tests hijau (116/116 tests)
+- [x] Debt Sprint: modul mati dan roadmap redundan dibersihkan
+- [x] SQLite Vault (ADR-001) menggantikan JSON vault secara default
+- [ ] `ant doctor` command tersedia untuk diagnostik lokal (Sprint 4)
+**Dogfooding Minimum:** 7 hari operasi stabil setelah Sprint 4 & 5 selesai sebelum masuk ke coding FASE 3.
+
+### FASE 3 (v0.4.x) — Remote Dispatch (BELUM DIMULAI)
+- [ ] ADR-002 Lease Lock Spec selesai & divalidasi
+- [ ] Telegram: whitelist `user_id` hardcoded di env, bot hidup
+- [ ] Plan Approval Gate aktif: [Lanjut] / [Batal] via chat
+- [ ] Rate limiter (10 req/menit per user) berfungsi
+**Prasyarat:** Semua DoD FASE 2 harus hijau dan terbukti stabil di lapangan.
