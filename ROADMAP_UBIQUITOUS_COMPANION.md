@@ -169,7 +169,7 @@ RECOVER   SECURE (Gray Units 5-Tier Audit)
 - [x] 100%+ unit tests hijau (116/116 tests)
 - [x] Debt Sprint: modul mati dan roadmap redundan dibersihkan
 - [x] SQLite Vault (ADR-001) menggantikan JSON vault secara default
-- [ ] `ant doctor` command tersedia untuk diagnostik lokal (Sprint 4)
+- [x] `ant doctor` command tersedia untuk diagnostik lokal (Sprint 4)
 **Dogfooding Minimum:** 7 hari operasi stabil setelah Sprint 4 & 5 selesai sebelum masuk ke coding FASE 3.
 
 ### FASE 3 (v0.4.x) — Remote Dispatch (BELUM DIMULAI)
