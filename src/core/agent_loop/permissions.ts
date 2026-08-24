@@ -71,7 +71,7 @@ const ARG_VALIDATORS: Record<string, ArgValidator> = {
         const allowedStatus = isShellCommandAllowed(cmd);
         
         if (allowedStatus === false) {
-            return `Command ditolak oleh security policy (deny list): "${cmd.slice(0, 80)}"`;
+            return `Command ditolak oleh security policy (deny list): "${cmd.length > 80 ? cmd.slice(0, 80) + '...' : cmd}"`;
         }
         
         if (allowedStatus === true) {

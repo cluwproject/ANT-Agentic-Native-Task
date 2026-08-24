@@ -46,7 +46,7 @@ export const DENIED_PATTERNS = [
   /\brm\s+(?:-{1,2}[\w-]+\s+)+(?:\/(?:\*|\s|$)|~(?:\/)?(?:\s|$)|\$HOME\b)/i,
   /mkfs/i,            // format
   /\bdd\s+if=/i,      // disk dump (case-insensitive: DD IF=)
-  /\bchmod\s+-R\s+777\s+\//i, // world-writable pada root
+  /\bchmod\s+-R\s+777\s+\/(?:\s|$|\*)/i, // world-writable pada root
   /\b(?:shutdown|reboot|halt|poweroff)\b/i // power control sistem
 ];
 
