@@ -95,7 +95,11 @@ export async function chat(
   }
 
   if (!localBrain.base_url) {
-    localBrain.base_url = process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL || '';
+    if (localBrain.api_key.startsWith('sk-or-')) {
+      localBrain.base_url = 'https://openrouter.ai/api/v1';
+    } else {
+      localBrain.base_url = process.env.OPENAI_BASE_URL || process.env.AI_BASE_URL || '';
+    }
   }
 
   if (!localBrain.custom_model && process.env.CUSTOM_MODEL) {

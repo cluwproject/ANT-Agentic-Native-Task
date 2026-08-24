@@ -94,6 +94,12 @@ export function getModelDescription(modelName: string): { description: string; b
             badge: 'Cloud'
         };
     }
+    if (m.includes('glm-5.2') || m.includes('glm-5')) {
+        return {
+            description: 'Large-scale reasoning model suited for long-horizon agent workflows.',
+            badge: 'Cloud Free'
+        };
+    }
 
     return {
         description: 'Agentic AI model for reasoning, planning, and task execution.',
@@ -177,6 +183,11 @@ export async function getDiscoverableModels(
             'minicpm-v4.6:latest'
         ];
         defaults.forEach(d => modelMap.set(d, {}));
+    }
+
+    // 4. Always ensure the free OpenRouter GLM 5.2 model is available
+    if (!modelMap.has('z-ai/glm-5.2:free')) {
+        modelMap.set('z-ai/glm-5.2:free', {});
     }
 
     // Ensure currentModel is always in the list
