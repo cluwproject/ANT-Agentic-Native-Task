@@ -102,6 +102,9 @@ export async function handleModelCommands(text: string, ctx: CliContext): Promis
         else if (mLower.includes('z-ai/') || mLower.includes('-cloud') || mLower.includes('openrouter')) newProvider = 'OpenAI';
 
         try {
+            // Ensure the file ends with a newline before we append anything
+            if (!envContent.endsWith('\n')) envContent += '\n';
+
             if (envContent.includes('CLI_CUSTOM_MODEL=')) {
                 envContent = envContent.replace(/#?\s*CLI_CUSTOM_MODEL=.*/g, `CLI_CUSTOM_MODEL=${newModel}`);
             } else {
