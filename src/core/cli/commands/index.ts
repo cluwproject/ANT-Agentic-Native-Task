@@ -7,6 +7,7 @@ import { handleModelCommands } from './model.js';
 import { handleAgentCommands } from './agent.js';
 import { handleTaskCommands } from './task.js';
 import { handleSystemCommands } from './system.js';
+import { handleWorkspaceCommands } from './workspace.js';
 import { handleShellCommands } from './shell.js';
 import { handleScaffoldCommands } from './scaffold.js';
 
@@ -15,7 +16,7 @@ export const HANDLED_PREFIXES = [
     '/memories', '/vault', '/mailbox', '/health', '/doctor', '/swarm', '/sync',
     '/consolidate', '/scaffold', '/resume', '/model', '/session', '/checkpoint', '/undo', '/skills',
     '/agent', '/task', '/git', '/help', '/exit', '/quit', '/report',
-    '/osint', '/connect'
+    '/osint', '/connect', '/workspace'
 ] as const;
 
 const commandHandlers: CommandHandler[] = [
@@ -27,7 +28,8 @@ const commandHandlers: CommandHandler[] = [
     handleModelCommands,
     handleAgentCommands,
     handleTaskCommands,
-    handleSystemCommands
+    handleSystemCommands,
+    handleWorkspaceCommands
 ];
 
 export async function dispatchSlash(text: string, ctx: CliContext): Promise<boolean> {
