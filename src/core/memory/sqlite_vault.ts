@@ -40,7 +40,12 @@ export interface VaultEntry {
 // ── Path Konstanta ───────────────────────────────────────────────────
 const BASE_DIR = process.cwd();
 const MEMORY_DIR = path.join(BASE_DIR, 'workspace', 'memories');
-const VAULT_DB   = path.join(MEMORY_DIR, 'ant_vault.db');
+// Override path DB via env (dipakai test isolation & deployment kustom).
+// Default tetap workspace/memories/ant_vault.db.
+const VAULT_DB   = process.env.ANT_SQLITE_DB_PATH
+  ? path.resolve(process.env.ANT_SQLITE_DB_PATH)
+  : path.join(MEMORY_DIR, 'ant_vault.db');
+const DB_DIR     = path.dirname(VAULT_DB);
 
 // ── Singleton Database ───────────────────────────────────────────────
 let _db: any = null;
@@ -55,7 +60,7 @@ export async function initSQLiteVault(): Promise<void> {
   if (_initPromise) return _initPromise;
 
   _initPromise = (async () => {
-    await fs.mkdir(MEMORY_DIR, { recursive: true });
+    await fs.mkdir(DB_DIR, { recursive: true });
 
     // Gunakan node:sqlite built-in (Node v22.5.0+)
     const { DatabaseSync } = await import('node:sqlite' as any);
@@ -388,6 +393,21 @@ export async function vaultDiagnose(): Promise<{
     sizeKb = Math.round(stat.size / 1024);
   } catch {}
   return { path: VAULT_DB, totalRows: total, layers, dbSizeKb: sizeKb, walMode: wal };
+}
+
+/**
+ * Tutup koneksi DB singleton (untuk graceful shutdown & test cleanup).
+ * Setelah dipanggil, initSQLiteVault() dapat memulai koneksi baru.
+ */
+export async function vaultClose(): Promise<void> {
+  if (_initPromise) {
+    await _initPromise.catch(() => {});
+  }
+  if (_db) {
+    try { _db.close(); } catch {}
+    _db = null;
+    _initPromise = null;
+  }
 }
 
 // ── Internal Helper ───────────────────────────────────────────────────

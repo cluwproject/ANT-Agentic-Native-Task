@@ -18,13 +18,16 @@ import os from 'os';
 import path from 'path';
 
 // ── Isolasi tmpdir per test run ──────────────────────────────────────
-const TMP = path.join(os.tmpdir(), `ant-vault-test-${Date.now()}`);
-const originalCwd = process.cwd;
+// CATATAN PENTING: static import di-hoist oleh ESM, sehingga override
+// process.cwd() TIDAK berpengaruh (modul vault menghitung BASE_DIR saat
+// evaluasi import, sebelum body modul ini jalan). Isolasi yang benar:
+// set env DB path SEBELUM dynamic import modul vault, supaya tiap proses
+// test punya database sendiri dan tidak saling "database is locked".
+const TMP = path.join(os.tmpdir(), `ant-vault-test-${Date.now()}-${process.pid}`);
 
-// Override cwd agar vault menulis ke TMP
-(process as any).cwd = () => TMP;
+process.env.ANT_SQLITE_DB_PATH = path.join(TMP, 'workspace', 'memories', 'ant_vault.db');
 
-import {
+const {
   initSQLiteVault,
   vaultStore,
   vaultGet,
@@ -37,7 +40,8 @@ import {
   leaseRelease,
   leaseRenew,
   vaultDiagnose,
-} from '../../src/core/memory/sqlite_vault.js';
+  vaultClose
+} = await import('../../src/core/memory/sqlite_vault.js');
 
 // ── Setup & Teardown ─────────────────────────────────────────────────
 
@@ -46,8 +50,10 @@ before(async () => {
 });
 
 after(async () => {
-  process.cwd = originalCwd;
-  await fs.rm(TMP, { recursive: true, force: true });
+  // Tutup koneksi dulu — di Windows file DB yang masih terbuka tidak
+  // bisa dihapus (EBUSY).
+  await vaultClose();
+  await fs.rm(TMP, { recursive: true, force: true }).catch(() => {});
 });
 
 // ── Test Suites ──────────────────────────────────────────────────────
