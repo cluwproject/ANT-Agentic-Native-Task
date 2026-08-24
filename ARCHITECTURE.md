@@ -118,6 +118,21 @@ graph TD
 
 ---
 
+## 🆕 v0.4-alpha — Ubiquitous Assistant Modules
+
+| Modul | Fungsi |
+|-------|--------|
+| `src/core/mcp/client.ts` | MCP stdio client (newline-delimited JSON-RPC 2.0): initialize → tools/list → tools/call. |
+| `src/core/mcp/registry.ts` | Pool koneksi MCP dari `.ant/mcp.json`; schema tool `mcp__<server>__<tool>` di-merge ke SEMUA provider declarations; routing eksekusi via `actions/index.ts`. |
+| `src/core/agent_loop/projectMemory.ts` | Loader `ANT.md` / `.ant/ANT.md` — instruksi proyek persisten di-append ke system instruction semua model (dibungkus delimiter, security fence tetap berlaku). |
+| `src/core/cli/argv/one_shot.ts` | Parser headless mode: `ant -p "<task>" [--output-format json] [--sandbox]`. |
+| `src/core/cli/commands/custom_commands.ts` | Custom slash commands dari `.ant/commands/*.md` (frontmatter `description`, placeholder `$ARGUMENTS`). |
+| `src/core/agent_loop/hooks.ts` | Lifecycle hooks `.ant/hooks.json`: `pre_tool_call` (exit ≥ 2 = veto tool), `post_tool_call` (fire-and-forget). Env: `ANTHOOK_EVENT/TOOL/ARGS/RESULT`. |
+| `sub_agents.ts` (v2) | Sub-agent berjalan sebagai agent loop penuh dengan tool access & konteks terisolasi. Approval non-interaktif default **deny** (`ANT_SUBAGENT_AUTO_APPROVE=true` untuk override); nesting maks 2 tingkat; mode lama via `ANT_SUBAGENT_MODE=legacy`. |
+| `ai/index.ts` + `tiers/llm.ts` | Native tool calls provider diteruskan apa adanya (`nativeToolCalls`) dan di-bridge ke format JSON block untuk kompatibilitas caller lama. |
+
+---
+
 ## 🔒 Security & Trust Gate Architecture
 
 1. **Trust Score Gate**: Every action maintains a dynamic trust score (0 to 100). Destructive actions (`shell_exec`, `delete_file`) require explicit manual approval unless the trust score threshold is met.

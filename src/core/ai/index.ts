@@ -180,9 +180,15 @@ export async function chat(
         nativeToolCalls = oaiRes.nativeToolCalls;
       }
 
+      // Bridge native tool calls ke format teks ANT untuk kompatibilitas
+      // caller lama — SEMUA call (bukan hanya yang pertama). Native calls
+      // juga diteruskan apa adanya via field `nativeToolCalls` agar agent
+      // loop bisa memakainya langsung tanpa parsing ulang.
       if (nativeToolCalls.length > 0) {
-        const t = nativeToolCalls[0];
-        resText += `\n\n\`\`\`json\n{"tool": "${t.name}", "args": ${JSON.stringify(t.args)}}\n\`\`\``;
+        const bridged = nativeToolCalls.map(t =>
+          `\`\`\`json\n{"tool": "${t.name}", "args": ${JSON.stringify(t.args ?? {})}}\n\`\`\``
+        ).join('\n');
+        resText += `\n\n${bridged}`;
       }
 
       providerHealth[initialProvider] = { status: 'OK', updatedAt: new Date().toISOString() };
@@ -203,7 +209,8 @@ export async function chat(
       } catch (e: any) {}
       
       await Logger.log('AI', `Receive response from ${currentProvider}`, { model: activeModel, channel, responseLength: resText.length }, 'AI_CORE');
-      return { content: resText, model: activeModel, provider: currentProvider };
+      return { content: resText, model: activeModel, provider: currentProvider, nativeToolCalls };
+
 
     } catch (e: any) {
       attempts++;

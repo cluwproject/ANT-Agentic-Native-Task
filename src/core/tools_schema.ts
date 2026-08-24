@@ -315,11 +315,11 @@ export const antToolsSchema = [
 ];
 
 export function getGeminiToolDeclarations() {
-  return [{ functionDeclarations: antToolsSchema }];
+  return [{ functionDeclarations: [...antToolsSchema, ...getMcpToolSchemas()] }];
 }
 
 export function getAnthropicToolDeclarations() {
-  return antToolsSchema.map(t => ({
+  return [...antToolsSchema, ...getMcpToolSchemas()].map(t => ({
     name: t.name,
     description: t.description,
     input_schema: t.parameters
@@ -327,8 +327,14 @@ export function getAnthropicToolDeclarations() {
 }
 
 export function getOpenAIToolDeclarations() {
-  return antToolsSchema.map(t => ({
+  return [...antToolsSchema, ...getMcpToolSchemas()].map(t => ({
     type: "function",
     function: t
   }));
 }
+
+// MCP bridge: tools dari server eksternal (.ant/mcp.json) otomatis masuk ke
+// schema SEMUA provider sehingga SEMUA model bisa memanggilnya. Import statis
+// aman — registry tidak bergantung balik ke tools_schema.
+import { getMcpToolSchemas } from './mcp/registry.js';
+

@@ -76,3 +76,8 @@ brain/
 # Local test scaffolds
 my-test-app/
 test-*/
+
+# ANT local agent config (.ant/mcp.json bisa berisi command lokal; hooks &
+# commands bersifat per-install)
+.ant/
+

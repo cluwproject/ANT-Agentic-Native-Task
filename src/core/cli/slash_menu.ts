@@ -50,9 +50,32 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     { command: '/report',            description: 'Compile and render White Unit swarm audit report' },
     { command: '/osint',             description: 'Launch Purple Unit multi-dimensional OSINT mission' },
     { command: '/connect',           description: 'Audit network connectivity to CockroachDB & EventBus' },
+    { command: '/mcp',               description: 'Manage MCP servers & tools (connect/add/remove/tools)' },
     { command: '/help',              description: 'Display all commands and operational options' },
     { command: '/exit',              description: 'Disconnect from ANT agent runtime' },
 ];
+
+/**
+ * Gabungan command statis + custom commands dari .ant/commands/*.md.
+ * Custom commands dimuat via preloadCustomSlashCommands() (async) karena
+ * modul ini berjalan di ESM — filtered() harus tetap sinkron.
+ */
+let customCommandsCache: SlashCommand[] = [];
+
+export async function preloadCustomSlashCommands(): Promise<SlashCommand[]> {
+    try {
+        const { listCustomCommands } = await import('./commands/custom_commands.js');
+        customCommandsCache = listCustomCommands(process.cwd())
+            .map(c => ({ command: `/${c.name}`, description: c.description }));
+    } catch {
+        customCommandsCache = [];
+    }
+    return customCommandsCache;
+}
+
+export function getAllSlashCommands(): SlashCommand[] {
+    return [...SLASH_COMMANDS, ...customCommandsCache];
+}
 
 const MAX_VISIBLE = 8;
 
@@ -111,12 +134,15 @@ export async function showSlashMenu(initialChar: string = '/'): Promise<string |
         return null;
     }
 
+    // Muat custom commands (.ant/commands/*.md) sebelum menu dirender
+    await preloadCustomSlashCommands();
+
     return new Promise((resolve) => {
         let query = initialChar;
         let selectedIdx = 0;
         let menuLines = 0;
 
-        const filtered = () => SLASH_COMMANDS.filter(c =>
+        const filtered = () => getAllSlashCommands().filter(c =>
             c.command.toLowerCase().startsWith(query.toLowerCase())
         );
 

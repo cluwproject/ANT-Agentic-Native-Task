@@ -91,11 +91,83 @@ export const SUB_AGENT_REGISTRY: Record<string, SubAgentDefinition> = {
     }
 };
 
-export async function spawnSubAgent(role: string, task: string, brain: any, contextHistory: any[] = []): Promise<{ role: string; output: string; status: 'success' | 'error' }> {
+/**
+ * Sub-Agent v2: menjalankan sub-agen sebagai AGENT LOOP PENUH (ala Claude
+ * Code Task tool) — punya akses tool, konteks terisolasi per-peran, dan
+ * kebijakan approval non-interaktif:
+ *   - Default   : tool berisiko OTOMATIS DITOLAK (hanya SAFE_TOOLS jalan)
+ *   - ANT_SUBAGENT_AUTO_APPROVE=true : semua approval di-auto-approve (yakin?)
+ *
+ * Mode lama (prompt-only tanpa tool) tetap tersedia via ANT_SUBAGENT_MODE=legacy.
+ * Rekursi dibatasi maksimal 2 tingkat agar tidak spawn-bomb.
+ */
+let activeSubAgents = 0;
+
+export async function spawnSubAgent(
+    role: string,
+    task: string,
+    brain: any,
+    contextHistory: any[] = []
+): Promise<{ role: string; output: string; status: 'success' | 'error' }> {
     const subAgent = SUB_AGENT_REGISTRY[role.toLowerCase()] || SUB_AGENT_REGISTRY.researcher;
-    
+
     Logger.log('INFO', `Spawning Sub-Agent [${subAgent.role.toUpperCase()}] for task: "${task.slice(0, 60)}..."`, {}, 'SUB_AGENT');
 
+    // --- MODE LEGACY (tanpa tool access, hemat RAM untuk Termux) ---
+    if ((process.env.ANT_SUBAGENT_MODE || '').toLowerCase() === 'legacy') {
+        return spawnSubAgentLegacy(subAgent, task, brain, contextHistory);
+    }
+
+    // --- GUARD REKURSI ---
+    if (activeSubAgents >= 2) {
+        Logger.log('WARN', `Sub-agent nesting ditolak (${activeSubAgents} aktif). Maksimal 2 tingkat.`, {}, 'SUB_AGENT');
+        return {
+            role: subAgent.role,
+            output: `[SUB-AGENT LIMIT] Kedalaman sub-agent sudah mencapai batas (${activeSubAgents}). Tugas ini dieksekusi langsung tanpa nested loop.`,
+            status: 'error'
+        };
+    }
+
+    const roleMessage = getSubAgentSystemMessage(subAgent.role);
+    const isolatedContext = roleMessage ? [roleMessage] : [];
+
+    // Kebijakan approval non-interaktif: default DENY untuk tool sensitif;
+    // hanya SAFE_TOOLS (read_file, list_dir, dll) yang lolos otomatis.
+    const interactiveAnswer =
+        (process.env.ANT_SUBAGENT_AUTO_APPROVE || '').toLowerCase() === 'true'
+            ? async (_q: string) => 'a'
+            : async (_q: string) => 'n';
+
+    activeSubAgents++;
+    try {
+        // Impor CORE loop langsung agar bisa menyuntikkan askQuestion
+        // non-interaktif (facade index.ts selalu pakai readline interaktif).
+        const { runCliAgentLoop: runCoreLoop } = await import('../agent_loop/agentLoop.js');
+        const result = await runCoreLoop(
+            `[SUB-TASK ASIGNMENT FOR ${subAgent.role.toUpperCase()}]\n${task}`,
+            isolatedContext,
+            interactiveAnswer,
+            { maxAttempts: parseInt(process.env.ANT_SUBAGENT_MAX_ITERATIONS || '8', 10) || 8 }
+        );
+        const lastAssistant = [...result.messages].reverse().find(m => m.role === 'assistant');
+        const output = lastAssistant?.content ?? '(sub-agent selesai tanpa output teks)';
+        Logger.log('INFO', `Sub-Agent [${subAgent.role.toUpperCase()}] finished. completed=${result.completed}, attempts=${result.attemptsUsed}`, {}, 'SUB_AGENT');
+        return { role: subAgent.role, output, status: 'success' };
+    } catch (e: any) {
+        Logger.log('ERROR', `Sub-Agent [${subAgent.role.toUpperCase()}] failed: ${e.message}`, {}, 'SUB_AGENT');
+        return { role: subAgent.role, output: `Gagal menjalankan sub-task: ${e.message}`, status: 'error' };
+    } finally {
+        activeSubAgents--;
+    }
+}
+
+/** Jalur lama: satu panggilan chat() tanpa tool loop. */
+async function spawnSubAgentLegacy(
+    subAgent: SubAgentDefinition,
+    task: string,
+    brain: any,
+    contextHistory: any[]
+): Promise<{ role: string; output: string; status: 'success' | 'error' }> {
     const subMessages = [
         ...contextHistory.slice(-2),
         { role: 'user', content: `[SUB-TASK ASIGNMENT FOR ${subAgent.role.toUpperCase()}]\n${task}` }
@@ -114,19 +186,10 @@ export async function spawnSubAgent(role: string, task: string, brain: any, cont
 
         const content = typeof response === 'string' ? response : response.content;
         Logger.log('INFO', `Sub-Agent [${subAgent.role.toUpperCase()}] finished task successfully.`, {}, 'SUB_AGENT');
-        
-        return {
-            role: subAgent.role,
-            output: content,
-            status: 'success'
-        };
+        return { role: subAgent.role, output: content, status: 'success' };
     } catch (e: any) {
         Logger.log('ERROR', `Sub-Agent [${subAgent.role.toUpperCase()}] failed: ${e.message}`, {}, 'SUB_AGENT');
-        return {
-            role: subAgent.role,
-            output: `Gagal menjalankan sub-task: ${e.message}`,
-            status: 'error'
-        };
+        return { role: subAgent.role, output: `Gagal menjalankan sub-task: ${e.message}`, status: 'error' };
     }
 }
 

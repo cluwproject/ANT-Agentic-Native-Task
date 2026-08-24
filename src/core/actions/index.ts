@@ -138,6 +138,23 @@ export async function executeAction(actionName: string, details: any, attempts =
     let lastError: any;
     for (let i = 0; i < attempts; i++) {
         try {
+            // 0. MCP Tools (Model Context Protocol) — routing sebelum native ops.
+            //    Nama tool format: mcp__<server>__<tool>. Tetap melewati trust
+            //    gate di atas sehingga kebijakan approval tetap berlaku.
+            if (action.startsWith('mcp__')) {
+                const { callMcpTool } = await import('../mcp/registry.js');
+                const mcpRes = await callMcpTool(action, details || {});
+                await updateTrustScore(action, true);
+                Logger.log('INFO', `MCP tool executed: ${action}`, {}, 'MCP');
+                return {
+                    status: 'success',
+                    source: 'mcp',
+                    action,
+                    text: mcpRes.text,
+                    raw: typeof mcpRes.raw === 'string' ? mcpRes.raw : JSON.stringify(mcpRes.raw ?? {})
+                };
+            }
+
             // 1. File Ops
             const fileRes = await handleFileOps(action, details, WORKSPACE_DIR, BASE_DIR, context);
             if (fileRes !== null) {

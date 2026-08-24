@@ -5,7 +5,9 @@ import { handleMailboxArgv } from './mailbox.js';
 import { handleSwarmArgv } from './swarm.js';
 import { handleAgentArgv } from './agent.js';
 import { handleScaffoldArgv } from './scaffold.js';
-import { runCliAgentLoop, closeCli } from '../../agent_loop/index.js';
+import { handleMcpArgv } from './mcp.js';
+import { parseOneShotArgs, type OneShotInvocation } from './one_shot.js';
+import { runCliAgentLoopDetailed, closeCli } from '../../agent_loop/index.js';
 
 export function printCliHelp(): void {
     console.log(getAntAscii());
@@ -13,15 +15,20 @@ export function printCliHelp(): void {
     console.log('  ant [opsi | subcommand]\n');
     console.log(chalk.bold('Opsi Utama:'));
     console.log('  -p, --prompt "<prompt>"   Menjalankan perintah secara satu kali (one-shot mode) lalu keluar.');
+    console.log('  --output-format <text|json>  Format output one-shot (json = terstruktur untuk CI/script).');
     console.log('  -h, --help                Menampilkan panduan bantuan ini.');
     console.log('  --sandbox                 Menjalankan CLI dalam lingkungan terisolasi (sandbox).\n');
     console.log(chalk.bold('Subcommands Mandiri:'));
     console.log('  ant scaffold <profile> <dir>           Buat project baru berbasis profil (L1/L2)');
-    console.log('  ant agent list                         Daftar 9 sub-agen spesialis terdaftar');
+    console.log('  ant agent list                         Daftar sub-agen spesialis terdaftar');
     console.log('  ant agent run <role> "<task>"          Eksekusi sub-agen spesifik secara langsung');
     console.log('  ant swarm "<goal>" "<target>"          Jalankan 5-Unit Swarm Security Audit');
     console.log('  ant swarm report [mission_id]          Kompilasi ringkasan laporan audit (White Unit)');
     console.log('  ant swarm osint                        Pusat investigasi multi-dimensi (Purple Unit)');
+    console.log('  ant mcp list                           Daftar MCP server terdaftar (.ant/mcp.json)');
+    console.log('  ant mcp add <nama> <command> [args..]  Daftarkan MCP server baru');
+    console.log('  ant mcp connect [nama]                 Konek server & muat tools untuk semua model');
+    console.log('  ant mcp tools                          Daftar tool MCP aktif (JSON)');
     console.log('  ant mailbox list                       Lihat rekaman inter-model relay ledger');
     console.log('  ant mailbox inspect <id>               Inspeksi detail entri mailbox');
     console.log('  ant mailbox verify                     Audit integritas kriptografi rantai ledger');
@@ -44,42 +51,53 @@ export async function routeArgv(args: string[], sessionId: string): Promise<bool
         process.exit(success ? 0 : 1);
     }
 
+    // Headless MCP management (ant mcp list|add|remove|connect|tools)
+    if (await handleMcpArgv(args)) return true;
+
     if (await handleScaffoldArgv(args)) return true;
     if (await handleTaskArgv(args)) return true;
     if (await handleMailboxArgv(args, sessionId)) return true;
     if (await handleSwarmArgv(args)) return true;
     if (await handleAgentArgv(args)) return true;
 
-    // Check one-shot prompt (-p / --prompt)
-    let oneShotPrompt: string | null = null;
-    let forceSandbox = false;
-
-    for (let i = 0; i < args.length; i++) {
-        const arg = args[i];
-        if (arg === '-p' || arg === '--prompt') {
-            if (i + 1 < args.length) {
-                oneShotPrompt = args[i + 1];
-                i++;
-            } else {
-                console.log(chalk.red('Error: Opsi -p/--prompt membutuhkan argumen prompt.'));
-                process.exit(1);
-            }
-        } else if (arg === '--sandbox') {
-            forceSandbox = true;
-        }
+    // Check one-shot prompt (-p / --prompt [--output-format text|json])
+    let oneShot: OneShotInvocation | null = null;
+    try {
+        oneShot = parseOneShotArgs(args);
+    } catch (err: any) {
+        console.log(chalk.red(`Error: ${err.message}`));
+        process.exit(1);
     }
 
-    if (oneShotPrompt) {
+    if (oneShot) {
         try {
-            if (forceSandbox) {
+            if (oneShot.sandbox) {
                 console.log(chalk.yellow('[SANDBOX MODE ACTIVE]'));
             }
-            await runCliAgentLoop(oneShotPrompt, []);
+            const result = await runCliAgentLoopDetailed(oneShot.prompt, []);
+
+            if (oneShot.outputFormat === 'json') {
+                // Output terstruktur ala `claude -p --output-format json`:
+                // teks asisten terakhir + status loop, tanpa noise UI lain.
+                const lastAssistant = [...result.messages].reverse().find(m => m.role === 'assistant');
+                process.stdout.write(JSON.stringify({
+                    ok: result.completed && !result.cancelled,
+                    completed: result.completed,
+                    cancelled: result.cancelled,
+                    attemptsUsed: result.attemptsUsed,
+                    result: lastAssistant?.content ?? ''
+                }, null, 2) + '\n');
+            }
         } catch (err: any) {
-            console.error(chalk.red(`[FATAL ERROR] ${err.message}`));
+            if (oneShot.outputFormat === 'json') {
+                process.stdout.write(JSON.stringify({ ok: false, error: err.message, result: '' }, null, 2) + '\n');
+                process.exitCode = 1;
+            } else {
+                console.error(chalk.red(`[FATAL ERROR] ${err.message}`));
+            }
         }
         closeCli();
-        process.exit(0);
+        process.exit(process.exitCode ?? 0);
     }
 
     return false;

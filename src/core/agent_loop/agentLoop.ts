@@ -35,6 +35,8 @@ import { recordEvidence, renderEvidenceTags } from './evidenceLedger.js';
 import { verifyEvidenceClaims, buildCorrectionMessage } from './verificationGuard.js';
 import { isBrowserTool, executeBrowserAction } from './browserTool.js';
 import type { ChatMessage, LoopOptions, LoopResult } from './types.js';
+import { loadProjectInstructions, renderProjectInstructionsBlock } from './projectMemory.js';
+import { runPreToolCallHooks, runPostToolCallHooks } from './hooks.js';
 
 // --- Sovereign Shield Imports ---
 import { callJudgeModel } from './judgeBridge.js';
@@ -157,6 +159,19 @@ export async function runCliAgentLoop(
     const isResearchMode = researchTriggerRegex.test(initialMessage);
     
     let baseSystemInstruction = getSystemInstruction();
+
+    // [PROJECT MEMORY] Instruksi proyek dari ANT.md / .ant/ANT.md (ala
+    // CLAUDE.md/GEMINI.md) — di-append agar SEMUA model paham konteks proyek.
+    try {
+        const projectMemory = loadProjectInstructions();
+        if (projectMemory) {
+            baseSystemInstruction += renderProjectInstructionsBlock(projectMemory);
+            safeLog('info', 'Project instructions dimuat', { sourcePath: projectMemory.sourcePath });
+        }
+    } catch (e) {
+        safeLog('warn', 'Gagal memuat ANT.md, dilewati', { error: String(e) });
+    }
+
     baseSystemInstruction += `\n\n[PRE-FLIGHT TEST-FIRST GUARD -- REQUIRED]
 Aturan Eksekusi Mutlak:
 1. JANGAN langsung menjalankan prosedur besar/destruktif dalam satu langkah tunggal.
@@ -180,6 +195,7 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
 
             let response: string;
             let metadata: any;
+            let providerNativeToolCalls: any[] = [];
             try {
                 if (maxContextMessages) {
                     currentMessages = boundMessages(currentMessages, maxContextMessages);
@@ -187,6 +203,9 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                 const result = await tieredChat(brain, currentMessages, [], {}, baseSystemInstruction);
                 response = result.content;
                 metadata = result.metadata;
+                providerNativeToolCalls = Array.isArray((result as any).nativeToolCalls)
+                    ? (result as any).nativeToolCalls
+                    : [];
             } catch (err: any) {
                 spinner.stop();
                 consecutiveErrors++;
@@ -227,7 +246,22 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
 
             const { toolCalls, cleanedText, parseError } = parseToolCall(response);
 
-            if (parseError && toolCalls.length === 0) {
+            // --- NATIVE TOOL CALLS (Fase B) ---
+            // Jika provider mengembalikan native function calls (OpenAI/
+            // Anthropic/Gemini tool-use API), gunakan itu — lebih andal
+            // daripada parsing JSON block. Fallback tetap ke parser teks.
+            let effectiveToolCalls = toolCalls;
+            const nativeToolCalls = providerNativeToolCalls;
+            if (nativeToolCalls && Array.isArray(nativeToolCalls) && nativeToolCalls.length > 0) {
+                const { nativeCallsToToolCalls } = await import('./toolCallParser.js');
+                const converted = nativeCallsToToolCalls(nativeToolCalls);
+                if (converted.length > 0) {
+                    effectiveToolCalls = converted;
+                    safeLog('info', 'Menggunakan native tool calls dari provider', { count: converted.length });
+                }
+            }
+
+            if (parseError && effectiveToolCalls.length === 0) {
                 ui.printToolParseFailure();
                 safeLog('warn', 'Gagal parse tool call dari respons model, memicu perbaikan format', { response });
                 currentMessages.push({ role: 'assistant', content: response });
@@ -286,7 +320,7 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                 speed: speedTokPerSec
             });
 
-            if (toolCalls.length === 0) {
+            if (effectiveToolCalls.length === 0) {
                 // --- GUARD: ANTI-BACKGROUND-HALU ---
                 const backgroundPromiseRegex = /(di\s+latar\s+belakang|di\s+balik\s+layar|sambil\s+.*istirahat|aku\s+akan\s+(terus\s+)?(membuat|membangun|menyiapkan|menulis|menyusun|mengumpulkan)\s+.*(nanti|di\s+latar|di\s+balik))/i;
                 if (backgroundPromiseRegex.test(cleanedText)) {
@@ -333,8 +367,22 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
             let allResults = "";
             let anyDenied = false;
 
-            for (const toolCall of toolCalls) {
+            for (const toolCall of effectiveToolCalls) {
                 const approval = await requestApproval(toolCall, askQuestion);
+
+                // --- HOOKS: pre_tool_call ---
+                // Hook bisa men-veto tool (exit code >= 2) sebelum eksekusi.
+                try {
+                    const hookVerdict = await runPreToolCallHooks(toolCall.tool, toolCall.args);
+                    if (!hookVerdict.allowed) {
+                        safeLog('warn', 'Tool dibatalkan oleh hook pre_tool_call', { tool: toolCall.tool, blockedBy: hookVerdict.blockedBy });
+                        ui.printConnectionError(`[HOOKS] Tool '${toolCall.tool}' di-veto oleh pre_tool_call hook: ${hookVerdict.blockedBy}`);
+                        allResults += `[SYSTEM HOOK VETO]\nTool '${toolCall.tool}' dibatalkan oleh pre_tool_call hook (${hookVerdict.blockedBy}). Jangan ulangi tool ini.\n\n`;
+                        continue;
+                    }
+                } catch (hookErr: any) {
+                    safeLog('warn', 'Gagal menjalankan pre_tool_call hooks, dilewati', { error: hookErr?.message });
+                }
 
                 if (approval.decision === 'denied') {
                     ui.printDenied();
@@ -473,6 +521,9 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                 if (toolCall.tool === 'shell_exec') {
                     console.log(chalk.green(`    ✔ Selesai dalam ${durationSec}s`));
                 }
+
+                // --- HOOKS: post_tool_call (fire-and-forget audit/notify) ---
+                runPostToolCallHooks(toolCall.tool, toolCall.args, result).catch(() => {});
 
                 const resultStr = truncateToolResult(JSON.stringify(result), maxToolResultChars);
                 currentMessages.push({

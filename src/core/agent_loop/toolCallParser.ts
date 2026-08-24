@@ -139,3 +139,26 @@ function extractFirstBalancedJsonWithKey(text: string, requiredKeys: string[]): 
     }
     return null;
 }
+
+/**
+ * Konversi native tool calls dari provider API (OpenAI/Anthropic/Gemini)
+ * ke format ToolCall internal ANT. Lebih andal daripada parsing JSON block
+ * karena struktur sudah terjamin oleh API provider.
+ */
+export function nativeCallsToToolCalls(native: any[] | undefined | null): ToolCall[] {
+    if (!Array.isArray(native)) return [];
+    const calls: ToolCall[] = [];
+    for (const nc of native) {
+        const name = nc?.name || nc?.tool;
+        if (typeof name !== 'string' || !name) continue;
+        let args: Record<string, any> = {};
+        const rawArgs = nc.args ?? nc.arguments ?? nc.input ?? {};
+        if (typeof rawArgs === 'string') {
+            try { args = JSON.parse(rawArgs); } catch { args = {}; }
+        } else if (rawArgs && typeof rawArgs === 'object') {
+            args = rawArgs;
+        }
+        calls.push({ tool: name, args });
+    }
+    return calls;
+}

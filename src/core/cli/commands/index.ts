@@ -10,13 +10,15 @@ import { handleSystemCommands } from './system.js';
 import { handleWorkspaceCommands } from './workspace.js';
 import { handleShellCommands } from './shell.js';
 import { handleScaffoldCommands } from './scaffold.js';
+import { handleMcpCommands } from './mcp.js';
+import { handleCustomCommands } from './custom_commands.js';
 
 export const HANDLED_PREFIXES = [
     '/new_chat', '/clear', '/plan', '/branch', '/store', '/recall',
     '/memories', '/vault', '/mailbox', '/health', '/doctor', '/swarm', '/sync',
     '/consolidate', '/scaffold', '/resume', '/model', '/session', '/checkpoint', '/undo', '/skills',
     '/agent', '/task', '/git', '/help', '/exit', '/quit', '/report',
-    '/osint', '/connect', '/workspace'
+    '/osint', '/connect', '/workspace', '/mcp'
 ] as const;
 
 const commandHandlers: CommandHandler[] = [
@@ -29,7 +31,11 @@ const commandHandlers: CommandHandler[] = [
     handleAgentCommands,
     handleTaskCommands,
     handleSystemCommands,
-    handleWorkspaceCommands
+    handleWorkspaceCommands,
+    // MCP & custom commands PALING AKHIR: mereka match nama dinamis dari
+    // file/konfigurasi user, jadi tidak boleh menutupi handler statis.
+    handleMcpCommands,
+    handleCustomCommands
 ];
 
 export async function dispatchSlash(text: string, ctx: CliContext): Promise<boolean> {

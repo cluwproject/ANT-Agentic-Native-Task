@@ -17,6 +17,14 @@ ANT berjalan langsung di terminal (Mac, Linux, Windows, Termux), mampu membaca/m
 ## 🚀 Fitur Utama
 
 - **Terminal-Native & Cross-Platform:** Bekerja langsung di mesin Anda, dari MacBook Pro hingga Android Termux.
+- **Ubiquitous Assistant (v0.4):** Setiap model (Gemini/Claude/OpenAI/Ollama lokal) bisa jadi asisten penuh — dengan tool access, memori proyek, dan MCP ecosystem.
+- **MCP Client (Model Context Protocol):** Hubungkan server MCP eksternal (`/mcp add github npx -y @modelcontextprotocol/server-github`) — tools-nya otomatis tersedia untuk SEMUA model melalui approval gate yang sama.
+- **Project Memory (ANT.md):** Instruksi proyek persisten ala CLAUDE.md/GEMINI.md. Taruh `ANT.md` di root repo dan semua model langsung paham konteks tim.
+- **Headless Mode:** `ant -p "task" --output-format json` untuk scripting, CI/CD, dan otomasi pipeline.
+- **Custom Slash Commands:** Simpan workflow tim sebagai markdown di `.ant/commands/*.md` → jadi slash command reusable (mis. `/review`, `/deploy`).
+- **Lifecycle Hooks:** Otomatisasi pre/post tool call via `.ant/hooks.json` — guard kustom, notifikasi, audit trail.
+- **Sub-Agent v2 (Full Loop):** `ant agent run coder "<task>"` menjalankan sub-agen dengan agent loop penuh + akses tool + konteks terisolasi (approval non-interaktif default: deny).
+- **Native Tool Calling:** Tool calls dari provider API (OpenAI/Anthropic/Gemini) dipakai langsung tanpa parsing teks — lebih andal untuk semua model cloud; SLM lokal tetap pakai JSON bridge.
 - **Project Scaffolding (Milestone Runner):** Buat proyek full-stack (mis. Next.js + Prisma) melalui satu perintah berjenjang (INIT → SCAFFOLD → IMPLEMENT → VERIFY → SECURE).
 - **The Agent Loop (ReAct):** Membaca log error, memperbaiki kode, dan menjalankannya lagi secara otonom (*self-healing*).
 - **Security Swarm (ANT-CYBER-CORPS):** Orkestrasi 5 Gray Unit ber-taksonomi untuk mengaudit keamanan lokal Anda (mencari celah auth, memory leaks, atau hardcoded secrets).

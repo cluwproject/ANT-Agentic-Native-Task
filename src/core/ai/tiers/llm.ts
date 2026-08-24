@@ -13,7 +13,7 @@ export async function tieredChat(
   systemInstruction: string,
   modelOverride?: string,
   onStream?: (token: string) => void
-): Promise<{content: string, metadata: any}> {
+): Promise<{content: string, metadata: any, nativeToolCalls?: any[]}> {
   const providerLower = (brain.provider || process.env.AI_PROVIDER || '').toLowerCase();
   const modelNameLower = (brain.custom_model || '').toLowerCase();
   const isOllama = providerLower.includes('ollama') || (brain.base_url && brain.base_url.includes('11434')) || process.env.AI_PROVIDER === 'ollama';
@@ -37,6 +37,7 @@ export async function tieredChat(
   if (modelOverride) {
     const response = await chat(brain, messages, attachments, uiContext, systemInstruction, modelOverride, 'Web', onStream);
     const content = typeof response === 'string' ? response : (response as any).content;
+    const nativeToolCalls = typeof response === 'object' && Array.isArray((response as any)?.nativeToolCalls) ? (response as any).nativeToolCalls : [];
     const actualModel = typeof response === 'object' && (response as any)?.model ? (response as any).model : modelOverride;
     const actualProvider = typeof response === 'object' && (response as any)?.provider ? (response as any).provider : (brain.provider || 'Google Gemini');
     return {
@@ -46,7 +47,8 @@ export async function tieredChat(
         model: actualModel, 
         provider: actualProvider, 
         reason: 'User forced specific model.' 
-      }
+      },
+      nativeToolCalls
     };
   }
 
@@ -110,6 +112,7 @@ export async function tieredChat(
 
   const response = await chat(brain, messages, attachments, uiContext, enrichedSystemInstruction, modelToUse, 'Web', onStream);
   const content = typeof response === 'string' ? response : (response as any).content;
+  const nativeToolCalls = typeof response === 'object' && Array.isArray((response as any)?.nativeToolCalls) ? (response as any).nativeToolCalls : [];
   const actualModel = typeof response === 'object' && (response as any)?.model ? (response as any).model : modelToUse;
   const actualProvider = typeof response === 'object' && (response as any)?.provider ? (response as any).provider : (brain.provider || 'Google Gemini');
 
@@ -120,6 +123,7 @@ export async function tieredChat(
       model: actualModel,
       provider: actualProvider,
       reason: 'Sticky Mode: Single model utilization active.'
-    }
+    },
+    nativeToolCalls
   };
 }
