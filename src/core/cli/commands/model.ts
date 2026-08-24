@@ -99,6 +99,7 @@ export async function handleModelCommands(text: string, ctx: CliContext): Promis
         else if (mLower === 'gpt-4o' || mLower === 'gpt-4' || mLower.startsWith('gpt-3.5') || mLower.startsWith('o1') || mLower.startsWith('o3')) newProvider = 'OpenAI';
         else if (mLower.includes('claude')) newProvider = 'Anthropic Claude';
         else if (mLower.includes('deepseek')) newProvider = 'DeepSeek';
+        else if (mLower.includes('z-ai/') || mLower.includes('-cloud') || mLower.includes('openrouter')) newProvider = 'OpenAI';
 
         try {
             if (envContent.includes('CLI_CUSTOM_MODEL=')) {

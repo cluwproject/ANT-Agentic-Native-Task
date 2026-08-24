@@ -40,7 +40,7 @@ export function getLocalSandboxResponse(userMsg: string): string {
   
   const baseWarning = `⚠️ **[NEURAL LINK: LOCAL COGNITIVE SANDBOX ACTIVE]**
 \n\n*Halo, Ard!*
-\n\nSaat ini, **Koneksi Kognitif Awan (Google Gemini API)** sedang offline karena kunci API belum dikonfigurasi atau limit harian dicapai. Sebagai Asisten Berdaulat yang cerdas dan mandiri, ANT otomatis meluncurkan **Local Sandbox Mode** agar sistem kognitif kita tidak pernah mati dan selalu siap mendampingimu.
+\n\nSaat ini, **Koneksi Kognitif Awan (Cloud API)** sedang offline karena kunci API belum dikonfigurasi, limit harian/kuota (429) dicapai, atau server penyedia mengalami gangguan. Sebagai Asisten Berdaulat yang cerdas dan mandiri, ANT otomatis meluncurkan **Local Sandbox Mode** agar sistem kognitif kita tidak pernah mati dan selalu siap mendampingimu.
 \n\n💡 **Pilihan Model Lokal (SLM):** Karena Anda memiliki LLM lokal, Anda sangat disarankan menggunakan **gemma3:1b** sebagai SLM (Small Language Model) alternatif agar ANT dapat merespons secara cerdas walaupun offline penuh.`;
 
   const setupGuide = `\n\n### 🔧 Langkah Pemulihan (Brain Settings):
