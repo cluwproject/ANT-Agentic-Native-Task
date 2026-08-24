@@ -144,6 +144,12 @@ export async function runCliAgentLoop(
     let consecutiveErrors = 0;
     const CIRCUIT_BREAKER_THRESHOLD = 3;
 
+    // ── Task Stats (Fase 3: Task Summary Box) ──
+    const loopStartTime = Date.now();
+    const toolsUsed: Record<string, { ok: number; fail: number }> = {};
+    const evidenceIds: string[] = [];
+    const modelsSeen: string[] = [];
+
     const onSigint = () => {
         if (cancelled) return;
         cancelled = true;
@@ -190,8 +196,9 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
 
     try {
         while (attempts < maxAttempts && !cancelled) {
-            const spinner = ui.startSpinner('ANT Sedang Memproses...');
+            const spinner = ui.startSpinner('ANT sedang berpikir');
             const startTime = Date.now();
+            let streamPreview = '';
 
             let response: string;
             let metadata: any;
@@ -200,7 +207,25 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                 if (maxContextMessages) {
                     currentMessages = boundMessages(currentMessages, maxContextMessages);
                 }
-                const result = await tieredChat(brain, currentMessages, [], {}, baseSystemInstruction);
+                const result = await tieredChat(
+                    brain,
+                    currentMessages,
+                    [],
+                    {},
+                    baseSystemInstruction,
+                    undefined,
+                    (token: string) => {
+                        // Protokol status internal stack AI: __STATUS:teks__
+                        if (token.startsWith('__STATUS:') && token.endsWith('__')) {
+                            spinner.text = token.slice(9, -2);
+                            return;
+                        }
+                        // Live preview: potongan teks terakhir yang mengalir,
+                        // ditampilkan inline di baris spinner (ramah Termux).
+                        streamPreview += token;
+                        spinner.preview = streamPreview;
+                    }
+                );
                 response = result.content;
                 metadata = result.metadata;
                 providerNativeToolCalls = Array.isArray((result as any).nativeToolCalls)
@@ -237,7 +262,12 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
 
             if (metadata) {
                 lastModelUsed = ui.printRoutingStatus(metadata, lastModelUsed);
+                if (metadata.model) modelsSeen.push(metadata.model);
             }
+
+            // Header langkah ringan — proses selalu terlihat & konsisten
+            // antar model, meski model tidak mengirim blok <thought>.
+            ui.printStepHeader(attempts + 1, metadata?.model, durationSec);
 
             const thoughtMatch = response.match(/<thought>([\s\S]*?)<\/thought>/i);
             if (thoughtMatch) {
@@ -291,7 +321,8 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                 });
 
                 if (verificationRetries >= MAX_VERIFICATION_RETRIES) {
-                    ui.printConnectionError(
+                    ui.printGuardNotice(
+                        'guard',
                         `Model berulang kali menghasilkan klaim bukti yang tidak dapat diverifikasi ` +
                         `(${verificationRetries}x). Loop dihentikan — periksa manual sebelum lanjut.`
                     );
@@ -347,7 +378,7 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                     safeLog('warn', 'Freshness Validator menolak penutupan task', { reason: freshness.reason });
                     
                     // Kita beritahu UI secara halus agar Ard tahu
-                    ui.printConnectionError(`Sovereign Guard menahan agent: ${freshness.reason}`);
+                    ui.printGuardNotice('freshness', `Sovereign Guard menahan agent: ${freshness.reason}`);
                     
                     currentMessages.push({ role: 'assistant', content: response });
                     currentMessages.push({
@@ -376,7 +407,7 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                     const hookVerdict = await runPreToolCallHooks(toolCall.tool, toolCall.args);
                     if (!hookVerdict.allowed) {
                         safeLog('warn', 'Tool dibatalkan oleh hook pre_tool_call', { tool: toolCall.tool, blockedBy: hookVerdict.blockedBy });
-                        ui.printConnectionError(`[HOOKS] Tool '${toolCall.tool}' di-veto oleh pre_tool_call hook: ${hookVerdict.blockedBy}`);
+                        ui.printGuardNotice('hook', `Tool '${toolCall.tool}' di-veto oleh pre_tool_call hook: ${hookVerdict.blockedBy}`);
                         allResults += `[SYSTEM HOOK VETO]\nTool '${toolCall.tool}' dibatalkan oleh pre_tool_call hook (${hookVerdict.blockedBy}). Jangan ulangi tool ini.\n\n`;
                         continue;
                     }
@@ -487,10 +518,10 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                                 
                                 if (isSystemFailure) {
                                     safeLog('warn', 'Sovereign Judge offline/unparseable - Lolos dengan peringatan audit log', { reason: grade.reason });
-                                    ui.printConnectionError(`[Sovereign Judge Warning] Model juri tidak merespons JSON. Hasil tes native dipertahankan.`);
+                                    ui.printGuardNotice('guard', `Sovereign Judge tidak merespons JSON. Hasil tes native dipertahankan.`);
                                 } else {
                                     safeLog('warn', 'Semantic Grader menolak tes', { reason: grade.reason });
-                                    ui.printConnectionError(`[Sovereign Judge] Menolak tes Anda: ${grade.reason}`);
+                                    ui.printGuardNotice('guard', `Sovereign Judge menolak tes Anda: ${grade.reason}`);
                                     
                                     // Override result to FAIL so it doesn't get a successful EVID
                                     result = {
@@ -513,6 +544,9 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
                 // Hash & metadata dihitung DI SINI oleh kode kita, dari hasil
                 // asli — bukan diserahkan ke model untuk "dilaporkan ulang".
                 const evidence = recordEvidence(toolCall.tool, toolCall.args, result);
+                toolsUsed[toolCall.tool] = toolsUsed[toolCall.tool] || { ok: 0, fail: 0 };
+                toolsUsed[toolCall.tool].ok++;
+                if (evidence?.id) evidenceIds.push(evidence.id);
                 safeLog('info', 'Evidence dicatat ke ledger', { evidenceId: evidence.id, tool: toolCall.tool });
 
                 const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -539,6 +573,8 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
             } catch (e: any) {
                 execSpinner.stop();
                 ui.printToolFailure(toolCall.tool, toolCall.args, e.message);
+                toolsUsed[toolCall.tool] = toolsUsed[toolCall.tool] || { ok: 0, fail: 0 };
+                toolsUsed[toolCall.tool].fail++;
 
                 safeLog('error', 'Tool call gagal dieksekusi', { tool: toolCall.tool, error: e.message });
                 allResults += `[SYSTEM ERROR]\nTool '${toolCall.tool}' gagal: ${e.message}\nPerbaiki kesalahan ini dan coba lagi.\n\n`;
@@ -564,6 +600,19 @@ User telah memicu mode riset. Ikuti aturan mutlak berikut:
     if (hitLimit) {
         ui.printAttemptLimitReached(maxAttempts);
         safeLog('warn', 'Loop dihentikan karena mencapai MAX_ATTEMPTS', { maxAttempts });
+    }
+
+    // ── Task Summary Box (Fase 3): penutup tugas yang rapi & transparan ──
+    try {
+        ui.printTaskSummary({
+            steps: attempts,
+            durationSec: Number(((Date.now() - loopStartTime) / 1000).toFixed(1)),
+            toolsUsed,
+            evidenceIds,
+            models: modelsSeen
+        });
+    } catch {
+        // Summary bersifat kosmetik — jangan pernah membuat loop gagal.
     }
 
     return {

@@ -3,6 +3,7 @@ import { executeAction } from '../actions/index.js';
 import { runCliAgentLoopDetailed } from '../agent_loop/index.js';
 import { launchSwarmAudit } from './swarm_orchestrator.js';
 import chalk from 'chalk';
+import * as ui from '../agent_loop/ui.js';
 
 export type MilestoneState = 'INIT' | 'SCAFFOLD' | 'IMPLEMENT' | 'VERIFY' | 'SECURE' | 'DONE';
 
@@ -23,7 +24,7 @@ export class MilestoneRunner {
   }
 
   async run(initialPrompt: string): Promise<boolean> {
-    console.log(chalk.cyan(`[Milestone] Memulai pipeline untuk profil: ${this.context.profile.id}`));
+    ui.printPhase('MILESTONE', undefined, undefined, `profil: ${this.context.profile.id}`);
     
     let currentPrompt = initialPrompt || 'Silakan lanjutkan setup dan integrasi awal proyek ini.';
     let verifyErrorLog = '';
@@ -32,13 +33,13 @@ export class MilestoneRunner {
     while (this.state !== 'DONE') {
       switch (this.state) {
         case 'INIT':
-          console.log(chalk.blue('[Milestone] INIT: Validasi lingkungan & Snapshot Checkpoint'));
+          ui.printPhase('INIT', 1, 5, 'Validasi lingkungan & snapshot checkpoint');
           try {
             const gitCheck = await executeAction('shell_exec', { command: 'git rev-parse HEAD', cwd: this.context.targetDir }, 1, { cwd: this.context.targetDir, manual_approval: true });
             if (gitCheck && (gitCheck as any).stdout) {
               initialGitSnapshot = (gitCheck as any).stdout.trim();
               if (initialGitSnapshot) {
-                console.log(chalk.dim(`  • Git Snapshot Anchor: ${initialGitSnapshot.slice(0, 7)}`));
+                ui.printSubStep(`Git anchor: ${initialGitSnapshot.slice(0, 7)}`);
               }
             }
           } catch {
@@ -49,9 +50,9 @@ export class MilestoneRunner {
           break;
           
         case 'SCAFFOLD':
-          console.log(chalk.blue('[Milestone] SCAFFOLD: Menjalankan skrip inisialisasi'));
+          ui.printPhase('SCAFFOLD', 2, 5, 'Menjalankan skrip inisialisasi');
           for (const cmd of this.context.profile.scaffold) {
-            console.log(chalk.dim(`> ${cmd}`));
+            ui.printSubStep(cmd);
             const result = await executeAction('shell_exec', { command: cmd, cwd: this.context.targetDir }, 1, { cwd: this.context.targetDir, manual_approval: true });
             if (result && result.status === 'error') {
                const errStr = (result as any).stderr || (result as any).error || 'Unknown shell error';
@@ -85,7 +86,8 @@ export class MilestoneRunner {
              contextMsgs.push({ role: 'user', content: patchPrompt });
           }
 
-          console.log(chalk.blue(`[Milestone] IMPLEMENT: Menjalankan agent loop...${this.context.role ? ` (Peran: ${this.context.role})` : ''}`));
+          const roleDetail = this.context.role ? `peran: ${this.context.role}` : 'agent loop penuh';
+          ui.printPhase('IMPLEMENT', 3, 5, roleDetail);
           
           const loopResult = await runCliAgentLoopDetailed(currentPrompt, contextMsgs);
           
@@ -98,15 +100,14 @@ export class MilestoneRunner {
           break;
           
         case 'VERIFY':
-          console.log(chalk.blue('\n[Milestone] VERIFY: Mengevaluasi kriteria kelulusan (Build/Tests)'));
+          ui.printPhase('VERIFY', 4, 5, 'Evaluasi kriteria kelulusan (build/tests)');
           
           let verifySuccess = true;
           
           // Execute dev/build/test if provided in profile (we'll map 'test' for now)
           if (this.context.profile.test) {
-            console.log(chalk.dim(`> Menjalankan test: ${this.context.profile.test}`));
-            const testResult = await executeAction('shell_exec', { command: this.context.profile.test, cwd: this.context.targetDir }, 1, { cwd: this.context.targetDir, manual_approval: true });
-            
+            ui.printSubStep(`test: ${this.context.profile.test}`);
+            const testResult = await executeAction('shell_exec', { command: this.context.profile.test, cwd: this.context.targetDir }, 1, { cwd: this.context.targetDir, manual_approval: true });            
             if (testResult && testResult.status === 'error') {
                verifySuccess = false;
                verifyErrorLog = (testResult as any).stderr || (testResult as any).stdout || (testResult as any).error || 'Test failed';
@@ -140,7 +141,7 @@ export class MilestoneRunner {
             // Optional Dynamic HTTP Healthcheck & Response Contract Check (Sprint S4)
             if (this.context.profile.healthcheck) {
               const hc = this.context.profile.healthcheck;
-              console.log(chalk.dim(`> Dynamic Healthcheck Probe: Memeriksa kontrak ${hc.url}...`));
+              ui.printSubStep(`healthcheck probe: ${hc.url}`);
               try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 2000);
@@ -154,10 +155,10 @@ export class MilestoneRunner {
                     console.log(chalk.yellow(`  • Healthcheck Probe: Mendapat status ${response.status} (diharapkan ${hc.expectStatus})`));
                   }
                 } else {
-                  console.log(chalk.dim(`  • Healthcheck Probe: Standby (build & typecheck contract verified)`));
+                  ui.printSubStep('healthcheck standby — build & typecheck tervalidasi');
                 }
               } catch {
-                console.log(chalk.dim(`  • Healthcheck Probe: Dilewati`));
+                ui.printSubStep('healthcheck dilewati');
               }
             }
 
@@ -167,7 +168,7 @@ export class MilestoneRunner {
           break;
           
         case 'SECURE':
-          console.log(chalk.blue('\n[Milestone] SECURE: Menjalankan Swarm Audit (Gray Units)'));
+          ui.printPhase('SECURE', 5, 5, 'Swarm audit (Gray Units)');
           
           try {
              // We inject a synthetic goal for the swarm orchestrator

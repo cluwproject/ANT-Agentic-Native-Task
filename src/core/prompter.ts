@@ -40,24 +40,40 @@ export async function askUser(promptText: string = 'You ❯ '): Promise<string> 
         let accumulated = '';
         let isPasting = false;
         let timer: NodeJS.Timeout | null = null;
+        let settled = false;
+
+        const finish = (value: string) => {
+            if (settled) return;
+            settled = true;
+            if (timer) clearTimeout(timer);
+            // FIX memory leak: listener BPM WAJIB dilepas setiap giliran.
+            // Tanpa ini, tiap askUser() menambah satu listener permanen
+            // (MaxListenersExceeded setelah ±10 turn + artefak paste).
+            process.stdin.removeListener('data', onRawData);
+            rl.close();
+            if (bpmEnabled) process.stdout.write('\x1b[?2004l');
+            resolve(value);
+        };
+
+        const onRawData = (chunk: Buffer | string) => {
+            const data = chunk.toString();
+            if (data.includes('\x1b[200~')) {
+                isPasting = true;
+                accumulated += data.replace(/\x1b\[200~/g, '');
+            } else if (data.includes('\x1b[201~')) {
+                isPasting = false;
+                accumulated += data.replace(/\x1b\[201~/g, '');
+            } else if (isPasting) {
+                accumulated += data;
+            }
+        };
 
         rl.setPrompt(promptText);
         rl.prompt();
 
         // Tangkap data raw untuk mendeteksi marker BPM
         if (bpmEnabled) {
-            process.stdin.on('data', (chunk: Buffer | string) => {
-                const data = chunk.toString();
-                if (data.includes('\x1b[200~')) {
-                    isPasting = true;
-                    accumulated += data.replace(/\x1b\[200~/g, '');
-                } else if (data.includes('\x1b[201~')) {
-                    isPasting = false;
-                    accumulated += data.replace(/\x1b\[201~/g, '');
-                } else if (isPasting) {
-                    accumulated += data;
-                }
-            });
+            process.stdin.on('data', onRawData);
         }
 
         rl.on('line', (line) => {
@@ -66,23 +82,33 @@ export async function askUser(promptText: string = 'You ❯ '): Promise<string> 
                 return;
             }
 
-            if (timer) clearTimeout(timer);
-
             // Gabungkan accumulated paste + baris terakhir yang diketik/Enter
             const fullInput = accumulated ? (accumulated + '\n' + line).trim() : line.trim();
             accumulated = '';
 
-            timer = setTimeout(async () => {
-                rl.close();
-                if (bpmEnabled) process.stdout.write('\x1b[?2004l');
-
+            // Debounce kecil agar paste multi-baris terkumpul utuh
+            timer = setTimeout(() => {
                 if (fullInput === '/' || fullInput === '/help') {
-                    const selected = await showSlashMenu('/');
-                    resolve(selected ? selected.trim() : '');
+                    // Cleanup manual TANPA men-resolve — menu interaktif
+                    // ditampilkan dulu, hasilnya jadi nilai resolve.
+                    settled = true;
+                    if (timer) clearTimeout(timer);
+                    process.stdin.removeListener('data', onRawData);
+                    rl.close();
+                    if (bpmEnabled) process.stdout.write('\x1b[?2004l');
+                    void (async () => {
+                        const selected = await showSlashMenu('/');
+                        resolve(selected ? selected.trim() : '');
+                    })();
                 } else {
-                    resolve(fullInput);
+                    finish(fullInput);
                 }
             }, 10);
+        });
+
+        // Jika rl tertutup tanpa line (Ctrl+D / stream end), jangan gantung
+        rl.on('close', () => {
+            setTimeout(() => finish(''), 0);
         });
     });
 }

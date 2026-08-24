@@ -134,15 +134,11 @@ export async function requestApproval(
     }
 
     if (isToolAutoApproved(toolCall.tool, risk)) {
-        ui.printToolCallHeader(toolCall.tool);
-        ui.printToolArgs(toolCall.args);
         console.log(chalk.dim(`  Auto-approved by execution policy [tool: ${toolCall.tool}, risk: ${risk}].`));
         return { decision: 'approved', isSafe: false };
     }
 
     if (isBrowserTool(toolCall.tool) && typeof toolCall.args?.url === 'string') {
-        ui.printToolCallHeader(toolCall.tool);
-        ui.printToolArgs(toolCall.args);
 
         const domainResult = await requestDomainApproval(toolCall.args.url, askQuestion);
 
@@ -160,22 +156,16 @@ export async function requestApproval(
 
     const validationResult = runArgValidator(toolCall);
     if (validationResult && typeof validationResult === 'object' && validationResult.isAutoApproved) {
-        ui.printToolCallHeader(toolCall.tool);
-        ui.printToolArgs(toolCall.args);
         console.log(chalk.dim(`  Auto-approved by shell allowlist.`));
         return { decision: 'auto', isSafe: true };
     }
     
     if (typeof validationResult === 'string') {
-        ui.printToolCallHeader(toolCall.tool);
-        ui.printToolArgs(toolCall.args);
         ui.printBlocked(validationResult);
         return { decision: 'denied', isSafe: safe };
     }
 
     if (safe) {
-        ui.printToolCallHeader(toolCall.tool);
-        ui.printToolArgs(toolCall.args);
         ui.printAutoExecuteNotice();
         return { decision: 'auto', isSafe: true };
     }

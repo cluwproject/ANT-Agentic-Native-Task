@@ -71,8 +71,14 @@ export async function routeArgv(args: string[], sessionId: string): Promise<bool
 
     if (oneShot) {
         try {
-            if (oneShot.sandbox) {
+            if (oneShot.sandbox && oneShot.outputFormat !== 'json') {
                 console.log(chalk.yellow('[SANDBOX MODE ACTIVE]'));
+            }
+            if (oneShot.outputFormat === 'json') {
+                // Headless JSON: semua noise UI dialihkan ke stderr agar
+                // stdout murni JSON — aman dipipe ke jq / dikonsumsi CI.
+                const { setUiSilent } = await import('../../agent_loop/ui.js');
+                setUiSilent(true);
             }
             const result = await runCliAgentLoopDetailed(oneShot.prompt, []);
 
