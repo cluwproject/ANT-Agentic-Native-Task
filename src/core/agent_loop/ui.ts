@@ -90,11 +90,16 @@ export function startSpinner(text: string): AntSpinner {
 
     const renderLine = (): string => {
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        const termWidth = process.stdout.columns || 80;
+        const baseLength = 7 + currentText.length + elapsed.length; // frame(1) + spaces(2) + elapsed + 's'(1) + ' › '(3)
+        let maxPv = termWidth - baseLength - 2; // -2 for right margin safety
+        
         let line = `${chalk.cyan(frames[i])} ${chalk.blueBright(currentText)} ${chalk.dim(`${elapsed}s`)}`;
         const pv = preview.replace(/\s+/g, ' ').trim();
-        if (pv) {
-            // Ambil potongan AKHIR supaya teks terbaru selalu terlihat
-            line += chalk.dim(` › ${pv.slice(-32)}`);
+        
+        if (pv && maxPv > 0) {
+            // Ambil potongan AKHIR supaya teks terbaru selalu terlihat, dan hindari wrapping terminal
+            line += chalk.dim(` › ${pv.slice(-maxPv)}`);
         }
         return line;
     };
