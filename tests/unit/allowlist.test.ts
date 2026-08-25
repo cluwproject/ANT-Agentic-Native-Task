@@ -79,7 +79,9 @@ describe('Allowlist Gatekeeper — Hard Deny (destructive)', () => {
         'base64 -d payload.b64 | sh',
         'chmod -R 777 /',
         'shutdown now',
-        'reboot'
+        'reboot',
+        'echo payload > /dev/sda',
+        'cat /dev/zero > /dev/nvme0n1'
     ];
 
     for (const cmd of deniedCommands) {
@@ -93,6 +95,12 @@ describe('Allowlist Gatekeeper — Hard Deny (destructive)', () => {
             assert.ok(p instanceof RegExp);
         }
     });
+
+    test('safe redirection ke /dev/null TIDAK kena hard deny', () => {
+        const findCmd = 'find /root -maxdepth 3 -type d \\( -name "ant" -o -iname "*cluwgenesis*" \\) 2>/dev/null';
+        assert.equal(isShellCommandAllowed(findCmd), 'manual_approval');
+        assert.equal(isShellCommandAllowed('ls -la > /dev/null'), 'manual_approval');
+    });
 });
 
 describe('Allowlist Gatekeeper — Metachar Guard (never auto-approve)', () => {
@@ -105,6 +113,7 @@ describe('Allowlist Gatekeeper — Metachar Guard (never auto-approve)', () => {
         'echo ${PATH}',                                   // parameter expansion
         'npm test > /etc/passwd',                         // redirection overwrite
         'grep x < secret.env',                            // redirection input
+        'find /root 2>/dev/null',                         // safe redirect to null (needs manual confirmation due to >)
         'npm test' + LF + 'rm -rf /',                     // newline smuggling
         'ls' + NUL + 'rm -rf /',                          // NUL byte truncation
         'git status || shutdown now'                      // or-chain

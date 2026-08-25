@@ -46,7 +46,7 @@ export const SHELL_METACHAR_REGEX = /[|&;`$><\r\n]/;
 export const DENIED_PATTERNS = [
   /\|\s*sh\b/i,       // curl | sh
   /\|\s*bash\b/i,     // curl | bash
-  />\s*\/dev\//,      // redirect to devices
+  />\s*\/dev\/(?!(?:null|zero|stdout|stderr|tty|pts\/\d+|fd\/\d+)\b)/i, // redirect to hardware/block devices (allow /dev/null, /dev/stdout)
   // rm rekursif-force ke root/home/env — tahan variasi flag (-rf, -fr, -Rf, --recursive)
   // dan case-insensitive (RM -RF /). Target: "/", "/*", "~", "~/", "$HOME".
   /\brm\s+(?:-{1,2}[\w-]+\s+)+(?:\/(?:\*|\s|$)|~(?:\/)?(?:\s|$)|\$HOME\b)/i,
