@@ -396,6 +396,31 @@ export async function vaultDiagnose(): Promise<{
 }
 
 /**
+ * Optimasi & defragmentasi SQLite DB (VACUUM + wal_checkpoint)
+ */
+export async function vaultOptimize(): Promise<{ beforeSizeKb: number; afterSizeKb: number; vacuumed: boolean }> {
+  await initSQLiteVault();
+  const db = getDB();
+  let beforeSizeKb = 0;
+  try {
+    beforeSizeKb = Math.round(fsSync.statSync(VAULT_DB).size / 1024);
+  } catch {}
+
+  try {
+    db.exec('PRAGMA optimize;');
+    db.exec('VACUUM;');
+    db.exec('PRAGMA wal_checkpoint(TRUNCATE);');
+  } catch {}
+
+  let afterSizeKb = 0;
+  try {
+    afterSizeKb = Math.round(fsSync.statSync(VAULT_DB).size / 1024);
+  } catch {}
+
+  return { beforeSizeKb, afterSizeKb, vacuumed: true };
+}
+
+/**
  * Tutup koneksi DB singleton (untuk graceful shutdown & test cleanup).
  * Setelah dipanggil, initSQLiteVault() dapat memulai koneksi baru.
  */
