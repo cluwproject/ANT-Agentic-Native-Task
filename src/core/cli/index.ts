@@ -33,6 +33,13 @@ export async function main() {
     let activeEnvPath = path.join(BASE_DIR, '.env');
     const resolvedEnvPath = envCandidates.find(p => fs.existsSync(p));
     if (resolvedEnvPath) {
+        try {
+            const { autoHealEnvFile } = await import('./env_cleaner.js');
+            const healed = autoHealEnvFile(resolvedEnvPath);
+            if (healed) {
+                console.log(chalk.dim(`[ENV] Auto-healed formatting in: ${resolvedEnvPath}`));
+            }
+        } catch {}
         dotenv.config({ path: resolvedEnvPath });
         activeEnvPath = resolvedEnvPath;
         console.log(chalk.dim(`[ENV] Loaded configuration from: ${resolvedEnvPath}`));

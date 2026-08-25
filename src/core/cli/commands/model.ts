@@ -102,8 +102,8 @@ export async function handleModelCommands(text: string, ctx: CliContext): Promis
         else if (mLower.includes('z-ai/') || mLower.includes('-cloud') || mLower.includes('openrouter')) newProvider = 'OpenAI';
 
         try {
-            // Ensure the file ends with a newline before we append anything
-            if (!envContent.endsWith('\n')) envContent += '\n';
+            const { sanitizeEnvContent } = await import('../env_cleaner.js');
+            envContent = sanitizeEnvContent(envContent);
 
             if (envContent.includes('CLI_CUSTOM_MODEL=')) {
                 envContent = envContent.replace(/#?\s*CLI_CUSTOM_MODEL=.*/g, `CLI_CUSTOM_MODEL=${newModel}`);
@@ -117,6 +117,7 @@ export async function handleModelCommands(text: string, ctx: CliContext): Promis
                 envContent += `\nCLI_AI_PROVIDER=${newProvider}`;
             }
 
+            envContent = sanitizeEnvContent(envContent);
             await fs.promises.writeFile(envPath, envContent, 'utf-8');
 
             process.env.CLI_CUSTOM_MODEL = newModel;

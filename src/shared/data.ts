@@ -151,8 +151,17 @@ export async function getBrainConfig() {
   const isCli = process.argv[1] && (process.argv[1].endsWith('cli.ts') || process.argv[1].endsWith('cli.js'));
   const prefix = isCli ? 'CLI_' : 'WEB_';
   
+  const sanitizeRaw = (val: string) => {
+    if (!val) return '';
+    const match = val.match(/^([^=]+?)(?:CLI_[A-Z0-9_]+|AI_[A-Z0-9_]+|CUSTOM_[A-Z0-9_]+)=/);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+    return val.trim();
+  };
+
   // Ambil env dengan prioritas: (CLI_ / WEB_) > GLOBAL
-  const getPrefixedEnv = (key: string) => getEnv(`${prefix}${key}`) || getEnv(key) || '';
+  const getPrefixedEnv = (key: string) => sanitizeRaw(getEnv(`${prefix}${key}`) || getEnv(key) || '');
 
   const envKey = getPrefixedEnv('GEMINI_API_KEY');
   

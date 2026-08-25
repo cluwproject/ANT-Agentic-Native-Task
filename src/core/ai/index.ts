@@ -114,6 +114,12 @@ export async function chat(
     modelToUse = localBrain.custom_model;
   }
 
+  // Defensive sanitization: pastikan tidak ada variabel env lain yang menempel pada model ID
+  if (modelToUse && (modelToUse.includes('CLI_') || modelToUse.includes('='))) {
+    const match = modelToUse.match(/^([^=]+?)(?:CLI_[A-Z0-9_]+|AI_[A-Z0-9_]+|CUSTOM_[A-Z0-9_]+)/);
+    if (match && match[1]) modelToUse = match[1].trim();
+  }
+
   let currentProvider = detectedProvider;
   let currentIsGemini = isGemini;
   let currentIsDeepSeek = isDeepSeek;
