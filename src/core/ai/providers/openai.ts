@@ -48,6 +48,7 @@ export async function callOpenAICompatible(
   let nativeToolCalls: any[] = [];
   const isOllamaSLM = isOllama && /:(0\.5|1|1\.5|2|3)b|gemma3:1b|tinyllama|tinymistral|phi-2|stablelm/i.test(finalModel);
   let aiResponseText = '';
+  let reasoningText = '';
 
   if (onStream) {
     const stream: any = await openai.chat.completions.create({
@@ -56,11 +57,28 @@ export async function callOpenAICompatible(
       ...(isOllamaSLM ? { temperature: 0.3, top_p: 0.85, max_tokens: 512 } : {}),
       ...(isOllama ? { keep_alive: 0 } : {})
     } as any);
+
+    let isThinking = false;
     for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content || "";
-      aiResponseText += content; if (content) onStream(content);
-      if (chunk.choices[0]?.delta?.tool_calls) {
-        for (const tc of chunk.choices[0].delta.tool_calls) {
+      const delta = chunk.choices[0]?.delta;
+      const reasoning = (delta as any)?.reasoning || (delta as any)?.reasoning_content || (delta as any)?.thought || "";
+      const content = delta?.content || "";
+
+      if (reasoning) {
+        reasoningText += reasoning;
+        if (!isThinking) {
+          isThinking = true;
+          if (onStream) onStream('__STATUS:Sedang berpikir (Deep Reasoning)...__');
+        }
+      }
+
+      if (content) {
+        aiResponseText += content;
+        if (onStream) onStream(content);
+      }
+
+      if (delta?.tool_calls) {
+        for (const tc of delta.tool_calls) {
           if (tc.function?.name) { nativeToolCalls[tc.index] = { name: tc.function.name, argsString: tc.function.arguments || '' }; }
           else if (tc.function?.arguments && nativeToolCalls[tc.index]) { nativeToolCalls[tc.index].argsString += tc.function.arguments; }
         }
@@ -75,11 +93,21 @@ export async function callOpenAICompatible(
       ...(isOllama ? { keep_alive: 0 } : {})
     } as any);
     aiResponseText = completion.choices[0].message?.content || "";
+    const msgReasoning = (completion.choices[0].message as any)?.reasoning || (completion.choices[0].message as any)?.reasoning_content || "";
+    if (msgReasoning) {
+      reasoningText += msgReasoning;
+    }
     if (completion.choices[0].message?.tool_calls) {
       nativeToolCalls = completion.choices[0].message.tool_calls.map((tc: any) => {
         try { return { name: tc.function.name, args: JSON.parse(tc.function.arguments) }; } catch { return { name: tc.function.name, args: {} }; }
       });
     }
+  }
+
+  // Jika model mengirimkan reasoning tokens terpisah (misal OpenRouter GLM-5.2 / DeepSeek-R1),
+  // bungkus ke dalam blok <thought> agar diproses & ditampilkan secara elegan oleh ANT UI.
+  if (reasoningText.trim() && !aiResponseText.includes('<thought>')) {
+    aiResponseText = `<thought>\n${reasoningText.trim()}\n</thought>\n\n${aiResponseText}`;
   }
 
   return { text: aiResponseText, nativeToolCalls };
