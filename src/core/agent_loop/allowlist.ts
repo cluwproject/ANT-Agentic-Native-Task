@@ -25,7 +25,12 @@
 export const DEFAULT_ALLOWED_PREFIXES = [
   "npm run", "npm test", "npm ci", "npm install",
   "npx", "node", "git status", "git log", "git diff", "git add", "git commit",
-  "tsc", "ls", "cat", "echo", "pwd", "grep", "find", "mkdir", "touch"
+  "tsc", "echo", "pwd", "grep", "find", "mkdir", "touch",
+  // Safe read-only filesystem exploration
+  "ls", "ls -la", "ls -l", "ls -a", "ls -d", "ls -lh",
+  "cat", "head", "tail", "wc", "file",
+  // Directory listing with paths (agent needs to browse /root etc.)
+  "ls /root", "ls /", "ls ~/",
 ];
 
 export type ShellDecision = {
@@ -35,6 +40,7 @@ export type ShellDecision = {
 
 // Operator shell berbahaya untuk auto-approve:
 // pipe, chaining, sequencer, substitusi ($, backtick), redirection, newline smuggling.
+// Note: forward slash (/) is intentionally excluded — it's a valid path separator.
 export const SHELL_METACHAR_REGEX = /[|&;`$><\r\n]/;
 
 export const DENIED_PATTERNS = [

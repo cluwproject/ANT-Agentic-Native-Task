@@ -58,18 +58,28 @@ export async function handleFileOps(action: string, details: any, workspaceDir: 
     } 
     
     if (action === 'list_dir') {
-        const targetPath = path.resolve(workspaceDir, details.path || '.');
-        if (!targetPath.startsWith(workspaceDir)) throw new Error('ACCESS_DENIED: Path outside workspace.');
+        // Resolve path: if absolute, use as-is; if relative, anchor to workspaceDir
+        const rawPath = details.path || '.';
+        const targetPath = path.isAbsolute(rawPath)
+            ? path.resolve(rawPath)
+            : path.resolve(workspaceDir, rawPath);
+
+        // list_dir is READ-ONLY — allow absolute paths for directory exploration.
+        // Only block sensitive system dirs that should never be enumerated.
+        const blockedPaths = ['/proc', '/sys', '/dev'];
+        if (blockedPaths.some(bp => targetPath.startsWith(bp))) {
+            throw new Error(`ACCESS_DENIED: Path '${rawPath}' is a protected system directory.`);
+        }
         
         try {
             const stats = await fs.stat(targetPath);
             if (!stats.isDirectory()) {
-                throw new Error(`ENOTDIR: '${details.path}' bukan direktori. Gunakan 'read_file' untuk membaca isinya.`);
+                throw new Error(`ENOTDIR: '${rawPath}' bukan direktori. Gunakan 'read_file' untuk membaca isinya.`);
             }
             const files = await fs.readdir(targetPath);
             return { status: 'success', files };
         } catch (e: any) {
-            if (e.code === 'ENOENT') throw new Error(`ENOENT: Direktori '${details.path}' tidak ditemukan.`);
+            if (e.code === 'ENOENT') throw new Error(`ENOENT: Direktori '${rawPath}' tidak ditemukan.`);
             throw e;
         }
     } 

@@ -14,7 +14,10 @@ export async function handleSkillOps(action: string, details: any, workspaceDir:
 
     if (action === 'ant_skill_execute') {
         const { executeAntSkill } = await import('../ant_skills.js');
-        const result = await executeAntSkill(details.fileName, details.args || []);
+        // Normalize all possible arg names the model might send
+        const fileName = details.fileName || details.path || details.name || details.file || details.filePath;
+        if (!fileName) throw new Error('Argument "fileName" is required for ant_skill_execute. Provide the filename (e.g. "list_root_scan.py").');
+        const result = await executeAntSkill(fileName, details.args || []);
         return Object.assign({ status: 'success' }, result);
     }
 
