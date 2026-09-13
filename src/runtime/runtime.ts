@@ -45,6 +45,7 @@ export class AgenticRuntime {
   private bus: RuntimeEventBus;
   private session: RuntimeSession;
   private state: CognitiveState;
+  private busy = false;
 
   constructor(bus: RuntimeEventBus = runtimeBus) {
     this.bus = bus;
@@ -105,6 +106,10 @@ export class AgenticRuntime {
    */
   async runInteractive(options: RuntimeOptions = {}): Promise<void> {
     const readline = await import('readline');
+    // TODO(antcode#8): output readline + seluruh event stream memakai
+    // process.stderr — prompt bisa tertimpa tulisan event saat task
+    // berjalan. Refactor UI besar (mis. alihkan renderer ke baris
+    // terpisah / mode silent saat busy) ditunda, di luar task ini.
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stderr, // stdout dipakai untuk output
@@ -123,7 +128,7 @@ export class AgenticRuntime {
         this.bus.emit('system:status', { status: 'SHUTDOWN' });
         process.stderr.write('Bye.\n');
         rl.close();
-        process.exit(0);
+        return;
       }
 
       if (input === '/history') {
@@ -140,6 +145,15 @@ export class AgenticRuntime {
         return;
       }
 
+      // Guard: tolak task baru saat task sebelumnya masih berjalan.
+      // Slash command (mis. /quit, /history) tetap responsif di atas.
+      if (this.busy) {
+        process.stderr.write('  ⏳ Task masih berjalan, tunggu selesai...\n');
+        rl.prompt();
+        return;
+      }
+
+      this.busy = true;
       try {
         const task = await this.runTask(input, options);
         process.stderr.write(`\n── Result (${task.totalMs}ms) ──\n`);
@@ -147,14 +161,17 @@ export class AgenticRuntime {
       } catch (e: unknown) {
         const errText = e instanceof Error ? e.message : String(e);
         process.stderr.write(`\n[ERROR] ${errText}\n`);
+      } finally {
+        this.busy = false;
       }
 
       rl.prompt();
     });
 
     rl.on('close', () => {
+      // Keluar natural: biarkan event loop kosong sendiri. Jangan
+      // process.exit() brutal agar stream/output sempat flush.
       this.bus.emit('system:status', { status: 'SHUTDOWN' });
-      process.exit(0);
     });
   }
 
@@ -169,14 +186,4 @@ export class AgenticRuntime {
   getBus(): RuntimeEventBus {
     return this.bus;
   }
-}
-
-// Entry point for direct runtime testing
-if (import.meta.url === `file://${process.argv[1]}` || process.argv.includes('runtime.ts')) {
-  const runtime = new AgenticRuntime();
-  const taskArg = process.argv[2] || 'Hello World';
-  runtime.runTask(taskArg).then(result => {
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(result.error ? 1 : 0);
-  });
 }

@@ -43,8 +43,6 @@ export type RuntimeEvent = keyof RuntimeEventMap;
  */
 export class RuntimeEventBus {
   private emitter: EventEmitter;
-  private buffer: Array<{ event: string; data: unknown }> = [];
-  private flushing = false;
 
   constructor(maxListeners = 100) {
     this.emitter = new EventEmitter();

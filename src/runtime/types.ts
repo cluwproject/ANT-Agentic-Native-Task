@@ -52,14 +52,15 @@ export interface Task {
   error: string | null;
 }
 
-/** Brain config — konfigurasi AI provider untuk task */
+/** Brain config — konfigurasi AI provider untuk task.
+ * Field eksplisit sesuai pemakaian executor. Tanpa index signature agar
+ * typo field tertangkap typecheck. */
 export interface BrainConfig {
   provider?: string;
   api_key?: string;
   base_url?: string;
   custom_model?: string;
   tavily_api_key?: string;
-  [key: string]: unknown;
 }
 
 /** Runtime options — kontrol perilaku agent loop */

@@ -1,10 +1,27 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 import { RuntimeEventBus } from './events.js';
 import { parseToolCall, nativeCallsToToolCalls } from '../core/agent_loop/toolCallParser.js';
 import { executeAction } from '../core/actions/index.js';
 import { buildFullSystemInstruction, type BrainState } from '../core/ai/prompts.js';
 import { detectProvider } from '../core/ai/router.js';
 import type { RuntimeToolCall, Turn, RuntimeOptions, BrainConfig } from './types.js';
+
+/**
+ * Marker substring yang menandakan error tool bersifat fatal —
+ * executor harus berhenti, bukan retry / lanjut turn berikutnya.
+ * Diekspor agar bisa di-unit-test langsung.
+ */
+export const FATAL_ERROR_MARKERS = [
+  'ACCESS_DENIED',
+  'SECURITY_VIOLATION',
+  'APPROVAL_REQUIRED',
+  'FATAL',
+] as const;
+
+/** true jika pesan error tool mengandung salah satu marker fatal. */
+export function isFatalError(message: string): boolean {
+  return FATAL_ERROR_MARKERS.some((m) => message.includes(m));
+}
 
 /**
  * Jalankan satu task menggunakan agent loop ReAct.
@@ -31,6 +48,7 @@ export async function executeTask(
   const turns: Turn[] = [];
   let finalAnswer = '';
   let error: string | null = null;
+  let lastTurnNum = 0;
 
   // Build brain config
   const brain: BrainConfig = options.brain ?? {};
@@ -160,18 +178,15 @@ export async function executeTask(
       });
 
       if (!toolSuccess) {
-        // Cek apakah error fatal
-        const isFatal = toolResult.includes('ACCESS_DENIED') ||
-          toolResult.includes('SECURITY_VIOLATION') ||
-          toolResult.includes('APPROVAL_REQUIRED') ||
-          toolResult.includes('FATAL');
-        if (isFatal) {
+        // Cek apakah error fatal — berhenti total, bukan retry.
+        if (isFatalError(toolResult)) {
           error = `Fatal tool error: ${toolResult}`;
           bus.taskError(taskId, turnNum, error, false);
           const totalMs = Date.now() - startTime;
           return { id: taskId, prompt, turns, finalAnswer: toolResult, totalMs, error };
         }
       }
+      lastTurnNum = turnNum;
     }
   }
 
@@ -185,6 +200,6 @@ export async function executeTask(
   }
 
   const totalMs = Date.now() - startTime;
-  bus.taskComplete(taskId, turns.length, finalAnswer, totalMs);
+  bus.taskComplete(taskId, lastTurnNum, finalAnswer, totalMs);
   return { id: taskId, prompt, turns, finalAnswer, totalMs, error };
 }

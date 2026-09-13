@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { runtimeBus } from './events.js';
+import type { RuntimeEventBus, RuntimeEventMap } from './events.js';
 import { AgenticRuntime } from './runtime.js';
-import type { RuntimeEventMap } from './events.js';
 
 // ============================================================================
 // ANT Runtime — Pure CLI Runner
@@ -14,6 +14,10 @@ const runtime = new AgenticRuntime(bus);
 
 // ── Event Listeners ─────────────────────────────────────────────────
 // Setiap event di-render ke stderr supaya stdout bersih untuk output.
+// Dibungkus fungsi agar module aman di-import programmatic tanpa
+// menculik stderr — hanya main() yang memasang renderer terminal.
+
+export function attachTerminalRenderer(bus: RuntimeEventBus): void {
 
 bus.on('task:start', (d: RuntimeEventMap['task:start']) => {
   process.stderr.write(`\n┌─ Task [${d.taskId}] start ──────────────────────────\n`);
@@ -86,10 +90,19 @@ bus.on('system:log', (d: RuntimeEventMap['system:log']) => {
 bus.on('system:status', (d: RuntimeEventMap['system:status']) => {
   process.stderr.write(`\n═══ Status: ${d.status} ═══\n`);
 });
+} // ── end attachTerminalRenderer ──
 
 // ── Main ────────────────────────────────────────────────────────────
 
 async function main() {
+  attachTerminalRenderer(bus);
+
+  process.on('SIGINT', () => {
+    bus.emit('system:status', { status: 'SHUTDOWN' });
+    process.stderr.write('\nInterrupted.\n');
+    process.exit(130);
+  });
+
   const args = process.argv.slice(2);
 
   if (args.includes('--help') || args.includes('-h')) {
