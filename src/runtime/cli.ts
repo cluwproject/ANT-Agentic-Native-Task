@@ -107,12 +107,20 @@ async function main() {
 
   if (args.includes('--help') || args.includes('-h')) {
     process.stderr.write(`
-ANT Runtime — Pure CLI Agent
+ANT-CODE Runtime — Pure CLI Agent
 
 Usage:
-  ant-runtime <prompt>              Run single task (one-shot)
-  ant-runtime                       Start interactive REPL
-  ant-runtime --help                Show this help
+  antcode <prompt>              Run single task (one-shot)
+  antcode                       Start interactive REPL
+  antcode --help                Show this help
+
+REPL Commands:
+  /scope                  Show current working directory
+  /scope <path>           Change working directory
+  /scope ~                Go to home directory
+  /scope ..               Go up one level
+  /history                Show task history
+  /quit                   Exit
 
 Environment:
   AI_PROVIDER       AI provider (Google Gemini|OpenAI|Anthropic Claude)
@@ -124,9 +132,9 @@ Event stream:
   Task output goes to stdout (pipe-friendly).
 
 Examples:
-  ant-runtime "Create a hello world Express server with tests"
-  ant-runtime "List files in current directory"
-  echo "What files are here?" | ant-runtime
+  antcode "Create a hello world Express server with tests"
+  antcode "List files in current directory"
+  echo "What files are here?" | antcode
 `);
     process.exit(0);
   }

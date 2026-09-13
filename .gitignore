@@ -94,4 +94,5 @@ test-results/
 playwright-report/
 .envrc
 __manual_test__*
+bin/antcode.js
 

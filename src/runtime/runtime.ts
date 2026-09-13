@@ -25,6 +25,8 @@ export interface RuntimeSession {
   task: RuntimeTask | null;
   history: string[];
   startedAt: number;
+  /** Working directory aktif untuk task (default: process.cwd()). */
+  scope: string;
 }
 
 /**
@@ -54,6 +56,7 @@ export class AgenticRuntime {
       task: null,
       history: [],
       startedAt: Date.now(),
+      scope: process.cwd(),
     };
     this.state = {
       observation: '',
@@ -117,7 +120,8 @@ export class AgenticRuntime {
     });
 
     this.bus.emit('system:status', { status: 'READY' });
-    process.stderr.write('\nANT Runtime Ready. Ketik task atau /quit untuk keluar.\n');
+    process.stderr.write(`\nANT-CODE Runtime Ready. 📁 Scope: ${this.session.scope}\n`);
+    process.stderr.write('Ketik task, /scope <path> untuk ganti direktori, atau /quit untuk keluar.\n');
     rl.prompt();
 
     rl.on('line', async (line: string) => {
@@ -135,6 +139,41 @@ export class AgenticRuntime {
         for (const h of this.session.history) {
           process.stderr.write(`  ${h}\n`);
         }
+        rl.prompt();
+        return;
+      }
+
+      // /scope — lihat atau ubah working directory task
+      if (input === '/scope' || input.startsWith('/scope ')) {
+        const arg = input.slice(6).trim();
+        if (!arg) {
+          // Tampilkan scope saat ini
+          process.stderr.write(`  📁 Scope: ${this.session.scope}\n`);
+          rl.prompt();
+          return;
+        }
+        // Resolve path: ~ → home, .. → parent, absolute/relative
+        let target = arg;
+        if (target === '~') {
+          target = (await import('os')).homedir();
+        } else if (target === '..') {
+          target = require('path').dirname(this.session.scope);
+        } else if (!target.startsWith('/')) {
+          target = require('path').join(this.session.scope, target);
+        }
+        // Validasi path ada
+        const fs = await import('fs');
+        if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
+          process.stderr.write(`  ❌ Directory not found: ${target}\n`);
+          rl.prompt();
+          return;
+        }
+        // Simpan previous scope untuk /scope -
+        this.session.history.push(`[scope] ${this.session.scope}`);
+        this.session.scope = target;
+        process.chdir(target);
+        this.bus.emit('system:log', { level: 'INFO', message: `Scope changed to: ${target}` });
+        process.stderr.write(`  📁 Scope: ${this.session.scope}\n`);
         rl.prompt();
         return;
       }

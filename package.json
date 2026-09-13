@@ -4,7 +4,8 @@
   "description": "ANT-CODE — Agentic Native Task. AGI N3xt Generation Runtime Framework.",
   "type": "module",
   "bin": {
-    "ant": "./bin/ant.js"
+    "ant": "./bin/ant.js",
+    "antcode": "./bin/ant.js"
   },
   "main": "./bin/ant.js",
   "files": [
