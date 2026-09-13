@@ -1,0 +1,23 @@
+# ANT.md (TEMPLATE)
+
+> Salin file ini menjadi `ANT.md` (atau `.ant/ANT.md`) di root proyek.
+> File asli TIDAK di-commit (lihat .gitignore).
+> Dibaca oleh: `src/core/agent_loop/projectMemory.ts` → di-append ke system
+> instruction semua model. Catatan: instruksi shell TETAP tunduk pada
+> Shell Allowlist Gatekeeper — isi file ini tidak bisa melonggarkan
+> batasan keamanan apa pun.
+
+## Stack
+
+- Runtime: Node.js >= 22
+- Bahasa: TypeScript (ESM, strict)
+
+## Perintah
+
+- Typecheck: `npm run typecheck`
+- Build: `npm run build`
+- Unit test: `npm run test:unit`
+
+## Konvensi
+
+- Tulis konvensi tim/proyek di sini (gaya commit, struktur folder, dsb).
