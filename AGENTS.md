@@ -22,16 +22,19 @@ This branch is for **runtime agent code** refactoring. The `src/runtime/` module
 
 ## 🔴 Known Issues (Runtime Layer)
 
-| # | Issue | File | Priority |
-|---|-------|------|----------|
-| 1 | **Trust file path mismatch** — `actions/index.ts` reads `workspace/registry/trust.json` & `workspace/core/trust.shadow.json` but files are at `workspace/trust.json` & `workspace/trust.shadow.json` | `src/core/actions/index.ts` | P0 |
-| 2 | **Missing `config/soul.yaml`** — `prompts.ts` falls back to DEFAULT_SOUL | `config/soul.yaml` | P0 |
-| 3 | **Missing `config/ant_identity.json`** — `agentLoop.ts` falls back to default system instruction | `config/ant_identity.json` | P1 |
-| 4 | **Missing `ANT.md`** — Project memory not loaded | `ANT.md` or `.ant/ANT.md` | P1 |
-| 5 | **`executor.ts` `turns` array** — Multiple tool calls per turn each get separate entry with same `turnNum` | `src/runtime/executor.ts` | P1 |
-| 6 | **`parseError` ignored** — Tool call parse errors not checked in executor | `src/runtime/executor.ts` | P2 |
-| 7 | **`bridge.js` uses CJS `require` in ESM** — Fragile, should use ESM imports | `src/core/ai/bridge.js` | P0 |
-| 8 | **`runInteractive()` UI** — `process.stderr` conflicts with readline prompt | `src/runtime/runtime.ts` | P2 |
+> Status per 2026-09-13 (Fase 1 selesai): `[x]` = fixed di branch ini,
+> `[~]` = partial / documented, `[→]` = dipindah ke branch `fix/core-p0`.
+
+| # | Issue | File | Priority | Status |
+|---|-------|------|----------|--------|
+| 1 | **Trust file path mismatch** — `actions/index.ts` reads `workspace/registry/trust.json` & `workspace/core/trust.shadow.json` but files are at `workspace/trust.json` & `workspace/trust.shadow.json` | `src/core/actions/index.ts` | P0 | [→] `fix/core-p0` (core, dilarang di branch ini) |
+| 2 | **Missing `config/soul.yaml`** — `prompts.ts` falls back to DEFAULT_SOUL | `config/soul.yaml` | P0 | [~] template `config/soul.yaml.example` ditambah; file asli tetap per-install (di-ignore) |
+| 3 | **Missing `config/ant_identity.json`** — `agentLoop.ts` falls back to default system instruction | `config/ant_identity.json` | P1 | [~] template `config/ant_identity.json.example` ditambah |
+| 4 | **Missing `ANT.md`** — Project memory not loaded | `ANT.md` or `.ant/ANT.md` | P1 | [~] template `ANT.md.example` ditambah |
+| 5 | **`executor.ts` `turns` array** — Multiple tool calls per turn each get separate entry with same `turnNum` | `src/runtime/executor.ts` | P1 | [~] count event `taskComplete` diperbaiki via `lastTurnNum`; agregasi per-turn entry masih terbuka |
+| 6 | **`parseError` ignored** — Tool call parse errors not checked in executor | `src/runtime/executor.ts` | P2 | [x] emit `system:log WARN` saat `parseError` |
+| 7 | **`bridge.js` uses CJS `require` in ESM** — Fragile, should use ESM imports | `src/core/ai/bridge.js` | P0 | [→] `fix/core-p0` (core, dilarang di branch ini) |
+| 8 | **`runInteractive()` UI** — `process.stderr` conflicts with readline prompt | `src/runtime/runtime.ts` | P2 | [~] dicatat TODO di kode; refactor UI besar ditunda. Race condition (`busy` guard) + shutdown natural [x] |
 
 ---
 
@@ -43,7 +46,7 @@ This branch is for **runtime agent code** refactoring. The `src/runtime/` module
 4. **Create config files** in `config/` or `.ant/` as needed (don't modify existing)
 5. **Commit message format**: `antcode(runtime): <description>`
 6. **Do NOT push to `main`** — all work stays on `antcode` branch
-7. **Runtime tests**: `npm run test:unit` — baseline 232/232 passing
+7. **Runtime tests**: `npm run test:unit` — baseline 232/232 passing (235/235 sejak test `isFatalError` ditambah Fase 1)
 8. **Typecheck**: `npm run typecheck` — must pass with 0 errors
 9. **Build**: `npm run build` — must produce clean `dist/`
 
@@ -88,7 +91,7 @@ Each agent/machine must install it once if missing.
 
 ## 🧪 Test Baseline
 
-- Unit tests: **232 passing**
+- Unit tests: **235 passing** (232 baseline + 3 `isFatalError`, Fase 1)
 - Typecheck: **0 errors**
 - Lint: **0 errors, 684 warnings** (warnings only)
 
@@ -96,4 +99,7 @@ Each agent/machine must install it once if missing.
 
 ## 📌 Last Updated
 
-2026-09-13 — Agent review of runtime agent code. Branch `antcode` created for antcli→antcode refactoring.
+2026-09-13 — Fase 0–1 selesai di branch `antcode`: repo hygiene, REPL race fix,
+dead-code removal, FATAL markers + test, CLI renderer wrap + SIGINT,
+BrainConfig diperketat, template `.example`. Issue #1 & #7 dipindah ke
+`fix/core-p0` (di luar branch ini).

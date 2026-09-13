@@ -31,6 +31,7 @@ ANT berjalan langsung di terminal (Mac, Linux, Windows, Termux), mampu membaca/m
 - **Dual-Vault Memory (MindBy 4-Tier):** Memori persisten antar-sesi. Mode offline menggunakan JSON lokal, mode cloud tersinkronisasi via CockroachDB (Vector 768-dim).
 - **Shell Allowlist & Gatekeeper:** Mengamankan mesin Anda dengan pola `default deny` untuk perintah destruktif, dan `auto-approve` untuk *tools* pengembangan (seperti `npm`, `tsc`, `git`).
 - **Evidence-Based Claims:** Agen tidak bisa berhalusinasi "sudah memperbaiki kode". Setiap eksekusi sukses wajib mencatatkan *evidence* (SHA-256 hash) di Ledger.
+- **Runtime Public API (`src/runtime/`, branch `antcode`):** Lapisan API publik yang membungkus agent loop inti — `AgenticRuntime` + `executeTask()` + `RuntimeEventBus` untuk one-shot task, REPL interaktif (`runInteractive`), dan streaming event real-time ke stderr (stdout bersih untuk output). Lihat `AGENTS.md` untuk aturan kontribusi branch ini.
 
 ---
 
