@@ -81,3 +81,17 @@ test-*/
 # commands bersifat per-install)
 .ant/
 
+# ── ANT-Code: artefak daily-use & testing (2026-09) ──
+# NOTE: pakai `config/*` (bukan `config/`) agar negasi `!config/*.example`
+# tetap berlaku — file contoh template boleh terpublish, config asli tidak.
+ANT.md
+config/*
+!config/*.example
+*.tmp
+*.bak
+tmp/
+test-results/
+playwright-report/
+.envrc
+__manual_test__*
+

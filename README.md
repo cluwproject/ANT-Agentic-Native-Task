@@ -55,7 +55,7 @@ npm start          # Memulai ANT CLI
 
 ### Untuk Kontributor / Developer (Opsional)
 Jika Anda ikut mengembangkan basis kode ini, pastikan kode Anda lolos standar *Continuous Integration* (CI) sebelum melakukan _Push_:
-- `npm run test:unit` : Menjalankan 96/96 unit test lokal secara offline (termasuk security bypass suite).
+- `npm run test:unit` : Menjalankan 232/232 unit test lokal secara offline (termasuk security bypass suite).
 - `npm run ci` : Mensimulasikan pipeline GitHub Actions secara lokal (Typecheck + Build + Test). 
 *(Catatan: Anda tidak perlu perintah CI jika hanya ingin menggunakan CLI-nya).*
 
