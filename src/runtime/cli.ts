@@ -115,12 +115,13 @@ Usage:
   antcode --help                Show this help
 
 REPL Commands:
-  /scope                  Show current working directory
-  /scope <path>           Change working directory
-  /scope ~                Go to home directory
-  /scope ..               Go up one level
-  /history                Show task history
-  /quit                   Exit
+  /scope  atau  scope          Lihat working directory saat ini
+  /scope <path>                Ganti working directory
+  /scope ~                     Pindah ke home directory
+  /scope ..                    Naik satu level
+  /history  atau  history      Lihat riwayat task
+  /help  atau  help            Tampilkan bantuan
+  exit  atau  /quit            Keluar dari REPL
 
 Environment:
   AI_PROVIDER       AI provider (Google Gemini|OpenAI|Anthropic Claude)
