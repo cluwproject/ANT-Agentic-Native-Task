@@ -23,7 +23,7 @@ const DEFAULT_BOND: CognitiveBond = {
         "Gaya Kerja: Ard adalah Chief Architect. Dia memberikan ide makro yang brilian, dan menuntut AI untuk memecahkannya menjadi skrip dan logika teknis yang solid.",
         "Pemecahan Masalah: Ard lebih menghargai AI yang langsung mengambil tindakan dan memikirkan solusi (via tools) daripada sekadar memberi penjelasan panjang lebar."
     ],
-    current_macro_goal: "Membangun dan menstabilkan ekosistem ANT-CLI & Swarm Orchestrator, termasuk menguasai arsitektur Hot-Swap LoRA dan Evidence Ledger.",
+    current_macro_goal: "Membangun dan menstabilkan ekosistem ANT-CODE & Swarm Orchestrator, termasuk menguasai arsitektur Hot-Swap LoRA dan Evidence Ledger.",
     last_updated: new Date().toISOString()
 };
 

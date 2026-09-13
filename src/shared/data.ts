@@ -116,11 +116,11 @@ export async function getBrainConfig() {
   let isEnvFilled = false;
   
   const envCandidates = [
-    process.env.ANT_CLI_HOME ? path.join(process.env.ANT_CLI_HOME, '.env') : '',
+    process.env.ANT_CODE_HOME ? path.join(process.env.ANT_CODE_HOME, '.env') : '',
     path.join(BASE_DIR, '.env'),
     path.join(os.homedir(), '.ant', '.env'),
-    path.join(os.homedir(), 'ant-cli', '.env'),
-    '/data/data/com.termux/files/home/ant-cli/.env'
+    path.join(os.homedir(), 'ant-code', '.env'),
+    '/data/data/com.termux/files/home/ant-code/.env'
   ].filter(Boolean);
 
   for (const envCandidate of envCandidates) {

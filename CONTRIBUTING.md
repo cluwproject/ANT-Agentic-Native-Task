@@ -1,8 +1,8 @@
-# 🤝 Contributing to ANT-CLI
+# 🤝 Contributing to ANT-CODE
 
-Thank you for your interest in contributing to **ANT-CLI (Agentic Native Task)**.
+Thank you for your interest in contributing to **ANT-CODE (Agentic Native Task)**.
 
-ANT-CLI is a sovereign, model-agnostic agentic runtime designed around autonomous execution, persistent cognitive memory, security controls, and verifiable evidence.
+ANT-CODE is a sovereign, model-agnostic agentic runtime designed around autonomous execution, persistent cognitive memory, security controls, and verifiable evidence.
 
 Contributions are welcome—but changes to the runtime should preserve the core principles of the system:
 
@@ -399,7 +399,7 @@ The goal is to make ANT **more capable without making it less understandable or 
 
 # 🛡️ Sovereignty Rule
 
-ANT-CLI is designed as a sovereign agentic runtime.
+ANT-CODE is designed as a sovereign agentic runtime.
 
 Contributors should not introduce architectural dependencies that unnecessarily transfer control of the runtime to a single external provider.
 
@@ -439,7 +439,7 @@ Before opening a pull request:
 
 ## Final Principle
 
-ANT-CLI is built around a simple idea:
+ANT-CODE is built around a simple idea:
 
 > **An autonomous agent should not only be capable of acting. It should be capable of explaining, verifying, and accounting for its actions.**
 
@@ -449,6 +449,6 @@ Contributions that strengthen that principle are especially valuable.
 Act deliberately.
 Verify everything.**
 
-**ANT-CLI — Agentic Native Task**
+**ANT-CODE — Agentic Native Task**
 
 > **You Ask. ANT Acts. Memory Persists. Evidence Remains.**

@@ -91,7 +91,7 @@ export class McpStdioClient {
             const initResult = await this.request('initialize', {
                 protocolVersion: MCP_PROTOCOL_VERSION,
                 capabilities: { tools: {} },
-                clientInfo: { name: 'ant-cli', version: '0.4.0-alpha' }
+                clientInfo: { name: 'ant-code', version: '0.4.0-alpha' }
             });
             this.serverInfo = initResult?.serverInfo ?? null;
             this.notify('notifications/initialized', {});

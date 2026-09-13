@@ -7,7 +7,7 @@ async function run() {
 
     if (initRes.success) {
         console.log('\nTesting Store Memory...');
-        const stored = await storeCockroachMemory('CockroachDB x AWS Hackathon Test Memory from ANT-CLI', undefined, ['test', 'hackathon']);
+        const stored = await storeCockroachMemory('CockroachDB x AWS Hackathon Test Memory from ANT-CODE', undefined, ['test', 'hackathon']);
         console.log('Stored:', stored);
 
         console.log('\nTesting Recall Memory...');

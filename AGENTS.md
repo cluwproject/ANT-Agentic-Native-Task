@@ -1,7 +1,7 @@
 # AGENTS.md — ANT-Code Branch Context
 
-> ⚠️ **BRANCH: `antcode`** — Refactoring target from `antcli` → `antcode`
-> **DO NOT MODIFY** core antcli system internals (ai/, agent_loop/, actions/, security/).
+> ⚠️ **BRANCH: `antcode`** — Full rename to antcode naming (owner-approved, in progress 2026-09-13)
+> **DO NOT MODIFY** core antcode system internals (ai/, agent_loop/, actions/, security/) — exception: pure product-name string rename, no logic changes.
 > Only add/modify files in `src/runtime/`, `config/`, `.ant/`, and documentation.
 
 ---
@@ -41,7 +41,7 @@ This branch is for **runtime agent code** refactoring. The `src/runtime/` module
 ## 📋 Rules for Agents Working on `antcode`
 
 1. **Stay on branch `antcode`** — verify with `git branch --show-current` (must print `antcode`)
-2. **Never modify** `src/core/ai/`, `src/core/agent_loop/`, `src/core/actions/`, `src/core/security/` internals
+2. **Never modify** `src/core/ai/`, `src/core/agent_loop/`, `src/core/actions/`, `src/core/security/` internals — exception (owner-approved 2026-09-13): pure product-name string rename, no logic changes
 3. **Only modify** `src/runtime/` for runtime-layer changes
 4. **Create config files** in `config/` or `.ant/` as needed (don't modify existing)
 5. **Commit message format**: `antcode(runtime): <description>`

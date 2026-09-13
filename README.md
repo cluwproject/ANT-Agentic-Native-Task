@@ -156,7 +156,7 @@ ANT **tidak** mengeksekusi shell secara membabi buta. Ia menggunakan L5 Allowlis
 ## 🗂️ Struktur Direktori Proyek
 
 ```
-ant-cli/
+ant-code/
 ├── src/
 │   ├── core/
 │   │   ├── cli/

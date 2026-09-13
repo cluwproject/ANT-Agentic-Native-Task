@@ -2,7 +2,7 @@
 // Advisory file lock sederhana berbasis exclusive-create ('wx'), dipakai bareng
 // oleh mailboxWriter.js dan circuitBreaker.ts supaya read-modify-write ke file
 // yang sama aman lintas proses OS. Bukan pengganti proper distributed lock —
-// cukup untuk skenario single-machine (Termux/PC) yang jadi target ant-cli.
+// cukup untuk skenario single-machine (Termux/PC) yang jadi target ant-code.
 
 import fs from 'node:fs';
 

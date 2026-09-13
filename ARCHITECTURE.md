@@ -1,6 +1,6 @@
-# 🏗️ ANT-CLI Architecture Documentation
+# 🏗️ ANT-CODE Architecture Documentation
 
-This document describes the modular architecture of **ANT-CLI (Agentic Native Task)** v0.3.0.
+This document describes the modular architecture of **ANT-CODE (Agentic Native Task)** v0.3.0.
 
 > 🔄 Terakhir disinkronkan dengan kode aktual (Fase 1 — docs sync). Jika struktur folder berubah lewat refactor Fase 3, perbarui dokumen ini di commit yang sama.
 
@@ -8,7 +8,7 @@ This document describes the modular architecture of **ANT-CLI (Agentic Native Ta
 
 ## 🏛️ System Overview
 
-ANT-CLI uses a decoupled, event-driven architecture designed for high performance, low-memory footprints (optimised for Android Termux Proot environments), and total agentic autonomy.
+ANT-CODE uses a decoupled, event-driven architecture designed for high performance, low-memory footprints (optimised for Android Termux Proot environments), and total agentic autonomy.
 
 ```mermaid
 graph TD
@@ -102,7 +102,6 @@ graph TD
 - `events.ts` / `events_subscriber.ts` / `event_checklist.ts`: Event-driven bus.
 - `healing.ts`: Self-healing error recovery flows.
 - `slash_menu.ts` kini di `src/core/cli/slash_menu.ts`; `sovereign_seal.ts` kini di `src/security/` (Fase 3).
-- **Deprecated (hapus v0.5)**: `mindby_os.ts`, `mindby_habitat.ts` (alias mati dari `ant_os`/`ant_habitat`), `memoryAdapter.ts`, `verificationStore.ts`.
 
 ### 7. `src/security/`
 - `auth.ts`: Authentication primitives.

@@ -32,7 +32,7 @@ export function getLastHandoverEnvelope(): any {
 export async function setActiveModel(
     newModelId: string,
     trigger: string = '/model command',
-    handoverSummary: string = 'Transisi model aktif di ant-cli.',
+    handoverSummary: string = 'Transisi model aktif di ant-code.',
     messageText: string = 'Melanjutkan tugas dengan model baru.'
 ): Promise<{ success: boolean; envelope?: any; reason?: string }> {
     const prevModelId = activeModelId;
@@ -63,7 +63,7 @@ export async function setActiveModel(
         session: { id: `session_${Date.now()}`, taskId: `task_${Date.now()}` },
         type: 'HANDOVER',
         state: {
-            currentObjective: 'Evolusi & Eksekusi Otonom ANT-CLI',
+            currentObjective: 'Evolusi & Eksekusi Otonom ANT-CODE',
             completed: ['Setup BLOK 1-7', 'ANT Adapt Module', 'Inter-Model Mailbox Engine'],
             pending: ['Verifikasi Inter-Model Handover'],
             blocked: []

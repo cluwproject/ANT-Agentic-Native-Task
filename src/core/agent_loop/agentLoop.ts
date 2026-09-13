@@ -85,7 +85,7 @@ export function getSystemInstruction(): string {
     `- Jangan pernah mengasumsikan keberhasilan eksekusi tool sebelum tool tersebut benar-benar dijalankan dan hasilnya dikembalikan kepada Anda di giliran berikutnya.\n\n` +
     `[ATURAN PENCARIAN FILE & STRUKTUR LINUX — WAJIB DIPATUHI]\n` +
     `- Sadari lingkungan sistem: Di Linux, direktori home untuk user 'root' berada di '/root' (atau '~' / '$HOME'), BUKAN '/home/root'. Direktori '/home' hanya untuk user biasa non-root.\n` +
-    `- Saat mencari file/folder proyek yang diminta user (misal: cluwgenesis, ant-cli), JANGAN PERNAH menjalankan perintah 'find /' dari root OS tanpa batas karena akan memindai seluruh OS (/proc, /sys, dll) dan terkena batas waktu timeout (30s).\n` +
+    `- Saat mencari file/folder proyek yang diminta user (misal: cluwgenesis, ant-code), JANGAN PERNAH menjalankan perintah 'find /' dari root OS tanpa batas karena akan memindai seluruh OS (/proc, /sys, dll) dan terkena batas waktu timeout (30s).\n` +
     `- Utamakan pencarian cepat terarah: periksa direktori induk '..', home user '/root' atau '~' (misal: 'find ~ -maxdepth 3 -name "*nama*"' atau 'ls -d /root/*nama* 2>/dev/null').\n\n` +
     `[ATURAN BUKTI — WAJIB DIPATUHI]\n` +
     `Anda TIDAK PERNAH boleh menulis sendiri: hash SHA-256, status "file berhasil dibaca", ` +
