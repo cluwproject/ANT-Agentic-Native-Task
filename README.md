@@ -44,14 +44,14 @@ ANT berjalan langsung di terminal (Mac, Linux, Windows, Termux), mampu membaca/m
 - Opsional: Ollama untuk *embedding* 768-dim (`ollama pull nomic-embed-text`) dan model SLM lokal offline.
 
 ### Instalasi (Untuk Pengguna Akhir)
-Gunakan perintah standar berikut untuk menginstal dan menjalankan ANT CLI:
+Gunakan perintah standar berikut untuk menginstal dan menjalankan ANT-CODE:
 
 ```bash
 git clone https://github.com/cluwproject/ANT-Agentic-Native-Task.git
 cd ANT-Agentic-Native-Task
 npm install        # Menginstal seluruh dependensi standar
 npm run build      # Mengompilasi kode TypeScript
-npm start          # Memulai ANT CLI
+npm start          # Memulai ANT-CODE
 ```
 
 ### Untuk Kontributor / Developer (Opsional)
@@ -223,7 +223,7 @@ Arsitektur ANT v0.4 (The Sovereign Runtime Era) dirumuskan, diuji, dan didogfood
 - **Nemotron:** *Embedding Optimization, 768-dim Vector Vault Spec, & Semantic Search Ranking.*
 
 **Stealth**
-- **ox-alpha (stealth/OpenRouter):** *Live Runtime Validation langsung dari dalam ANT CLI v0.3.5 — Zero-Hallucination Audit & Evidence-Based Codebase Debugging.*
+- **ox-alpha (stealth/OpenRouter):** *Live Runtime Validation langsung dari dalam ANT-CODE v0.3.5 — Zero-Hallucination Audit & Evidence-Based Codebase Debugging.*
 
 **Ollama Local Models (On-Device Sovereign Runtime)**
 - **Qwen 3.8 Max, Gemma series, dan model lokal lainnya:** *Validasi on-device di Termux & Android, Offline-First Resilience Testing, & Latency Benchmarking.*
