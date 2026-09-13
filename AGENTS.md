@@ -1,0 +1,71 @@
+# AGENTS.md — ANT-Code Branch Context
+
+> ⚠️ **BRANCH: `antcode`** — Refactoring target from `antcli` → `antcode`
+> **DO NOT MODIFY** core antcli system internals (ai/, agent_loop/, actions/, security/).
+> Only add/modify files in `src/runtime/`, `config/`, `.ant/`, and documentation.
+
+---
+
+## 🎯 Scope: Runtime Agent Code (`src/runtime/`)
+
+This branch is for **runtime agent code** refactoring. The `src/runtime/` module is the public-facing API layer that wraps the core agent loop. It must remain decoupled from internal system changes.
+
+### Runtime Files (`src/runtime/`)
+- `index.ts` — Public API exports
+- `runtime.ts` — `AgenticRuntime` class + `CognitiveStateSchema`
+- `executor.ts` — `executeTask()` ReAct loop
+- `events.ts` — `RuntimeEventBus` + `runtimeBus`
+- `types.ts` — `Task`, `Turn`, `TaskStatus`, `RuntimeOptions`
+- `cli.ts` — Pure CLI runner entry point
+
+---
+
+## 🔴 Known Issues (Runtime Layer)
+
+| # | Issue | File | Priority |
+|---|-------|------|----------|
+| 1 | **Trust file path mismatch** — `actions/index.ts` reads `workspace/registry/trust.json` & `workspace/core/trust.shadow.json` but files are at `workspace/trust.json` & `workspace/trust.shadow.json` | `src/core/actions/index.ts` | P0 |
+| 2 | **Missing `config/soul.yaml`** — `prompts.ts` falls back to DEFAULT_SOUL | `config/soul.yaml` | P0 |
+| 3 | **Missing `config/ant_identity.json`** — `agentLoop.ts` falls back to default system instruction | `config/ant_identity.json` | P1 |
+| 4 | **Missing `ANT.md`** — Project memory not loaded | `ANT.md` or `.ant/ANT.md` | P1 |
+| 5 | **`executor.ts` `turns` array** — Multiple tool calls per turn each get separate entry with same `turnNum` | `src/runtime/executor.ts` | P1 |
+| 6 | **`parseError` ignored** — Tool call parse errors not checked in executor | `src/runtime/executor.ts` | P2 |
+| 7 | **`bridge.js` uses CJS `require` in ESM** — Fragile, should use ESM imports | `src/core/ai/bridge.js` | P0 |
+| 8 | **`runInteractive()` UI** — `process.stderr` conflicts with readline prompt | `src/runtime/runtime.ts` | P2 |
+
+---
+
+## 📋 Rules for Agents Working on `antcode`
+
+1. **Never modify** `src/core/ai/`, `src/core/agent_loop/`, `src/core/actions/`, `src/core/security/` internals
+2. **Only modify** `src/runtime/` for runtime-layer changes
+3. **Create config files** in `config/` or `.ant/` as needed (don't modify existing)
+4. **Commit message format**: `antcode(runtime): <description>`
+5. **Do NOT push to `main`** — all work stays on `antcode` branch
+6. **Runtime tests**: `npm run test:unit` — baseline 232/232 passing
+7. **Typecheck**: `npm run typecheck` — must pass with 0 errors
+8. **Build**: `npm run build` — must produce clean `dist/`
+
+---
+
+## 🔗 Related Files
+
+- `ARCHITECTURE.md` — System architecture documentation
+- `src/core/cli/index.ts` — Main CLI entry (NOT to be modified)
+- `src/core/ai/index.ts` — AI provider hub (NOT to be modified)
+- `src/core/agent_loop/agentLoop.ts` — Core ReAct loop (NOT to be modified)
+- `src/runtime/` — **THE** working directory for this branch
+
+---
+
+## 🧪 Test Baseline
+
+- Unit tests: **232 passing**
+- Typecheck: **0 errors**
+- Lint: **0 errors, 684 warnings** (warnings only)
+
+---
+
+## 📌 Last Updated
+
+2026-09-13 — Agent review of runtime agent code. Branch `antcode` created for antcli→antcode refactoring.
