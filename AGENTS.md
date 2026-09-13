@@ -37,14 +37,42 @@ This branch is for **runtime agent code** refactoring. The `src/runtime/` module
 
 ## 📋 Rules for Agents Working on `antcode`
 
-1. **Never modify** `src/core/ai/`, `src/core/agent_loop/`, `src/core/actions/`, `src/core/security/` internals
-2. **Only modify** `src/runtime/` for runtime-layer changes
-3. **Create config files** in `config/` or `.ant/` as needed (don't modify existing)
-4. **Commit message format**: `antcode(runtime): <description>`
-5. **Do NOT push to `main`** — all work stays on `antcode` branch
-6. **Runtime tests**: `npm run test:unit` — baseline 232/232 passing
-7. **Typecheck**: `npm run typecheck` — must pass with 0 errors
-8. **Build**: `npm run build` — must produce clean `dist/`
+1. **Stay on branch `antcode`** — verify with `git branch --show-current` (must print `antcode`)
+2. **Never modify** `src/core/ai/`, `src/core/agent_loop/`, `src/core/actions/`, `src/core/security/` internals
+3. **Only modify** `src/runtime/` for runtime-layer changes
+4. **Create config files** in `config/` or `.ant/` as needed (don't modify existing)
+5. **Commit message format**: `antcode(runtime): <description>`
+6. **Do NOT push to `main`** — all work stays on `antcode` branch
+7. **Runtime tests**: `npm run test:unit` — baseline 232/232 passing
+8. **Typecheck**: `npm run typecheck` — must pass with 0 errors
+9. **Build**: `npm run build` — must produce clean `dist/`
+
+---
+
+## 🔄 Git Workflow (antcode only)
+
+Daily cycle — always from branch `antcode`:
+
+```bash
+git branch --show-current   # must print: antcode
+git status                  # check changes
+git add <files>             # stage (prefer specific files over `git add .`)
+git commit -m "antcode(runtime): <description>"
+git push                    # tracked → origin/antcode (no args needed)
+git pull                    # tracked ← origin/antcode
+```
+
+Upstream is pre-configured: `branch.antcode.remote=origin`, `branch.antcode.merge=refs/heads/antcode`.
+
+### ⛔ Forbidden (auto-blocked by local pre-push hook)
+
+```bash
+git push origin main        # BLOCKED — hook rejects refs/heads/main
+git push origin HEAD:main   # BLOCKED
+```
+
+Note: `.git/hooks/pre-push` is local-only (not committed to repo).
+Each agent/machine must install it once if missing.
 
 ---
 
