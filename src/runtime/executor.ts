@@ -117,8 +117,16 @@ export async function executeTask(
 
     bus.aiResponse(taskId, responseText, turnNum);
 
-    // Parse tool calls dari response
+    // Parse tool calls dari response. parseError yang true berarti model
+    // mengeluarkan format tool-call rusak — catat warning agar transparan
+    // (antcode#6), lalu lanjut dengan call yang berhasil di-parse.
     const parsed = parseToolCall(responseText);
+    if (parsed.parseError) {
+      bus.emit('system:log', {
+        level: 'WARN',
+        message: `Turn ${turnNum}: tool-call parse error, proceeding with ${parsed.toolCalls.length} parsed call(s).`,
+      });
+    }
     const nativeConverted = nativeCallsToToolCalls(nativeToolCalls);
     const allToolCalls: RuntimeToolCall[] = [...nativeConverted, ...parsed.toolCalls];
 
