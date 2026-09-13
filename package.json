@@ -1,7 +1,7 @@
 {
   "name": "ant-code",
   "version": "0.5.0-alpha.0",
-  "description": "ANT — Agentic Native Task. AGI N3xt Generation Runtime Framework.",
+  "description": "ANT-CODE — Agentic Native Task. AGI N3xt Generation Runtime Framework.",
   "type": "module",
   "bin": {
     "ant": "./bin/ant.js"

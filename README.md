@@ -1,4 +1,4 @@
-# 🐜 ANT (Agentic Native Task) CLI
+# 🐜 ANT-CODE (Agentic Native Task)
 
 [![CI](https://github.com/cluwproject/ANT-Agentic-Native-Task/actions/workflows/ci.yml/badge.svg)](https://github.com/cluwproject/ANT-Agentic-Native-Task/actions/workflows/ci.yml)
 
